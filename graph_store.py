@@ -84,14 +84,20 @@ def walk_2hop(
 # 1-hop directed walk variant for the agentic `graph_lookup` tool — when the
 # router classifies a query as id_lookup, the tool needs ID -> direct neighbors
 # along a specific link type, not a flood. Phase 1c uses this.
+#
+# Cypher correctness note: outgoing and incoming neighbors are collected into
+# separate WITH-bound lists, then concatenated in RETURN. Mixing two aggregations
+# in a single RETURN ("RETURN outs + collect(...)") triggers Neo4j's implicit
+# grouping error.
 HOP1_DIRECTED_CYPHER = """
 MATCH (a:Requirement {id: $req_id})
 OPTIONAL MATCH (a)-[r_out]->(b:Requirement)
   WHERE type(r_out) IN $rel_types
 WITH a, collect(DISTINCT {id: b.id, dir: 'out', rel: type(r_out)}) AS outs
-OPTIONAL MATCH (c)-[r_in]->(a)
+OPTIONAL MATCH (c:Requirement)-[r_in]->(a)
   WHERE type(r_in) IN $rel_types
-RETURN outs + collect(DISTINCT {id: c.id, dir: 'in', rel: type(r_in)}) AS neighbors
+WITH outs, collect(DISTINCT {id: c.id, dir: 'in', rel: type(r_in)}) AS ins
+RETURN outs + ins AS neighbors
 """.strip()
 
 
@@ -116,5 +122,6 @@ def hop1_directed(
         )
     if not rec or not rec["neighbors"]:
         return []
-    # Filter out the OPTIONAL MATCH null-rows (collect returns {id: None, ...})
+    # OPTIONAL MATCH that finds nothing yields a single record with id=None;
+    # filter those out so callers see only real neighbors.
     return [n for n in rec["neighbors"] if n.get("id")]

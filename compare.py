@@ -47,6 +47,7 @@ def build_configs(
     include_azure_rerank: bool = True,
     include_agentic: bool = True,
     include_graphrag: bool = True,
+    include_agentic_graph: bool = True,
 ) -> list[dict]:
     cfgs: list[dict] = []
     for emb in embedders:
@@ -60,6 +61,8 @@ def build_configs(
             cfgs.append({"pipeline": "agentic", "embedder": emb, "reranker": None})
         if include_graphrag:
             cfgs.append({"pipeline": "graphrag", "embedder": emb, "reranker": None})
+        if include_agentic_graph:
+            cfgs.append({"pipeline": "agentic-graph", "embedder": emb, "reranker": None})
     return cfgs
 
 
@@ -71,9 +74,10 @@ def run_one(cfg: dict, query: str) -> dict:
             reranker_name=cfg["reranker"],
         )
     if cfg["pipeline"] == "graphrag":
-        # Lazy import — neo4j driver only loaded when graphrag is actually used.
         from graph_rag import graph_rag
         return graph_rag(query, embedder_name=cfg["embedder"])
+    if cfg["pipeline"] == "agentic-graph":
+        return run_agentic_rag(query, embedder_name=cfg["embedder"], use_graph=True)
     return run_agentic_rag(query, embedder_name=cfg["embedder"])
 
 
@@ -197,6 +201,8 @@ def main() -> None:
     parser.add_argument("--no-agentic", action="store_true")
     parser.add_argument("--no-graphrag", action="store_true",
                         help="Skip the graphrag pipeline (needs Neo4j Aura)")
+    parser.add_argument("--no-agentic-graph", action="store_true",
+                        help="Skip agentic-graph pipeline (LangGraph + graph_lookup tool)")
     parser.add_argument("--out", default="results/results.csv")
     args = parser.parse_args()
 
@@ -212,6 +218,7 @@ def main() -> None:
         include_azure_rerank=not args.no_azure_rerank,
         include_agentic=not args.no_agentic,
         include_graphrag=not args.no_graphrag,
+        include_agentic_graph=not args.no_agentic_graph,
     )
 
     total = len(cfgs) * len(queries)
