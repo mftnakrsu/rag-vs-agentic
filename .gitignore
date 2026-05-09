@@ -1,0 +1,29 @@
+# Secrets
+.env
+*.key
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# ChromaDB persistent store
+data/chroma/
+
+# Eval results
+results/*.csv
+results/*.json
+results/*.parquet
+
+# LangGraph checkpointer
+*.db
+*.db-shm
+*.db-wal
+
+# OS
+.DS_Store
+.idea/
+.vscode/
