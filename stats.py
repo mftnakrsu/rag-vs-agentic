@@ -2,15 +2,18 @@
 
 Implements:
 - Non-parametric bootstrap CIs for per-pipeline metrics (1000 iters default).
-- Paired bootstrap CIs for pipeline-pair differences.
+  Both percentile (`bootstrap_ci`) and BCa / bias-corrected-and-accelerated
+  (`bootstrap_ci_bca`). BCa is the paper-grade default; percentile is kept
+  for sanity comparison and for cases where BCa's acceleration estimate is
+  ill-defined.
+- Paired bootstrap CIs for pipeline-pair differences (percentile + BCa).
 - Paired permutation test for mean differences (10000 perms default).
 - Bonferroni and Holm corrections for multiple comparisons.
-- Cohen's d effect size.
+- Cohen's d effect size (independent + paired).
 
-Why these specifically: the 2025-2026 RAG-eval methodology bar is paired tests
-+ bootstrap CIs + multiple-comparison correction. arxiv 2025 'Bayesian RAG'
-uses the same template. ARES (NAACL 2024) uses PPI; we don't need that yet
-since our dataset is small enough that bootstrap is computationally fine.
+Why these specifically: the 2025-2026 RAG-eval methodology bar is paired
+tests + bootstrap CIs + multiple-comparison correction. CIKM short-paper
+reviewers expect BCa over percentile when N is small (300 per stratum).
 
 API contract:
 - Inputs are 1-D iterables of floats (e.g., per-query metric values).
@@ -23,6 +26,7 @@ import math
 from typing import Iterable, Sequence
 
 import numpy as np
+import scipy.stats as _sps
 
 
 def bootstrap_ci(
@@ -85,6 +89,91 @@ def paired_bootstrap_ci(
     lo = float(np.quantile(diffs, alpha))
     hi = float(np.quantile(diffs, 1.0 - alpha))
     return (float(aa.mean() - bb.mean()), lo, hi)
+
+
+def bootstrap_ci_bca(
+    values: Sequence[float],
+    *,
+    n_iters: int = 1000,
+    ci: float = 0.95,
+    seed: int = 0,
+) -> tuple[float, float, float]:
+    """BCa (bias-corrected & accelerated) bootstrap CI for the mean.
+
+    More accurate than percentile when the bootstrap distribution is skewed
+    or when the metric is bounded near 0/1 (citation P/R/F1, faithfulness
+    scores). 2025-2026 RAG-eval reviewer default for small-N inferences.
+
+    Falls back to NaN on degenerate inputs (e.g., all values identical →
+    acceleration term is NaN).
+
+    Returns:
+        (mean, lower, upper).
+    """
+    arr = np.asarray(values, dtype=float)
+    if arr.size < 2:
+        return (float(arr.mean()) if arr.size else float("nan"),
+                float("nan"), float("nan"))
+    if np.all(arr == arr[0]):
+        return (float(arr[0]), float(arr[0]), float(arr[0]))
+    rng = np.random.default_rng(seed)
+    try:
+        res = _sps.bootstrap(
+            (arr,), np.mean,
+            n_resamples=n_iters,
+            confidence_level=ci,
+            method="BCa",
+            random_state=rng,
+        )
+        return (float(arr.mean()),
+                float(res.confidence_interval.low),
+                float(res.confidence_interval.high))
+    except (ValueError, RuntimeError):
+        # BCa can fail when acceleration is undefined; back off to percentile.
+        return bootstrap_ci(values, n_iters=n_iters, ci=ci, seed=seed)
+
+
+def paired_bootstrap_ci_bca(
+    a: Sequence[float],
+    b: Sequence[float],
+    *,
+    n_iters: int = 1000,
+    ci: float = 0.95,
+    seed: int = 0,
+) -> tuple[float, float, float]:
+    """Paired BCa CI for mean(a - b).
+
+    Computes the per-pair difference once and bootstraps that. Pairing is
+    preserved exactly because we collapse to a 1-D diff array first. Same
+    fallback behavior as bootstrap_ci_bca on degenerate inputs.
+
+    Returns:
+        (mean_diff, lower, upper).
+    """
+    aa = np.asarray(a, dtype=float)
+    bb = np.asarray(b, dtype=float)
+    if aa.shape != bb.shape:
+        raise ValueError(f"shape mismatch: {aa.shape} vs {bb.shape}")
+    if aa.size < 2:
+        return (float((aa - bb).mean()) if aa.size else float("nan"),
+                float("nan"), float("nan"))
+    diff = aa - bb
+    if np.all(diff == diff[0]):
+        return (float(diff[0]), float(diff[0]), float(diff[0]))
+    rng = np.random.default_rng(seed)
+    try:
+        res = _sps.bootstrap(
+            (diff,), np.mean,
+            n_resamples=n_iters,
+            confidence_level=ci,
+            method="BCa",
+            random_state=rng,
+        )
+        return (float(diff.mean()),
+                float(res.confidence_interval.low),
+                float(res.confidence_interval.high))
+    except (ValueError, RuntimeError):
+        return paired_bootstrap_ci(a, b, n_iters=n_iters, ci=ci, seed=seed)
 
 
 def paired_permutation_test(
@@ -214,11 +303,18 @@ if __name__ == "__main__":
 
     m_a, lo_a, hi_a = bootstrap_ci(a, seed=args.seed)
     m_b, lo_b, hi_b = bootstrap_ci(b, seed=args.seed)
-    print(f"Bootstrap 95% CI on A: {m_a:.4f}  [{lo_a:.4f}, {hi_a:.4f}]")
-    print(f"Bootstrap 95% CI on B: {m_b:.4f}  [{lo_b:.4f}, {hi_b:.4f}]")
+    print(f"Bootstrap 95% CI on A (percentile): {m_a:.4f}  [{lo_a:.4f}, {hi_a:.4f}]")
+    print(f"Bootstrap 95% CI on B (percentile): {m_b:.4f}  [{lo_b:.4f}, {hi_b:.4f}]")
+
+    m_a2, lo_a2, hi_a2 = bootstrap_ci_bca(a, seed=args.seed)
+    m_b2, lo_b2, hi_b2 = bootstrap_ci_bca(b, seed=args.seed)
+    print(f"Bootstrap 95% CI on A (BCa):        {m_a2:.4f}  [{lo_a2:.4f}, {hi_a2:.4f}]")
+    print(f"Bootstrap 95% CI on B (BCa):        {m_b2:.4f}  [{lo_b2:.4f}, {hi_b2:.4f}]")
 
     md, lo, hi = paired_bootstrap_ci(b, a, seed=args.seed)
-    print(f"\nPaired bootstrap 95% CI on (B - A): {md:.4f}  [{lo:.4f}, {hi:.4f}]")
+    print(f"\nPaired bootstrap 95% CI on (B - A) percentile: {md:.4f}  [{lo:.4f}, {hi:.4f}]")
+    md2, lo2, hi2 = paired_bootstrap_ci_bca(b, a, seed=args.seed)
+    print(f"Paired bootstrap 95% CI on (B - A) BCa:        {md2:.4f}  [{lo2:.4f}, {hi2:.4f}]")
 
     p2 = paired_permutation_test(b, a, seed=args.seed, alternative="two-sided")
     p_g = paired_permutation_test(b, a, seed=args.seed, alternative="greater")
