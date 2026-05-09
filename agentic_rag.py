@@ -62,6 +62,7 @@ from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode
 
 from embedders import get_embedder
+from graph_store import TRACEABILITY_LINK_TYPES, get_driver, hop1_directed
 from llm_compat import GPT5Client
 from vector_store import (
     fetch_by_id,
@@ -174,6 +175,120 @@ def _make_id_lookup(embedder_name: str):
     return id_lookup_node
 
 
+def _make_graph_id_lookup(embedder_name: str):
+    """Phase 1c: graph-augmented id_lookup.
+
+    Fetches each extracted ID + its 1-hop traceability neighbors. Replaces the
+    plain ChromaDB id_lookup when run_agentic_rag(use_graph=True).
+    """
+    coll_name, dim = _coll_for(embedder_name)
+    client = get_client()
+    col = get_or_create_collection(client, coll_name, dim=dim)
+
+    def graph_id_lookup_node(state: AgentState) -> dict:
+        ids = state.get("extracted_ids", []) or []
+        if not ids:
+            return {"chunks": [], "verdict": "sufficient"}
+
+        seed_chunks = fetch_by_id(col, ids)
+        for s in seed_chunks:
+            s["_hops"] = 0
+
+        # 1-hop walk per ID, dedupe across IDs
+        driver = get_driver()
+        try:
+            metas: list[dict] = []
+            for req_id in ids:
+                metas.extend(hop1_directed(driver, req_id))
+        finally:
+            driver.close()
+
+        if not metas:
+            return {"chunks": seed_chunks, "verdict": "sufficient"}
+
+        meta_by_id: dict[str, dict] = {}
+        for m in metas:
+            meta_by_id.setdefault(m["id"], m)  # keep first occurrence
+
+        neighbor_ids = list(meta_by_id.keys())
+        # Drop any neighbor that is itself a seed (avoid double-counting)
+        neighbor_ids = [nid for nid in neighbor_ids if nid not in set(ids)]
+
+        neighbor_chunks = fetch_by_id(col, neighbor_ids) if neighbor_ids else []
+        for c in neighbor_chunks:
+            m = meta_by_id.get(c["id"], {})
+            c["_hops"] = 1
+            c["_edge_rel"] = m.get("rel", "")
+            c["_edge_dir"] = m.get("dir", "")
+
+        return {
+            "chunks": seed_chunks + neighbor_chunks,
+            "verdict": "sufficient",
+        }
+
+    return graph_id_lookup_node
+
+
+def _make_graph_lookup_tool(embedder_name: str):
+    """Phase 1c: ReAct tool for ID -> 1-hop traceability neighbors.
+
+    The LLM calls this when it has an exact requirement ID and wants to
+    follow `derives_from` / `satisfies` / `references` / `verifies` / `refines`
+    edges to discover related requirements.
+    """
+    coll_name, dim = _coll_for(embedder_name)
+    client = get_client()
+    col = get_or_create_collection(client, coll_name, dim=dim)
+
+    @tool(response_format="content_and_artifact")
+    def graph_lookup(req_id: str) -> tuple[str, list[dict]]:
+        """Follow traceability links FROM or TO a known requirement ID.
+
+        Use this when you need to traverse the requirement graph — e.g., to
+        find what a requirement derives from, what satisfies it, what refines
+        it, or what verifies it. Edge types covered: DERIVES_FROM, SATISFIES,
+        REFERENCES, VERIFIES, REFINES.
+
+        Args:
+            req_id: An exact requirement ID like 'ADS-012' or 'FCC-022'.
+
+        Returns a brief summary of linked IDs with edge type + direction;
+        the full chunk dicts (with full_text) are attached as the
+        ToolMessage's artifact and consumed by collect_chunks downstream.
+        """
+        driver = get_driver()
+        try:
+            metas = hop1_directed(driver, req_id)
+        finally:
+            driver.close()
+        if not metas:
+            return (f"No traceability links found involving {req_id}.", [])
+
+        # Dedupe by id, prefer first-seen edge metadata
+        meta_by_id: dict[str, dict] = {}
+        for m in metas:
+            meta_by_id.setdefault(m["id"], m)
+        ids = list(meta_by_id.keys())
+        chunks = fetch_by_id(col, ids)
+        for c in chunks:
+            m = meta_by_id.get(c["id"], {})
+            c["_edge_rel"] = m.get("rel", "")
+            c["_edge_dir"] = m.get("dir", "")
+
+        lines = [f"Found {len(chunks)} requirement(s) linked to {req_id}:"]
+        for c in chunks:
+            rel = c.get("_edge_rel", "?")
+            d = c.get("_edge_dir", "")
+            arrow = "-->" if d == "out" else "<--"
+            lines.append(
+                f"  {req_id} {arrow}[:{rel}]{arrow} "
+                f"[{c['id']}] ({c.get('heading', '')[:50]})"
+            )
+        return ("\n".join(lines), chunks)
+
+    return graph_lookup
+
+
 # =============================================================================
 # LangChain ↔ OpenAI message conversion (we drive via raw openai SDK)
 # =============================================================================
@@ -217,12 +332,15 @@ def _lc_to_openai_messages(msgs: list[BaseMessage]) -> list[dict]:
 
 RETRIEVER_SYSTEM_PROMPT = """You are a retrieval agent for an aerospace requirements corpus (DOORS export, ~1100 requirements across modules ADS, FCC, NAV, GPS, EPS, ICE, …).
 
-You have one tool: `search_documents`. Use it to find relevant requirements before letting a downstream agent answer.
+Your tools:
+ - `search_documents` — semantic top-K over the corpus (use for natural-language questions).
+ - `graph_lookup` (when available) — given an exact requirement ID, return its 1-hop traceability neighbors via DERIVES_FROM / SATISFIES / REFERENCES / VERIFIES / REFINES edges.
 
 Strategy:
- - For cross-module questions (e.g., "How does ADS feed FCC?"), search each module separately.
+ - For cross-module questions (e.g., "How does ADS feed FCC?"), prefer `search_documents` for each module separately, OR if you already have a key ID, follow `graph_lookup` from it.
  - For semantic questions, search with the most specific technical phrase from the question.
- - You may call the tool up to 3 times.
+ - For ID-followup questions ("what does X derive from?", "what satisfies Y?"), prefer `graph_lookup` directly.
+ - You may make up to 3 tool calls total.
 
 Once you believe the retrieved set is sufficient, reply with a brief confirmation (no tool call). Do NOT compose the final answer here — a synthesizer node will do that with the full chunk text."""
 
@@ -257,8 +375,8 @@ def router_node(state: AgentState) -> dict:
     return {"intent": "semantic"}
 
 
-def _make_retriever_node(search_tool):
-    tool_schema = convert_to_openai_tool(search_tool)
+def _make_retriever_node(tools_list: list):
+    tool_schemas = [convert_to_openai_tool(t) for t in tools_list]
 
     def retriever_node(state: AgentState) -> dict:
         llm = GPT5Client()
@@ -270,7 +388,7 @@ def _make_retriever_node(search_tool):
             ]
         oa_msgs = _lc_to_openai_messages(msgs)
 
-        resp = llm.chat(messages=oa_msgs, tools=[tool_schema], tool_choice="auto")
+        resp = llm.chat(messages=oa_msgs, tools=tool_schemas, tool_choice="auto")
         ai_msg = GPT5Client.to_aimessage(resp)
         usage = GPT5Client.usage(resp)
 
@@ -398,14 +516,29 @@ def _make_checkpointer() -> SqliteSaver:
     return saver
 
 
-def build_graph(embedder_name: str = "local"):
+def build_graph(embedder_name: str = "local", *, use_graph: bool = False):
+    """Build the agentic graph.
+
+    Args:
+        embedder_name: 'local' or 'azure'.
+        use_graph: When True (Phase 1c agentic-graph pipeline), id_lookup node
+            is graph-augmented (req + 1-hop neighbors) AND the retriever
+            ReAct loop has graph_lookup as an additional tool.
+    """
     search_tool = _make_search_tool(embedder_name)
+    if use_graph:
+        graph_tool = _make_graph_lookup_tool(embedder_name)
+        tools_list = [search_tool, graph_tool]
+        id_lookup_node = _make_graph_id_lookup(embedder_name)
+    else:
+        tools_list = [search_tool]
+        id_lookup_node = _make_id_lookup(embedder_name)
 
     builder = StateGraph(AgentState)
     builder.add_node("router", router_node)
-    builder.add_node("id_lookup", _make_id_lookup(embedder_name))
-    builder.add_node("retriever", _make_retriever_node(search_tool))
-    builder.add_node("tools", ToolNode([search_tool]))
+    builder.add_node("id_lookup", id_lookup_node)
+    builder.add_node("retriever", _make_retriever_node(tools_list))
+    builder.add_node("tools", ToolNode(tools_list))
     builder.add_node("collect_chunks", collect_chunks_node)
     builder.add_node("critic", critic_node)
     builder.add_node("synthesizer", synthesizer_node)
@@ -440,16 +573,24 @@ def run_agentic_rag(
     *,
     embedder_name: str = "local",
     thread_id: str | None = None,
+    use_graph: bool = False,
 ) -> dict:
+    """Run the agentic pipeline.
+
+    use_graph=False -> Phase 1 baseline 'agentic'.
+    use_graph=True  -> Phase 1c 'agentic-graph': id_lookup is graph-augmented
+                       and the retriever ReAct loop has graph_lookup tool.
+    """
     t0 = time.time()
-    graph = build_graph(embedder_name)
+    graph = build_graph(embedder_name, use_graph=use_graph)
     config = {
         "configurable": {"thread_id": thread_id or f"agentic-{int(t0 * 1000)}"},
         "recursion_limit": 25,
     }
     final = graph.invoke({"query": query, "iter_count": 0, "tokens": {}}, config=config)
+    pipeline_name = "agentic-graph" if use_graph else "agentic"
     return {
-        "pipeline": f"agentic|{embedder_name}",
+        "pipeline": f"{pipeline_name}|{embedder_name}",
         "query": query,
         "answer": final.get("answer", ""),
         "sources": final.get("chunks", []),
@@ -464,10 +605,12 @@ def run_agentic_rag(
 
 if __name__ == "__main__":
     load_dotenv()
-    q = sys.argv[1] if len(sys.argv) > 1 \
+    use_graph = "--graph" in sys.argv
+    args = [a for a in sys.argv[1:] if a != "--graph"]
+    q = args[0] if args \
         else "How does the air data system provide angle-of-attack to the flight control computer?"
-    print(f"\n[query] {q}\n")
-    result = run_agentic_rag(q, embedder_name="local")
+    print(f"\n[query] {q}  (use_graph={use_graph})\n")
+    result = run_agentic_rag(q, embedder_name="local", use_graph=use_graph)
 
     total = result["tokens"].get("total_tokens", 0)
     print(f"--- Answer ({result['latency_ms']}ms, {total} tokens, intent={result['intent']}, "
