@@ -13,10 +13,11 @@ venv/
 # ChromaDB persistent store
 data/chroma/
 
-# Eval results
-results/*.csv
-results/*.json
+# Eval results — track .csv summaries and .json stats as paper artifacts;
+# ignore .parquet (binary) and large raw trace files matching results/main-*.jsonl
 results/*.parquet
+results/main-*.jsonl
+results/cross-*.jsonl
 
 # LangGraph checkpointer
 *.db
