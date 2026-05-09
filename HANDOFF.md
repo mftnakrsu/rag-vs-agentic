@@ -65,6 +65,31 @@ Sonra **bana** dönüp tek cümleyle ne istediğini söyle. Ör:
 | `chore/add-claude-md` | ✅ | #8 |
 | `chore/handoff-phase1c` | ✅ | #6 |
 | Phase 1 sanity 40/40 | ✅ | #9 |
+| `chore/dataset-publication-readme` | ✅ | #16 |
+
+---
+
+## 🌐 Dataset publication (DONE — 2026-05-10)
+
+Corpus published as a standalone dataset to both platforms; downstream consumers parse raw `.md` themselves. Dataset cards include the format spec + traceability annotations. CC BY 4.0.
+
+| Platform | URL | State |
+|---|---|---|
+| 🤗 Hugging Face | https://huggingface.co/datasets/meftun/aerosys-requirements | public, 33 files (30 modules + README + banner.png + .gitattributes), YAML pills live (license, tasks: question-answering / text-retrieval) |
+| Kaggle | https://www.kaggle.com/datasets/mftnakrsu/aerosys-requirements | public, CC BY 4.0, 720×720 cover/thumbnail uploaded (custom SDK call w/ full-image crop rects), usability 0.6875 |
+
+Repo README updated in PR #16 — top-of-file badges (HF + Kaggle + License) and a `## Dataset` section.
+
+Staging dirs (untracked, locally reproducible):
+- `hf_dataset/` — README.md (dataset card w/ YAML frontmatter) + 30 .md + banner.png (1280×720)
+- `kaggle_dataset/` — dataset-metadata.json + 30 .md + dataset-cover-image.png (720×720)
+
+Pending (UI-only, user discretion):
+- HF profile pin (huggingface.co/meftun → Customize → pin dataset)
+- Kaggle tags beyond `benchmark` (other tag refs the API rejected; UI dropdown has wider vocab)
+- Token revocation (HF "doors" + Kaggle KGAT_…) — user opted to leave active
+
+Paper-time (post-acceptance): HF DOI request, BibTeX `@misc` → `@inproceedings` swap on both cards.
 
 ---
 
