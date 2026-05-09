@@ -1,8 +1,12 @@
 # RAG vs Agentic RAG — Comparison Study
 
+[![Dataset on Hugging Face](https://huggingface.co/datasets/huggingface/badges/resolve/main/dataset-on-hf-md.svg)](https://huggingface.co/datasets/meftun/aerosys-requirements)
+[![Kaggle](https://img.shields.io/badge/Kaggle-Open%20in%20Kaggle-20BEFF?logo=Kaggle&logoColor=white)](https://www.kaggle.com/datasets/mftnakrsu/aerosys-requirements)
+[![License: CC BY 4.0](https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey)](https://creativecommons.org/licenses/by/4.0/)
+
 Experimental side-by-side of vanilla RAG and agentic RAG (LangGraph) against the
 AeroSys synthetic aerospace requirements corpus (1132 requirements, DO-178C-style
-subsystem specs across 32 modules — ADS, FCC, NAV, GPS, …).
+subsystem specs across 30 modules — ADS, FCC, NAV, GPS, …).
 
 Goal: measurable deltas in **latency, tokens, cited-source overlap, and answer
 groundedness** between the two paradigms — not production hardening.
@@ -27,6 +31,23 @@ groundedness** between the two paradigms — not production hardening.
   2. Azure OpenAI embedding (deployment-defined dim)
 - **Rerankers** (both compared): local `bge-reranker-v2-m3` + Azure-hosted
 - **No Neo4j** — graph layer skipped for this experiment.
+
+## Dataset
+
+The `data/synthetic/` corpus is also published as a standalone dataset for
+downstream RAG / retrieval research:
+
+| Platform | Slug |
+|---|---|
+| 🤗 Hugging Face | [`meftun/aerosys-requirements`](https://huggingface.co/datasets/meftun/aerosys-requirements) |
+| Kaggle | [`mftnakrsu/aerosys-requirements`](https://www.kaggle.com/datasets/mftnakrsu/aerosys-requirements) |
+
+Both releases ship the same 30 module DOORS-narrative `.md` files (~1,132
+requirement objects) under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+The format is left raw on purpose — see either dataset card for the
+`||`-delimited block syntax, inline `##MODULE.ID` cross-refs, traceability
+annotations (`Derives From:`, `References:`, `Satisfies:`, …), and glossary
+tables that consumers parse with their own loader.
 
 ## Quickstart
 
