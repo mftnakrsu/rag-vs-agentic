@@ -42,15 +42,18 @@ def get_driver() -> Driver:
 # Bidirectional 1-2 hop walk from seeds, restricted to whitelisted edge types,
 # excluding the seeds themselves. Returns ids ordered by hop distance asc so
 # graph_rag can prefer 1-hop neighbors when capping context.
+# Cypher returns one row per (b, path) pair. We grab b.id + length(path),
+# ORDER BY hops asc so when the same neighbor is reachable via paths of
+# different lengths, the lowest-hop occurrence is first. Python dedupes by
+# id keeping first-seen — simpler and more reliable than wrestling with
+# Cypher's aggregation grouping semantics on node values.
 WALK_CYPHER = """
 MATCH (a:Requirement) WHERE a.id IN $seeds
 MATCH path = (a)-[*1..2]-(b:Requirement)
 WHERE all(rel IN relationships(path) WHERE type(rel) IN $rel_types)
   AND NOT b.id IN $seeds
-WITH DISTINCT b, length(path) AS hops
-RETURN b.id AS id, hops
+RETURN b.id AS id, length(path) AS hops
 ORDER BY hops ASC, b.id ASC
-LIMIT $max_results
 """.strip()
 
 
@@ -64,8 +67,8 @@ def walk_2hop(
     """Walk 1-2 hops out from `seed_ids` along `rel_types` (undirected).
 
     Returns:
-        [{"id": str, "hops": int}, ...] sorted by hops asc, then id asc.
-        Seeds are excluded from the result (only their neighborhood).
+        [{"id": str, "hops": int}, ...] deduped by id (keeps min-hop occurrence),
+        sorted by hops asc, then id asc. Seeds are excluded from the result.
     """
     if not seed_ids:
         return []
@@ -75,10 +78,18 @@ def walk_2hop(
                 WALK_CYPHER,
                 seeds=list(seed_ids),
                 rel_types=list(rel_types),
-                max_results=max_results,
             ))
         )
-    return [{"id": r["id"], "hops": r["hops"]} for r in rec]
+    seen: set[str] = set()
+    out: list[dict] = []
+    for r in rec:
+        if r["id"] in seen:
+            continue
+        seen.add(r["id"])
+        out.append({"id": r["id"], "hops": r["hops"]})
+        if len(out) >= max_results:
+            break
+    return out
 
 
 # 1-hop directed walk variant for the agentic `graph_lookup` tool — when the
