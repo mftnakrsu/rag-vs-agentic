@@ -48,6 +48,7 @@ def build_configs(
     include_agentic: bool = True,
     include_graphrag: bool = True,
     include_agentic_graph: bool = True,
+    include_adaptive: bool = True,
 ) -> list[dict]:
     cfgs: list[dict] = []
     for emb in embedders:
@@ -63,6 +64,8 @@ def build_configs(
             cfgs.append({"pipeline": "graphrag", "embedder": emb, "reranker": None})
         if include_agentic_graph:
             cfgs.append({"pipeline": "agentic-graph", "embedder": emb, "reranker": None})
+        if include_adaptive:
+            cfgs.append({"pipeline": "adaptive", "embedder": emb, "reranker": None})
     return cfgs
 
 
@@ -78,6 +81,9 @@ def run_one(cfg: dict, query: str) -> dict:
         return graph_rag(query, embedder_name=cfg["embedder"])
     if cfg["pipeline"] == "agentic-graph":
         return run_agentic_rag(query, embedder_name=cfg["embedder"], use_graph=True)
+    if cfg["pipeline"] == "adaptive":
+        from hop_router import adaptive_rag
+        return adaptive_rag(query, embedder_name=cfg["embedder"])
     return run_agentic_rag(query, embedder_name=cfg["embedder"])
 
 
@@ -99,6 +105,8 @@ def _row_from_result(q: dict, cfg: dict, r: dict) -> dict:
         "iter_count": r.get("iter_count", 0),
         "verdict": r.get("verdict", ""),
         "intent": r.get("intent", ""),
+        "routed_to": r.get("routed_to", ""),
+        "route_reason": r.get("route_reason", ""),
         "answer": r.get("answer", ""),
     }
 
@@ -173,6 +181,7 @@ CSV_SHORT_KEYS = [
     "query", "query_type", "pipeline", "embedder", "reranker",
     "latency_ms", "prompt_tokens", "completion_tokens", "total_tokens",
     "cited_ids", "source_ids", "n_sources", "iter_count", "verdict", "intent",
+    "routed_to", "route_reason",
 ]
 
 
@@ -235,6 +244,8 @@ def main() -> None:
                         help="Skip the graphrag pipeline (needs Neo4j Aura)")
     parser.add_argument("--no-agentic-graph", action="store_true",
                         help="Skip agentic-graph pipeline (LangGraph + graph_lookup tool)")
+    parser.add_argument("--no-adaptive", action="store_true",
+                        help="Skip the adaptive pipeline (hop-adaptive router)")
     parser.add_argument("--queries-jsonl", type=Path, default=None,
                         help="Override built-in eval_queries with a JSONL file. "
                              "Each row needs at minimum a 'query' field; 'type' is "
@@ -268,6 +279,7 @@ def main() -> None:
         include_agentic=not args.no_agentic,
         include_graphrag=not args.no_graphrag,
         include_agentic_graph=not args.no_agentic_graph,
+        include_adaptive=not args.no_adaptive,
     )
 
     total = len(cfgs) * len(queries)
