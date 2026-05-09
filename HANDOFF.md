@@ -1,7 +1,7 @@
 # RAG vs Agentic — Devam Noktası
 
 > **Geri döndüğünde:** Bu dosyayı oku, sonra aşağıdaki **Quick resume** komutunu çalıştır.
-> Tarih: 2026-05-09
+> Tarih: 2026-05-09 (Phase 1c sonrası, Phase 1 sanity bg)
 
 ---
 
@@ -10,19 +10,26 @@
 ```bash
 cd /Users/suleakarsu/Desktop/rag-vs-agentic
 
-# 1. Streamlit hâlâ çalışıyor mu?
-curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8501/
-#   → 200 ise zaten ayakta, tarayıcıda aç: http://localhost:8501
-#   → değilse aşağıdaki komutu çalıştır:
+# main'e bağlan, son state'i al
+git checkout main && git pull --rebase
 
-# 2. Yoksa yeniden başlat
-.venv/bin/streamlit run ui_app.py
+# 4 pipeline import sanity (no Aura/no Azure call)
+.venv/bin/python -c "
+from dotenv import load_dotenv; load_dotenv()
+from agentic_rag import build_graph
+from graph_rag import graph_rag
+print('all 4 pipelines importable')
+"
+
+# Streamlit isteğe bağlı (henüz 4-pipeline'a uyarlanmadı, hâlâ vanilla+agentic)
+# .venv/bin/streamlit run ui_app.py
 ```
 
 Sonra **bana** dönüp tek cümleyle ne istediğini söyle. Ör:
-- *"bildiriyi yaz"* — TR paper drafting'e geçeriz (önce format seçimi gerek, aşağıda)
-- *"UI'da X şu sorun var"* — bug fix
-- *"graphRAG ekleyelim"* — Neo4j Aura ile 3. pipeline
+- *"sanity sonucu nasıl"* — `cat results/sanity-v2.csv` + per-config aggregate
+- *"phase 2 başla"* — hop-stratified eval generator (#9)
+- *"streamlit'i 4-pipeline'a uyarla"* — UI extension
+- *"x bug fix"* — fix branch açıp düzelt
 
 ---
 
@@ -30,84 +37,110 @@ Sonra **bana** dönüp tek cümleyle ne istediğini söyle. Ör:
 
 | | Durum |
 |---|---|
-| Repo bootstrap (13 modül) | ✅ |
-| venv 3.11 + deps (chromadb 1.5.9, langgraph 1.1.10, langchain-core 1.3.3, openai 2.36.0, torch 2.11.0, transformers 5.8.0, streamlit 1.57.0) | ✅ |
-| ChromaDB index: `docs-local-e5` (384d) + `docs-azure` (1536d), her biri 1102 chunk | ✅ |
-| Vanilla sanity (ADS-014 sorgusu) | ✅ 10.2s / 890 tok |
-| Agentic sanity (cross-module ADS↔FCC) | ✅ 18.7s / 5658 tok, verdict=sufficient iter=0 |
-| Full ablation matrix: **59/60** OK, 1100s wall | ✅ — `results/results.{csv,jsonl}` |
-| README "Results" — delta tablosu + per-query notlar | ✅ |
-| Streamlit UI — `ui_app.py` (side-by-side + canlı tool-call timeline + caching) | ✅ |
-| **TR bildiri yazımı** | ⏳ **format seçimi bekliyor** |
+| **Phase 0** Repo bootstrap (private GitHub `mftnakrsu/rag-vs-agentic`) | ✅ |
+| **Phase 1a** Neo4j Aura ETL (idempotent MERGE) | ✅ (live instance preloaded with richer hackathon schema) |
+| **Phase 1b** GraphRAG pipeline 3 (vector + 1-2 hop walk) | ✅ |
+| **Phase 1c** agentic-graph pipeline 4 (graph_id_lookup + graph_lookup tool) | ✅ |
+| **Phase 1 sanity** (4 pipelines × 10 queries, local emb, no rerank) | ⏳ bg running |
+| **Phase 2a** Hop-stratified queries (300) | ⏳ blocked on sanity |
+| **Phase 2b** RAGAS faithfulness | ⏳ blocked on sanity |
+| **Phase 2c** Bootstrap CI + paired permutation | ⏳ blocked on sanity |
+| **Phase 2d** Main matrix run (4 × 300) | ⏳ blocked on 2a-c |
+| **Phase 3a** RAG-Critic baseline | ⏳ blocked on 2d |
+| **Phase 3b** MuSiQue cross-eval | ⏳ blocked on 2d |
+| **Phase 3c** reasoning_effort ablation | ⏳ blocked on 2d |
+| **Phase 4** Plots + failure-mode taxonomy | ⏳ blocked on 3a-c |
+| **Phase 5-6** Paper drafting + submit | ⏳ blocked on 4 (deadline 30 Jun / 1 Jul) |
 
-### Headline sayılar (results section detayı README'de)
+### Smoke test deltas (1-query, before full sanity)
 
-| Pipeline | Embedder | Rerank | Avg ms | Avg tok | Avg cited |
-|---|---|---|---:|---:|---:|
-| vanilla | azure | — | **3,822** | 706 | 5.0 |
-| vanilla | local | — | 7,658 | 836 | 5.0 |
-| agentic | azure | — | 14,277 | 4,573 | 3.0 |
-| agentic | local | — | 20,181 | 5,343 | 2.8 |
-| vanilla | local | azure-cohere | 31,269 | 738 | 5.0 |
-| vanilla | azure | azure-cohere | 32,257 | 703 | 5.0 |
+| Query | Pipeline | Latency | Tokens | Iter | Notes |
+|---|---|---:|---:|---:|---|
+| Q1 ADS-014 ID | vanilla\|local | ~7-10s | ~890 | n/a | top-K only |
+| Q1 ADS-014 ID | agentic-graph\|local | **4.9s** | **579** | **0** | id_lookup + 1-hop graph (ADS-026, HMI-090) |
+| Q2 ADS↔FCC cross-mod | vanilla\|local | ~7-10s | ~890 | n/a | misses cross-link |
+| Q2 ADS↔FCC cross-mod | graphrag\|local | 26.9s | 1918 | n/a | finds ADS-012 via 1-hop walk |
+| Q2 ADS↔FCC cross-mod | agentic-graph\|local | 33.3s | 6265 | 3 | LLM didn't proactively call graph_lookup |
 
-**Takeaway:** agentic 4-5× daha yavaş, 6-7× daha çok token; ama cross-module sorularda kaliteli (Q2'de ADS-012↔FCC-022 link'ini bulup transport bus'a kadar inebiliyor). Rerank 1000 TPM'de pacing yüzünden değer üretmiyor.
+Critical paper-friendly observation already on Q1+Q2:
+- agentic-graph WINS on explicit-ID queries (structural id_lookup, 0 iter)
+- graphrag WINS on cross-module semantic queries (always-walk finds the link)
+- agentic-graph LOSES on cross-module semantic queries (LLM doesn't pull the trigger on graph_lookup)
+
+This is exactly the "when does each pipeline pay off?" question the paper will characterize at scale (300 queries × stratified hop count + bootstrap CIs).
 
 ---
 
-## ❓ Açık karar: TR bildiri formatı (geri dönünce seç)
+## 🌐 GitHub PRs (all merged on `main`)
 
-| Opsiyon | Süre | Kapsam |
+| # | Branch | Subject |
 |---|---|---|
-| **(a) Konferans bildirisi** (LaTeX, IEEE/ACM) | ~6-8 sayfa | Hangi konferans? UBMK, INISTA, ASYU…? |
-| **(b) Türk dergi makalesi** (`.docx`/md) | ~10-15 sayfa | Pamukkale, ODTÜ, Bilişim Dergisi vb. |
-| **(c) Pre-print / blog yazısı** (md) | daha kısa, gevşek | arxiv-tr veya kişisel blog |
+| 1 | `chore/repo-bootstrap` | Repo bootstrap (corpus, deps, gitignore) |
+| 2 | `feat/neo4j-etl` | Phase 1a — Neo4j Aura ETL with idempotent MERGE |
+| 3 | `feat/graphrag-pipeline` | Phase 1b — pipeline 3 (vector + 1-2 hop walk) |
+| 4 | `feat/agentic-graph-tool` | Phase 1c — pipeline 4 (graph_lookup tool node) |
+| 5 | `fix/walk2hop-dup-ids` | dedupe walk_2hop neighbors by id (Python-side) |
 
-Seçimini söyle, ben paper'ın iskeletini kurarım.
-
----
-
-## 🔧 Kritik teknik notlar (unutulmasın)
-
-### Azure Foundry URL conventions (öğrenilmesi pahalıydı)
-- **LLM** `gpt-5.4-meftun` → `https://aif-shared-swedencentral1.services.ai.azure.com/api/projects/proj-shared-swedencentral/openai/v1` — `?api-version=...` **REJECTED**
-- **Embedding** `text-embedding-3-small-meftun` → `https://...services.ai.azure.com/openai/v1` (resource-level, project değil) — api-version REJECTED
-- **Reranker** `Cohere-rerank-v4.0-fast-meftun` → `https://...services.ai.azure.com/providers/cohere/v2/rerank` — **Azure portal yanlış URL gösteriyor (known UI bug)**. api-version YOK.
-
-### Reranker pacing fixleri
-- 1000 TPM cap → `AZURE_RERANKER_MIN_INTERVAL_S=15` (4'tü, çok agresif), `MAX_DOC_CHARS=200`
-- `_last_call` instance-level → class-level shared state'e taşındı (`compare.py` her satırda fresh instance yaratıyordu, pacing reset oluyordu)
-
-### Local model durumu
-- e5-small ✅ (`/Users/suleakarsu/Desktop/doors_graphRAG/models/multilingual-e5-small`)
-- bge-reranker-v2-m3 ❌ — sadece tokenizer var, weights yok. `LOCAL_RERANKER_MODEL_PATH` `.env`'den silindi. `compare.py` her zaman `--no-local-rerank` ile çalıştır.
-
-### Streamlit caching
-- `cached_graph(embedder_name)`, `cached_embedder(name)`, `cached_collection(...)`, `cached_reranker()` — ilk sorgudan sonra her şey bellekte. İlk agentic sorgu ~7-10s, sonrakiler ~3-5s.
-
-### Neo4j Aura (offered, deferred)
-- Chris'ten gelen Aura instance'ı (`reference_neo4j_aura.md` memory'de cred'ler) — şu an entegre değil. GraphRAG istersen ayrı bir 3. pipeline olarak ekle, mevcut karşılaştırmayı kirletme.
+Tag `v0.1-baseline-comparison` = original 60-row two-pipeline study (HEAD before Phase 1).
 
 ---
 
-## 📁 Dosya map
+## 🔧 Kritik teknik notlar
+
+### Aura instance state (probed 2026-05-09)
+- 1132 `:Requirement` nodes (matches our jsonl count exactly — same source corpus, hackathon ETL preloaded it)
+- All 5 traceability rel types present: `REFERENCES` (623), `VERIFIES` (104), `DERIVES_FROM` (22), `REFINES` (17), `SATISFIES` (2)
+- Richer schema beyond ours: `:System` (90), `:Module` (30), `:Standard` (15), `:Component` (13), `:Interface`, `:Parameter`, `:TestMethod`, `:Stakeholder`, `:OperationalMode`, `:Image`, `:Organization`, `:Platform`, `:TestProcedure`
+- Extra rel types we currently don't traverse: `ALLOCATED_TO`, `CONTAINS`, `COVERS`, `DEPENDS_ON`, `IMPLEMENTS`, `MENTIONS_SYSTEM`, `NEXT`, `REFERENCES_STANDARD`, `RELATED_TO`, `USES_COMPONENT`, `USES_INTERFACE`, `USES_PARAMETER`, `VERIFIED_BY_METHOD`
+- Existing `:Requirement` props include `embedding` (precomputed!) — could exploit for Aura-native vector search in a Phase 5+ exploration if we want.
+
+### Code architecture (4 pipelines)
+```
+vanilla_rag.py        Pipeline 1: embed → ChromaDB top-K → 1 LLM call
+agentic_rag.py        Pipeline 2: LangGraph router/retriever-with-tools/critic/synthesizer
+                      Pipeline 4 (use_graph=True): adds graph_lookup tool + graph_id_lookup node
+graph_rag.py          Pipeline 3: vector seeds → Aura 1-2 hop walk → 1 LLM call
+graph_store.py        Aura helpers: get_driver, walk_2hop (1-2 hop), hop1_directed (1-hop directed)
+graph_loader.py       ETL CLI: jsonl → Aura MERGE (--dry-run, --reset)
+compare.py            4-arm dispatch: vanilla / agentic / graphrag / agentic-graph
+                      Flags: --no-graphrag, --no-agentic-graph
+```
+
+### Cypher gotchas (learned the hard way)
+- `WITH b, min(length(path)) AS hops` does NOT reliably aggregate when `b` is a node value — saw same `b.id` at multiple hops. Fix: dedupe in Python (PR #5).
+- `RETURN outs + collect(...)` mixes two aggregations → implicit-grouping error. Fix: split into two `WITH` clauses, concatenate (PR #4 graph_store.py).
+- `OPTIONAL MATCH` returns one row with null-id when no match → filter `if n.get("id")` in Python.
+
+### Reasoning loop (carry over from baseline)
+- Reranker pacing fix: `AZURE_RERANKER_MIN_INTERVAL_S=15`, `MAX_DOC_CHARS=200`, class-level `_last_call`.
+- bge-reranker-v2-m3 weights MISSING → `--no-local-rerank` always.
+
+---
+
+## 📁 Dosya map (paper-extension state)
 
 ```
-agentic_rag.py    LangGraph StateGraph (router/id_lookup/retriever/tools/collect_chunks/critic/synthesizer)
-vanilla_rag.py    Tek-shot RAG pipeline
-llm_compat.py     Azure GPT-5 variant-aware client (raw openai SDK; ChatOpenAI #34328 sebebiyle bypass)
-embedders.py      LocalE5Small + AzureOpenAI embedder
-reranker.py       Azure Cohere reranker (LocalBGE class kalıyor ama kullanılmıyor)
-vector_store.py   ChromaDB helpers
-build_index.py    Dual-collection indexer
-compare.py        Ablation matrix (60 satır default; --no-local-rerank şart)
-eval_queries.py   10 hand-curated query
-ui_app.py         Streamlit UI ⭐ yeni
-.streamlit/       Theme config (dark, blue accent)
-results/          results.csv + results.jsonl (60 satır)
-README.md         Project doc + Results section (delta tablosu + research takeaway)
-.env              Azure cred'leri (gitignored — Cohere reranker URL fix'i + local rerank silindi)
-HANDOFF.md        ⭐ bu dosya
+agentic_rag.py        Pipeline 2 + Pipeline 4 (use_graph flag)
+vanilla_rag.py        Pipeline 1
+graph_rag.py          Pipeline 3 ⭐ NEW
+graph_store.py        Aura read helpers ⭐ NEW
+graph_loader.py       Aura ETL CLI ⭐ NEW (idempotent MERGE)
+compare.py            4-arm dispatch (vanilla/agentic/graphrag/agentic-graph)
+embedders.py          Local e5-small + Azure text-embedding-3-small
+reranker.py           Azure Cohere (LocalBGE class kept but unused)
+vector_store.py       ChromaDB helpers
+build_index.py        Dual-collection indexer
+data_loader.py        jsonl → chunk dicts (used by build_index, ChromaDB metadata)
+eval_queries.py       10 hand-curated (will be extended to 300 in Phase 2a)
+ui_app.py             Streamlit UI (still 2-pipeline; needs Phase 5 update)
+llm_compat.py         Azure GPT-5.4 raw openai client (ChatOpenAI #34328 bypass)
+data/synthetic/       1132 jsonl + 30 module narrative MDs (committed in chore/repo-bootstrap)
+results/              CSV summaries + JSONL traces
+.streamlit/           Theme config
+.env                  Azure cred + Neo4j Aura cred (gitignored)
+HANDOFF.md            ⭐ this file
+README.md             Project doc + Results section
+requirements.txt      Python 3.11+ deps incl. neo4j 5.x, ragas, scipy, statsmodels
 ```
 
 ---
@@ -116,28 +149,29 @@ HANDOFF.md        ⭐ bu dosya
 
 `~/.claude/projects/-Users-suleakarsu-Desktop-rag-vs-agentic/memory/`:
 - `MEMORY.md` — index
-- `user_profile.md` — user role & preferences (terse, technical, deep LangGraph/Azure GPT-5 knowledge)
-- `project_rag_comparison.md` — proje genel bakış
-- `reference_data_and_models.md` — data + model paths (bge weights yok flag'lendi)
+- `user_profile.md` — terse, technical, deep stack knowledge
+- `project_rag_comparison.md` — vanilla vs agentic baseline (now 4 pipelines)
+- `reference_data_and_models.md` — corpus + model paths
 - `feedback_execution_autonomy.md` — "no cost concerns, you decide"
-- `feedback_research_first.md` — "web research before brute-force probing"
-- `reference_neo4j_aura.md` — Neo4j Aura cred (deferred)
-- `feedback_handoff_convention.md` — ⭐ yeni: session sonu HANDOFF.md yazma kuralı
+- `feedback_research_first.md` — web search before brute-force
+- `reference_neo4j_aura.md` — Aura cred (now actively used)
+- `feedback_handoff_convention.md` — write HANDOFF.md at session close
+- `feedback_no_claude_coauthor.md` ⭐ NEW — never `Co-Authored-By: Claude` in commits
+- `feedback_pr_workflow.md` ⭐ NEW — every change → branch → push → PR → self-merge
 
 ---
 
-## 🚦 Background processes (kapanma sonrası kaybolur)
+## 🚦 Background processes
 
-- `streamlit run ui_app.py` job `bsgdirrry` → http://localhost:8501 (Mac restart edersen kaybolur, Quick resume ile geri getir)
+- Sanity bg run `compare.py` started; output writing to `results/sanity-v2.csv` + `/tmp/sanity_v2.log`. Notification fires on completion.
+- After sanity completes: open PR `exp/phase1-sanity-run`, merge, then unblock Phase 2.
 
 ---
 
-## Git durumu
+## ❓ Açık kararlar
 
-Tüm değişiklikler **uncommitted**. Commit edilmesi istenirse:
-```bash
-git add -A && git status   # önce gör
-# user onayı sonrası:
-# git commit ile mesaj yaz
-```
-Şu ana kadar user commit/push istemedi.
+1. **Streamlit UI'yi 4-pipeline'a güncelle?** — paper'a değil, ama defense / demo için faydalı. Phase 5 öncesi ekleyebiliriz.
+2. **Aura'daki richer schema'yı (`:System`, `:Module`, etc.) Phase 5+ exploration olarak ekle?** — yeni paper bölümü açar; UBMK 6pp'e sığmaz, IEEE Aero full paper'a sığar (10pp).
+3. **Real-DOORS triangulation hâlâ açık** — gelirse %80 sentetik kritiği söner, gelmezse Synthline defense devam.
+
+Tüm Phase 2-6 task'ları memory'de + repo task list'inde.
