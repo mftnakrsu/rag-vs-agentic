@@ -2,6 +2,9 @@
 .env
 *.key
 
+# Local session-state notes (private — do not commit)
+HANDOFF.md
+
 # Python
 __pycache__/
 *.pyc
