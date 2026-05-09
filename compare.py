@@ -29,7 +29,7 @@ import json
 import os
 import time
 import traceback
-from pathlib import Path
+from pathlib import Path  # noqa: F401  (used by --queries-jsonl)
 
 from dotenv import load_dotenv
 from tabulate import tabulate
@@ -203,12 +203,29 @@ def main() -> None:
                         help="Skip the graphrag pipeline (needs Neo4j Aura)")
     parser.add_argument("--no-agentic-graph", action="store_true",
                         help="Skip agentic-graph pipeline (LangGraph + graph_lookup tool)")
+    parser.add_argument("--queries-jsonl", type=Path, default=None,
+                        help="Override built-in eval_queries with a JSONL file. "
+                             "Each row needs at minimum a 'query' field; 'type' is "
+                             "optional (defaults to 'unknown'). Used for the Phase 2d "
+                             "300-query hop-stratified main matrix.")
     parser.add_argument("--out", default="results/results.csv")
     args = parser.parse_args()
 
     load_dotenv()
 
-    queries = EVAL_QUERIES if args.limit is None else EVAL_QUERIES[: args.limit]
+    if args.queries_jsonl:
+        if not args.queries_jsonl.exists():
+            raise SystemExit(f"queries file not found: {args.queries_jsonl}")
+        with args.queries_jsonl.open(encoding="utf-8") as f:
+            queries = [json.loads(line) for line in f if line.strip()]
+        # _row_from_result needs q['type']; fall back so older manifests work.
+        for q in queries:
+            q.setdefault("type", "unknown")
+        print(f"Loaded {len(queries)} queries from {args.queries_jsonl}")
+    else:
+        queries = EVAL_QUERIES
+    if args.limit is not None:
+        queries = queries[: args.limit]
     embedders = [e.strip() for e in args.embedders.split(",") if e.strip()]
 
     cfgs = build_configs(
