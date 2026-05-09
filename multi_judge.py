@@ -50,6 +50,25 @@ from dotenv import load_dotenv
 from llm_compat import GPT5Client
 
 
+# =============================================================================
+# Rate limiting — Gemini free tier is 15 RPM / 1500 RPD on flash-latest.
+# Module-level throttle floor keeps us under 15 RPM with margin.
+# Override via env GEMINI_MIN_INTERVAL_S (default 4.5s = 13.3 RPM).
+# =============================================================================
+_GEMINI_LAST_CALL: float = 0.0
+_GEMINI_MIN_INTERVAL_S: float = float(os.environ.get("GEMINI_MIN_INTERVAL_S", "4.5"))
+
+
+def _gemini_throttle() -> None:
+    """Sleep so that consecutive Gemini calls respect the per-minute floor."""
+    global _GEMINI_LAST_CALL
+    now = time.time()
+    elapsed = now - _GEMINI_LAST_CALL
+    if elapsed < _GEMINI_MIN_INTERVAL_S:
+        time.sleep(_GEMINI_MIN_INTERVAL_S - elapsed)
+    _GEMINI_LAST_CALL = time.time()
+
+
 JUDGE_PROMPT_TEMPLATE = """You are an aerospace-requirements faithfulness judge.
 
 You will see:
@@ -121,8 +140,17 @@ def score_with_gpt5(question: str, contexts: str, answer: str) -> dict:
 
 
 def score_with_gemini(question: str, contexts: str, answer: str,
-                      *, model: str = "gemini-flash-latest") -> dict:
-    """Returns {'faithful': bool, 'reason': str, 'tokens': int} or {'error': ...}."""
+                      *, model: str = "gemini-flash-latest",
+                      max_retries: int = 3) -> dict:
+    """Score (question, contexts, answer) with Gemini Flash.
+
+    Honors the module-level _GEMINI_MIN_INTERVAL_S throttle (15 RPM compliance).
+    On 429 (rate limit) or 5xx (transient server), retries with exponential
+    backoff up to max_retries (30s → 60s → 120s).
+
+    Returns {'faithful': bool, 'reason': str, 'tokens': int} on success,
+    or {'error': ...} on permanent failure.
+    """
     api_key = os.environ.get("GOOGLE_API_KEY")
     if not api_key:
         return {"error": "GOOGLE_API_KEY not set"}
@@ -144,25 +172,46 @@ def score_with_gemini(question: str, contexts: str, answer: str,
             },
         },
     }
-    try:
-        with httpx.Client(timeout=60.0) as client:
-            r = client.post(
-                url,
-                headers={"Content-Type": "application/json", "X-goog-api-key": api_key},
-                json=payload,
-            )
-            r.raise_for_status()
-            data = r.json()
-        text = data["candidates"][0]["content"]["parts"][0]["text"]
-        m = json.loads(text)
-        usage = data.get("usageMetadata", {})
-        return {
-            "faithful": bool(m.get("faithful", False)),
-            "reason": str(m.get("reason", ""))[:200],
-            "tokens": int(usage.get("totalTokenCount", 0)),
-        }
-    except Exception as e:  # noqa: BLE001
-        return {"error": f"{type(e).__name__}: {e}"}
+    last_err: str = ""
+    for attempt in range(max_retries + 1):
+        _gemini_throttle()
+        try:
+            with httpx.Client(timeout=60.0) as client:
+                r = client.post(
+                    url,
+                    headers={"Content-Type": "application/json", "X-goog-api-key": api_key},
+                    json=payload,
+                )
+                if r.status_code == 429 or 500 <= r.status_code < 600:
+                    last_err = f"HTTP {r.status_code}: {r.text[:120]}"
+                    if attempt < max_retries:
+                        wait = 30.0 * (2 ** attempt)
+                        print(f"  Gemini {r.status_code}, retry {attempt + 1}/{max_retries} in {wait:.0f}s",
+                              file=sys.stderr)
+                        time.sleep(wait)
+                        continue
+                    return {"error": last_err}
+                r.raise_for_status()
+                data = r.json()
+            text = data["candidates"][0]["content"]["parts"][0]["text"]
+            m = json.loads(text)
+            usage = data.get("usageMetadata", {})
+            return {
+                "faithful": bool(m.get("faithful", False)),
+                "reason": str(m.get("reason", ""))[:200],
+                "tokens": int(usage.get("totalTokenCount", 0)),
+            }
+        except (httpx.TimeoutException, httpx.ConnectError, httpx.RemoteProtocolError) as e:
+            last_err = f"{type(e).__name__}: {e}"
+            if attempt < max_retries:
+                wait = 15.0 * (2 ** attempt)
+                print(f"  Gemini transient {type(e).__name__}, retry "
+                      f"{attempt + 1}/{max_retries} in {wait:.0f}s", file=sys.stderr)
+                time.sleep(wait)
+                continue
+        except Exception as e:  # noqa: BLE001
+            return {"error": f"{type(e).__name__}: {e}"}
+    return {"error": last_err or "max retries exceeded"}
 
 
 def cohens_kappa(labels_a: list[bool], labels_b: list[bool]) -> float:
