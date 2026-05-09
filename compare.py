@@ -169,23 +169,55 @@ def print_summary(rows: list[dict]) -> None:
     ))
 
 
-def write_outputs(rows: list[dict], csv_path: str) -> None:
-    Path(os.path.dirname(csv_path) or ".").mkdir(parents=True, exist_ok=True)
-    csv_short_keys = [
-        "query", "query_type", "pipeline", "embedder", "reranker",
-        "latency_ms", "prompt_tokens", "completion_tokens", "total_tokens",
-        "cited_ids", "source_ids", "n_sources", "iter_count", "verdict", "intent",
-    ]
-    with open(csv_path, "w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=csv_short_keys, extrasaction="ignore")
-        w.writeheader()
-        w.writerows(rows)
+CSV_SHORT_KEYS = [
+    "query", "query_type", "pipeline", "embedder", "reranker",
+    "latency_ms", "prompt_tokens", "completion_tokens", "total_tokens",
+    "cited_ids", "source_ids", "n_sources", "iter_count", "verdict", "intent",
+]
 
-    jsonl_path = csv_path.rsplit(".", 1)[0] + ".jsonl"
-    with open(jsonl_path, "w", encoding="utf-8") as f:
-        for r in rows:
-            f.write(json.dumps(r, ensure_ascii=False) + "\n")
-    print(f"\nWrote {len(rows)} rows -> {csv_path} (+ JSONL with full answers)")
+
+class IncrementalWriter:
+    """Stream rows to CSV + JSONL as they complete (vs the old end-of-run dump).
+
+    Required for long-running matrix evaluations (Phase 2d ~4-5 hours): if
+    the process is killed mid-run we keep all completed rows on disk. flush()
+    on every write pushes to OS buffer; we fsync periodically (every 25 rows)
+    to commit to physical storage in case of kernel panic.
+    """
+
+    def __init__(self, csv_path: str, *, fsync_every: int = 25) -> None:
+        Path(os.path.dirname(csv_path) or ".").mkdir(parents=True, exist_ok=True)
+        self.csv_path = csv_path
+        self.jsonl_path = csv_path.rsplit(".", 1)[0] + ".jsonl"
+        self._fsync_every = fsync_every
+        self._csv_f = open(csv_path, "w", newline="", encoding="utf-8")
+        self._csv_w = csv.DictWriter(
+            self._csv_f, fieldnames=CSV_SHORT_KEYS, extrasaction="ignore",
+        )
+        self._csv_w.writeheader()
+        self._csv_f.flush()
+        self._jsonl_f = open(self.jsonl_path, "w", encoding="utf-8")
+        self.n = 0
+
+    def write(self, row: dict) -> None:
+        self._csv_w.writerow(row)
+        self._csv_f.flush()
+        self._jsonl_f.write(json.dumps(row, ensure_ascii=False) + "\n")
+        self._jsonl_f.flush()
+        self.n += 1
+        if self.n % self._fsync_every == 0:
+            os.fsync(self._csv_f.fileno())
+            os.fsync(self._jsonl_f.fileno())
+
+    def close(self) -> None:
+        try:
+            os.fsync(self._csv_f.fileno())
+            os.fsync(self._jsonl_f.fileno())
+        except OSError:
+            pass
+        self._csv_f.close()
+        self._jsonl_f.close()
+        print(f"\nWrote {self.n} rows -> {self.csv_path} (+ JSONL with full answers)")
 
 
 def main() -> None:
@@ -246,28 +278,35 @@ def main() -> None:
     print()
 
     rows: list[dict] = []
+    writer = IncrementalWriter(args.out)
     n = 0
     t_total0 = time.time()
-    for q in queries:
-        for cfg in cfgs:
-            n += 1
-            tag = f"[{n:>3}/{total}] {cfg['pipeline']:7s} | {cfg['embedder']:5s} | rerank={cfg['reranker'] or '—':5s}"
-            print(f"{tag} | {q['query'][:60]}")
-            try:
-                r = run_one(cfg, q["query"])
-                rows.append(_row_from_result(q, cfg, r))
-                tot_tok = r["tokens"].get("total_tokens", 0)
-                print(f"    -> {r['latency_ms']}ms  {tot_tok} tok  cited={len(r.get('cited_ids') or [])}")
-            except Exception as e:  # noqa: BLE001
-                print(f"    -> ERROR {type(e).__name__}: {e}")
-                traceback.print_exc()
-                rows.append(_row_for_error(q, cfg, e))
+    try:
+        for q in queries:
+            for cfg in cfgs:
+                n += 1
+                tag = f"[{n:>3}/{total}] {cfg['pipeline']:7s} | {cfg['embedder']:5s} | rerank={cfg['reranker'] or '—':5s}"
+                print(f"{tag} | {q['query'][:60]}")
+                try:
+                    r = run_one(cfg, q["query"])
+                    row = _row_from_result(q, cfg, r)
+                    rows.append(row)
+                    writer.write(row)
+                    tot_tok = r["tokens"].get("total_tokens", 0)
+                    print(f"    -> {r['latency_ms']}ms  {tot_tok} tok  cited={len(r.get('cited_ids') or [])}")
+                except Exception as e:  # noqa: BLE001
+                    print(f"    -> ERROR {type(e).__name__}: {e}")
+                    traceback.print_exc()
+                    err_row = _row_for_error(q, cfg, e)
+                    rows.append(err_row)
+                    writer.write(err_row)
+    finally:
+        writer.close()
 
     elapsed = time.time() - t_total0
     print(f"\nDone in {elapsed:.0f}s")
 
     print_summary(rows)
-    write_outputs(rows, args.out)
 
 
 if __name__ == "__main__":
