@@ -87,7 +87,7 @@ def run_one(cfg: dict, query: str) -> dict:
     return run_agentic_rag(query, embedder_name=cfg["embedder"])
 
 
-def _row_from_result(q: dict, cfg: dict, r: dict) -> dict:
+def _row_from_result(q: dict, cfg: dict, r: dict, *, repeat: int = 0) -> dict:
     sources = r.get("sources") or []
     return {
         "query": q["query"],
@@ -95,6 +95,7 @@ def _row_from_result(q: dict, cfg: dict, r: dict) -> dict:
         "pipeline": cfg["pipeline"],
         "embedder": cfg["embedder"],
         "reranker": cfg["reranker"] or "none",
+        "repeat": repeat,
         "latency_ms": r["latency_ms"],
         "prompt_tokens": r["tokens"].get("prompt_tokens", 0),
         "completion_tokens": r["tokens"].get("completion_tokens", 0),
@@ -111,13 +112,14 @@ def _row_from_result(q: dict, cfg: dict, r: dict) -> dict:
     }
 
 
-def _row_for_error(q: dict, cfg: dict, exc: Exception) -> dict:
+def _row_for_error(q: dict, cfg: dict, exc: Exception, *, repeat: int = 0) -> dict:
     return {
         "query": q["query"],
         "query_type": q["type"],
         "pipeline": cfg["pipeline"],
         "embedder": cfg["embedder"],
         "reranker": cfg["reranker"] or "none",
+        "repeat": repeat,
         "latency_ms": -1,
         "prompt_tokens": 0,
         "completion_tokens": 0,
@@ -178,7 +180,7 @@ def print_summary(rows: list[dict]) -> None:
 
 
 CSV_SHORT_KEYS = [
-    "query", "query_type", "pipeline", "embedder", "reranker",
+    "query", "query_type", "pipeline", "embedder", "reranker", "repeat",
     "latency_ms", "prompt_tokens", "completion_tokens", "total_tokens",
     "cited_ids", "source_ids", "n_sources", "iter_count", "verdict", "intent",
     "routed_to", "route_reason",
@@ -246,6 +248,11 @@ def main() -> None:
                         help="Skip agentic-graph pipeline (LangGraph + graph_lookup tool)")
     parser.add_argument("--no-adaptive", action="store_true",
                         help="Skip the adaptive pipeline (hop-adaptive router)")
+    parser.add_argument("--repeats", type=int, default=1,
+                        help="Repeat each (cfg, query) combination N times to "
+                             "estimate variance under non-deterministic decoding "
+                             "(GPT-5.4 only accepts temperature=1.0). Default 1. "
+                             "CIKM main matrix uses 3.")
     parser.add_argument("--queries-jsonl", type=Path, default=None,
                         help="Override built-in eval_queries with a JSONL file. "
                              "Each row needs at minimum a 'query' field; 'type' is "
@@ -282,8 +289,9 @@ def main() -> None:
         include_adaptive=not args.no_adaptive,
     )
 
-    total = len(cfgs) * len(queries)
-    print(f"Running {total} combinations: {len(cfgs)} configs × {len(queries)} queries")
+    repeats = max(1, args.repeats)
+    total = len(cfgs) * len(queries) * repeats
+    print(f"Running {total} combinations: {len(cfgs)} configs × {len(queries)} queries × {repeats} repeats")
     for i, c in enumerate(cfgs, 1):
         print(f"  cfg{i}: {c['pipeline']:8s}  emb={c['embedder']:5s}  "
               f"rerank={c['reranker'] or '—'}")
@@ -294,24 +302,27 @@ def main() -> None:
     n = 0
     t_total0 = time.time()
     try:
-        for q in queries:
-            for cfg in cfgs:
-                n += 1
-                tag = f"[{n:>3}/{total}] {cfg['pipeline']:7s} | {cfg['embedder']:5s} | rerank={cfg['reranker'] or '—':5s}"
-                print(f"{tag} | {q['query'][:60]}")
-                try:
-                    r = run_one(cfg, q["query"])
-                    row = _row_from_result(q, cfg, r)
-                    rows.append(row)
-                    writer.write(row)
-                    tot_tok = r["tokens"].get("total_tokens", 0)
-                    print(f"    -> {r['latency_ms']}ms  {tot_tok} tok  cited={len(r.get('cited_ids') or [])}")
-                except Exception as e:  # noqa: BLE001
-                    print(f"    -> ERROR {type(e).__name__}: {e}")
-                    traceback.print_exc()
-                    err_row = _row_for_error(q, cfg, e)
-                    rows.append(err_row)
-                    writer.write(err_row)
+        for rep in range(repeats):
+            for q in queries:
+                for cfg in cfgs:
+                    n += 1
+                    tag = (f"[{n:>4}/{total}] r{rep} "
+                           f"{cfg['pipeline']:13s} | {cfg['embedder']:5s} | "
+                           f"rerank={cfg['reranker'] or '—':5s}")
+                    print(f"{tag} | {q['query'][:60]}")
+                    try:
+                        r = run_one(cfg, q["query"])
+                        row = _row_from_result(q, cfg, r, repeat=rep)
+                        rows.append(row)
+                        writer.write(row)
+                        tot_tok = r["tokens"].get("total_tokens", 0)
+                        print(f"    -> {r['latency_ms']}ms  {tot_tok} tok  cited={len(r.get('cited_ids') or [])}")
+                    except Exception as e:  # noqa: BLE001
+                        print(f"    -> ERROR {type(e).__name__}: {e}")
+                        traceback.print_exc()
+                        err_row = _row_for_error(q, cfg, e, repeat=rep)
+                        rows.append(err_row)
+                        writer.write(err_row)
     finally:
         writer.close()
 
