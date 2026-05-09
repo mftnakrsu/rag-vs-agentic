@@ -1,17 +1,25 @@
 """Run the ablation matrix and emit a comparison table + CSV/JSONL.
 
-Default matrix (8 configs):
-    vanilla  × {local, azure} × {none, local-bge, azure-cohere}     = 6
-    agentic  × {local, azure}                                       = 2
+Default matrix (10 configs in the paper-extension version):
+    vanilla   × {local, azure} × {none, local-bge, azure-cohere}    = 6
+    agentic   × {local, azure}                                      = 2
+    graphrag  × {local, azure}                                      = 2
 
-Agentic intentionally has no external reranker — its critic+ReAct loop is the
-filtering mechanism we're comparing AGAINST a reranker. (The research question:
-"does agentic intelligence substitute for a reranker?")
+`graphrag` is Phase 1b — vector retrieve seeds + Aura 1-2 hop walk on
+traceability edges. It needs NEO4J_URI/USER/PASSWORD in .env. Agentic-graph
+(pipeline 4) extends agentic_rag with a graph_lookup tool and lands in
+Phase 1c.
+
+Reranker policy: vanilla can use {none, local-bge, azure-cohere}; agentic
+intentionally has no external reranker (the critic+ReAct loop is the
+filtering mechanism we compare AGAINST a reranker). graphrag also runs
+without a reranker — the structural walk is the filtering mechanism.
 
 CLI flags let you cut/extend this matrix:
     python compare.py --limit 3                       # 3 queries
     python compare.py --embedders local --no-azure-rerank
-    python compare.py --no-agentic                    # vanilla only
+    python compare.py --no-agentic                    # vanilla + graphrag only
+    python compare.py --no-graphrag                   # vanilla + agentic only
 """
 from __future__ import annotations
 
@@ -38,6 +46,7 @@ def build_configs(
     include_local_rerank: bool = True,
     include_azure_rerank: bool = True,
     include_agentic: bool = True,
+    include_graphrag: bool = True,
 ) -> list[dict]:
     cfgs: list[dict] = []
     for emb in embedders:
@@ -49,6 +58,8 @@ def build_configs(
             cfgs.append({"pipeline": "vanilla", "embedder": emb, "reranker": "azure"})
         if include_agentic:
             cfgs.append({"pipeline": "agentic", "embedder": emb, "reranker": None})
+        if include_graphrag:
+            cfgs.append({"pipeline": "graphrag", "embedder": emb, "reranker": None})
     return cfgs
 
 
@@ -59,6 +70,10 @@ def run_one(cfg: dict, query: str) -> dict:
             embedder_name=cfg["embedder"],
             reranker_name=cfg["reranker"],
         )
+    if cfg["pipeline"] == "graphrag":
+        # Lazy import — neo4j driver only loaded when graphrag is actually used.
+        from graph_rag import graph_rag
+        return graph_rag(query, embedder_name=cfg["embedder"])
     return run_agentic_rag(query, embedder_name=cfg["embedder"])
 
 
@@ -180,6 +195,8 @@ def main() -> None:
     parser.add_argument("--no-local-rerank", action="store_true")
     parser.add_argument("--no-azure-rerank", action="store_true")
     parser.add_argument("--no-agentic", action="store_true")
+    parser.add_argument("--no-graphrag", action="store_true",
+                        help="Skip the graphrag pipeline (needs Neo4j Aura)")
     parser.add_argument("--out", default="results/results.csv")
     args = parser.parse_args()
 
@@ -194,6 +211,7 @@ def main() -> None:
         include_local_rerank=not args.no_local_rerank,
         include_azure_rerank=not args.no_azure_rerank,
         include_agentic=not args.no_agentic,
+        include_graphrag=not args.no_graphrag,
     )
 
     total = len(cfgs) * len(queries)
