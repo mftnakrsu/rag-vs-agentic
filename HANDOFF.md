@@ -106,7 +106,39 @@ wc -l results/main-v2.csv  # target 4441 lines (header + 4440 data rows)
 | **Phase 2d v2 main matrix (5 × 296 × 3)** | ⏳ **BG RUNNING** | — |
 | Phase 3 MuSiQue cross-eval | ⏳ blocked on 2d | — |
 | Phase 4 plots + failure-mode taxonomy | ⏳ blocked on 3 | — |
-| Phase 5-6 paper drafting + submit | ⏳ deadline 23 May 2026 | — |
+| **Phase 5 paper skeleton** | ✅ `paper/cikm/` compile-clean (this session) | — |
+| Phase 5-6 paper drafting + submit | ⏳ deadline 23 May 2026, awaits results + figs | — |
+
+---
+
+## 📄 Paper skeleton (added this session)
+
+`paper/cikm/` — 4-page ACM `sigconf`, double-blind, anonymous-author
+version, compile-clean. Figure 1 (architecture) is hand-written TikZ
+rendered inline via `\input{figures/architecture-tikz}` — no separate
+sub-compile needed.
+
+**Compile (Overleaf):** upload `paper/cikm-skeleton.zip` (regenerate
+with `cd paper/cikm && zip -r ../cikm-skeleton.zip . -x ".gitignore"`),
+set `main.tex` as main, Recompile. Local: `cd paper/cikm && make`.
+
+**Pending before 23 May submission:**
+1. Figures 2–3 (cost-quality Pareto + hop-stratified accuracy) — needs
+   `results/main-v2-scored.csv` (post BG + judge); write
+   `scripts/plot_pareto.py` + `scripts/plot_hop_curves.py`.
+2. Table 1 numbers — same source.
+3. Placeholders in abstract / intro headline / §5.1–5.4 / conclusion —
+   fill after stats finalize.
+4. `refs.bib` `[TODO: lead author]` entries (5 of 31) — verify via DBLP
+   / Semantic Scholar.
+5. Anonymisation final check (pdfinfo, no GitHub URLs in PDF, third-person
+   self-citations) — see `paper/cikm/README.md` checklist.
+
+**De-anonymisation note:** this `HANDOFF.md` and the project root
+`README.md` are publicly committed. The paper title appears verbatim on
+line 11 here. If strict double-blind hygiene matters during review,
+redact line 11 (and the title in any other tracked file) in a follow-up
+commit before submission.
 
 ---
 

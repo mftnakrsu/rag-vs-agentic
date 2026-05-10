@@ -1,0 +1,24 @@
+\section{Discussion and Limitations}
+\label{sec:discussion}
+
+\subsection{Threats to Validity}
+\textit{Construct validity.} The corpus is synthetic. We mitigate this
+by following the Synthline methodology~\cite{synthline2025} for
+synthetic requirements engineering, by enforcing DO-178C-style typed
+edges, and by cross-evaluating on MuSiQue~\cite{musique2022}.
+\textit{Internal validity.} LLM-as-judge is known to exhibit
+self-preference bias~\cite{selfpref_bias2024}. We mitigate via a
+two-judge ensemble, position-swap robustness, and a 50-query
+human-gold calibration slice.
+\textit{External validity.} Our domain is single (aerospace
+requirements). The MuSiQue cross-evaluation is a partial mitigation;
+full external validity awaits a real-DOORS triangulation, which is
+left for future work.
+
+\subsection{Limitations}
+The synthetic corpus is not certified DO-178C data and does not
+substitute for evaluation on industry artifacts. Hop labels for router
+training are LLM-derived and may inherit LLM biases on entity-recall
+boundaries. Edge-type weights $w(\tau)$ are set per DO-178C semantic
+priority rather than learned end-to-end; a learned variant is left for
+future work.

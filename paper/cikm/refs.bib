@@ -1,0 +1,284 @@
+%% =====================================================================
+%% refs.bib --- CIKM 2026 short paper
+%%
+%% Cite keys grouped by topic. Many entries use surname + "and others"
+%% where the full author list was not verified by the user; verify
+%% these against DBLP/Semantic Scholar before camera-ready.
+%% =====================================================================
+
+%% --- Agentic / Adaptive RAG ------------------------------------------
+@inproceedings{selfrag2024,
+  author    = {Asai, Akari and Wu, Zeqiu and Wang, Yizhong and
+               Sil, Avirup and Hajishirzi, Hannaneh},
+  title     = {{Self-RAG}: Learning to Retrieve, Generate, and Critique
+               through Self-Reflection},
+  booktitle = {Proc.\ International Conference on Learning
+               Representations (ICLR)},
+  year      = {2024}
+}
+
+@article{crag2024,
+  author  = {Yan, Shi-Qi and Gu, Jia-Chen and Zhu, Yun and
+             Ling, Zhen-Hua},
+  title   = {Corrective Retrieval Augmented Generation},
+  journal = {arXiv preprint arXiv:2401.15884},
+  year    = {2024}
+}
+
+@inproceedings{adaptiverag2024,
+  author    = {Jeong, Soyeong and Baek, Jinheon and Cho, Sukmin and
+               Hwang, Sung Ju and Park, Jong C.},
+  title     = {{Adaptive-RAG}: Learning to Adapt Retrieval-Augmented
+               Large Language Models through Question Complexity},
+  booktitle = {Proc.\ NAACL},
+  year      = {2024}
+}
+
+@inproceedings{ragcritic2025,
+  author    = {Dong, [TODO: full author list] and others},
+  title     = {{RAG-Critic}: An Agentic Critic for Retrieval-Augmented
+               Generation},
+  booktitle = {Proc.\ Annual Meeting of the Association for
+               Computational Linguistics (ACL)},
+  year      = {2025},
+  note      = {Long paper 179. [TODO: verify exact author list and
+               anthology ID]}
+}
+
+@article{searchr1_2025,
+  author  = {Jin, Bowen and others},
+  title   = {{Search-R1}: Training {LLMs} to Reason and Leverage Search
+             Engines with Reinforcement Learning},
+  journal = {arXiv preprint arXiv:2503.09516},
+  year    = {2025},
+  note    = {Also at COLM 2025}
+}
+
+%% --- GraphRAG family -------------------------------------------------
+@article{graphrag2024,
+  author  = {Edge, Darren and Trinh, Ha and Cheng, Newman and
+             Bradley, Joshua and Chao, Alex and Mody, Apurva and
+             Truitt, Steven and Larson, Jonathan},
+  title   = {From Local to Global: A Graph {RAG} Approach to
+             Query-Focused Summarization},
+  journal = {arXiv preprint arXiv:2404.16130},
+  year    = {2024}
+}
+
+@article{lightrag2024,
+  author  = {Guo, Zirui and Xia, Lianghao and Yu, Yanhua and
+             Ao, Tu and Huang, Chao},
+  title   = {{LightRAG}: Simple and Fast Retrieval-Augmented Generation},
+  journal = {arXiv preprint arXiv:2410.05779},
+  year    = {2024}
+}
+
+@article{hipporag2_2025,
+  author  = {Guti{\'e}rrez, Bernal Jim{\'e}nez and Shu, Yiheng and
+             Qi, Weijian and Zhou, Sizhe and Su, Yu},
+  title   = {{HippoRAG~2}: From {RAG} to Memory: Non-Parametric
+             Continual Learning for Large Language Models},
+  journal = {arXiv preprint arXiv:2502.14802},
+  year    = {2025}
+}
+
+@inproceedings{graphragbench2026,
+  author    = {Xiang, [TODO: lead author] and others},
+  title     = {When to Use Graphs in {RAG}: A Comprehensive Benchmark
+               on the Effectiveness of {GraphRAG}},
+  booktitle = {Proc.\ International Conference on Learning
+               Representations (ICLR)},
+  year      = {2026},
+  note      = {arXiv:2506.05690}
+}
+
+@article{ragvsgraphrag2025,
+  author  = {Han, [TODO: lead author] and others},
+  title   = {{RAG} vs.\ {GraphRAG}: A Systematic Evaluation and Key
+             Insights},
+  journal = {arXiv preprint arXiv:2502.11371},
+  year    = {2025}
+}
+
+@article{graphr1_2025,
+  author  = {Luo, [TODO: lead author] and others},
+  title   = {{Graph-R1}: Towards Agentic {GraphRAG} via Reinforcement
+             Learning},
+  journal = {arXiv preprint arXiv:2507.21892},
+  year    = {2025}
+}
+
+%% --- Requirements Traceability ---------------------------------------
+@inproceedings{lissa2025,
+  author    = {Fuchss, [TODO: lead author] and others},
+  title     = {{LiSSA}: Toward {LLM}-Based Software Architecture
+               Traceability},
+  booktitle = {Proc.\ International Conference on Software Engineering
+               (ICSE)},
+  year      = {2025}
+}
+
+@article{tracellm2026,
+  author  = {[TODO: authors]},
+  title   = {{TraceLLM}: [TODO: title]},
+  journal = {[TODO: venue / arXiv id]},
+  year    = {2026}
+}
+
+@article{niu_tvr2025,
+  author  = {Niu, [TODO: lead author] and others},
+  title   = {{TVR}: A {LLM}-Based Trace-Verify-Refine Framework for
+             Requirements Traceability},
+  journal = {arXiv preprint arXiv:2504.15427},
+  year    = {2025}
+}
+
+@article{graphragcompliance2024,
+  author  = {[TODO: authors]},
+  title   = {Graph-{RAG} for Regulatory Compliance Question Answering},
+  journal = {arXiv preprint arXiv:2412.08593},
+  year    = {2024}
+}
+
+%% --- Synthetic data --------------------------------------------------
+@inproceedings{synthline2025,
+  author    = {El-Hajjami, Abdelkarim and Salinesi, Camille},
+  title     = {{Synthline}: Synthetic Requirements via {LLMs} for
+               Requirements Engineering},
+  booktitle = {Proc.\ International Working Conference on Requirements
+               Engineering: Foundation for Software Quality (REFSQ)},
+  year      = {2025},
+  note      = {arXiv:2505.03265}
+}
+
+%% --- Evaluation frameworks -------------------------------------------
+@article{ragas2024,
+  author  = {Es, Shahul and James, Jithin and Espinosa-Anke, Luis and
+             Schockaert, Steven},
+  title   = {{RAGAS}: Automated Evaluation of Retrieval Augmented
+             Generation},
+  journal = {arXiv preprint arXiv:2309.15217},
+  year    = {2024}
+}
+
+@article{ares2024,
+  author  = {Saad-Falcon, Jon and Khattab, Omar and Potts, Christopher
+             and Zaharia, Matei},
+  title   = {{ARES}: An Automated Evaluation Framework for
+             Retrieval-Augmented Generation Systems},
+  journal = {arXiv preprint arXiv:2311.09476},
+  year    = {2024}
+}
+
+@inproceedings{ragchecker2024,
+  author    = {Ru, Dongyu and others},
+  title     = {{RAGChecker}: A Fine-Grained Framework for Diagnosing
+               Retrieval-Augmented Generation},
+  booktitle = {Advances in Neural Information Processing Systems
+               (NeurIPS)},
+  year      = {2024},
+  note      = {arXiv:2408.08067}
+}
+
+@article{ragbench2024,
+  author  = {Friel, Robert and others},
+  title   = {{RAGBench}: Explainable Benchmark for Retrieval-Augmented
+             Generation Systems},
+  journal = {arXiv preprint arXiv:2407.11005},
+  year    = {2024}
+}
+
+@article{selfpref_bias2024,
+  author  = {Wataoka, [TODO: lead author] and others},
+  title   = {Self-Preference Bias in {LLM}-as-Judge Evaluation},
+  journal = {arXiv preprint arXiv:2410.21819},
+  year    = {2024}
+}
+
+%% --- Multi-hop QA ----------------------------------------------------
+@article{musique2022,
+  author  = {Trivedi, Harsh and Balasubramanian, Niranjan and
+             Khot, Tushar and Sabharwal, Ashish},
+  title   = {{MuSiQue}: Multihop Questions via Single-Hop Question
+             Composition},
+  journal = {Transactions of the Association for Computational
+             Linguistics (TACL)},
+  volume  = {10},
+  pages   = {539--554},
+  year    = {2022}
+}
+
+%% --- Statistics -------------------------------------------------------
+@article{jung_owen2025,
+  author  = {Jung, [TODO: lead author] and Owen, Art B.},
+  title   = {Paired Bootstrap Confidence Intervals with Few Random
+             Seeds},
+  journal = {arXiv preprint arXiv:2511.19794},
+  year    = {2025}
+}
+
+@inproceedings{bergkirkpatrick2012,
+  author    = {Berg-Kirkpatrick, Taylor and Burkett, David and
+               Klein, Dan},
+  title     = {An Empirical Investigation of Statistical Significance
+               in {NLP}},
+  booktitle = {Proc.\ EMNLP-CoNLL},
+  year      = {2012}
+}
+
+@inproceedings{koehn2004,
+  author    = {Koehn, Philipp},
+  title     = {Statistical Significance Tests for Machine Translation
+               Evaluation},
+  booktitle = {Proc.\ EMNLP},
+  year      = {2004}
+}
+
+%% --- Standards / regulators ------------------------------------------
+@techreport{do178c,
+  author      = {{RTCA, Inc.}},
+  title       = {{DO-178C}: Software Considerations in Airborne
+                 Systems and Equipment Certification},
+  institution = {RTCA},
+  year        = {2011}
+}
+
+@techreport{arp4754a,
+  author      = {{SAE International}},
+  title       = {{ARP4754A}: Guidelines for Development of Civil
+                 Aircraft and Systems},
+  institution = {SAE International},
+  year        = {2010}
+}
+
+@misc{easa2025npa,
+  author       = {{European Union Aviation Safety Agency (EASA)}},
+  title        = {Notice of Proposed Amendment {NPA} 2025-07:
+                  Artificial Intelligence Concept Paper},
+  year         = {2025},
+  howpublished = {EASA}
+}
+
+@misc{faa2024airoadmap,
+  author       = {{Federal Aviation Administration}},
+  title        = {{AI} Safety Roadmap, Version 1},
+  year         = {2024},
+  howpublished = {FAA}
+}
+
+%% --- Software ---------------------------------------------------------
+@misc{langgraph_software,
+  author       = {{LangChain, Inc.}},
+  title        = {{LangGraph}: A Library for Building Stateful,
+                  Multi-Actor Applications with {LLMs}},
+  year         = {2024},
+  howpublished = {Software,
+                  \url{https://github.com/langchain-ai/langgraph}}
+}
+
+@misc{neo4j_software,
+  author       = {{Neo4j, Inc.}},
+  title        = {Neo4j Graph Database},
+  year         = {2024},
+  howpublished = {\url{https://neo4j.com}}
+}

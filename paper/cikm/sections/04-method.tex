@@ -1,0 +1,83 @@
+\section{Method}
+\label{sec:method}
+
+\begin{figure}[t]
+  \centering
+  \IfFileExists{figures/architecture.pdf}
+    {\includegraphics[width=\columnwidth]{figures/architecture.pdf}}%
+    {\input{figures/architecture-tikz}}%
+  \caption{Architecture. A hop-adaptive router selects among four
+    retrieval pipelines based on a query-conditioned hop-distance
+    estimator. Pipelines~2 and~4 share a LangGraph
+    router--retriever--critic--synthesizer skeleton; the typed
+    graph-lookup tool is exposed in pipelines~3 and~4. Tools
+    abbreviated: \texttt{search} = \texttt{search\_documents},
+    \texttt{graph} = \texttt{graph\_lookup}.}
+  \label{fig:arch}
+\end{figure}
+
+\subsection{Problem Formulation}
+\label{sec:problem}
+We model the requirement corpus as a typed graph $G=(V,E,\tau)$ where
+$V$ is the set of requirements, $E\subseteq V\times V$ is the set of
+traceability links, and $\tau:E\to T$ assigns each edge a type from
+$T=\{\mathrm{derives\_from},\mathrm{satisfies},\mathrm{references},
+\mathrm{traces\_to}\}$. A traceability query $q$ has an unobserved hop
+class $H(q)\in\{1,2,3{+}\}$ that summarizes the minimum graph distance
+between the entities mentioned in $q$ and the gold answer. The system
+produces an answer $a(q)$ together with cited requirement IDs
+$C(q)\subseteq V$.
+
+\subsection{Four Retrieval Pipelines}
+\label{sec:pipelines}
+We consider four pipelines that share an embedder, a vector store, and
+a synthesizer prompt and differ only in retrieval strategy:
+\textbf{(i)~Vanilla} performs dense top-$k$ retrieval over text chunks
+followed by one synthesis call.
+\textbf{(ii)~Agentic} runs a LangGraph
+router--retriever--critic--synthesizer loop with a
+\texttt{search\_documents} tool and an iteration cap of three.
+\textbf{(iii)~GraphRAG} retrieves vector seeds and then walks the typed
+graph for up to two hops via a Cypher query against
+Neo4j, synthesizing once at the end.
+\textbf{(iv)~Agentic+Graph} extends pipeline~(ii) with a
+\texttt{graph\_lookup} tool node alongside \texttt{search\_documents},
+allowing the critic to request typed-edge expansion when text retrieval
+fails.
+
+\subsection{Hop-Adaptive Router}
+\label{sec:router}
+The router predicts $\widehat{H}(q)\in\{1,2,3{+}\}$ from $q$ alone and
+selects the pipeline with the best expected reward in that hop bucket
+on a held-out validation set. Features include (a)~entity count via
+named-entity recognition, (b)~explicit requirement-ID patterns
+(regex \texttt{REQ-[A-Z]+-\textbackslash d+}), (c)~question-type cues
+(e.g., \textit{trace from}, \textit{how does $X$ relate to $Y$}), and
+(d)~the embedding-space norm of $q$. We instantiate two variants:
+\textbf{V1}, a transparent rule-based router, and \textbf{V2}, a
+multinomial logistic regressor trained on 30\% of labelled queries with
+a held-out test split. Hop labels for training are obtained by walking
+$G$ from gold answer chains at evaluation-set construction time.
+
+\subsection{Link-Type-Aware Graph Tool}
+\label{sec:graphtool}
+The graph-lookup tool has signature
+\[
+  \texttt{graph\_lookup}(\mathit{seed\_ids},\,\mathit{hops},\,
+                         \mathit{edge\_types})
+\]
+and returns chunks ranked by a hybrid score
+\[
+  s(c\mid q) \;=\;
+    \lambda_{\mathrm{text}}\,\cos(q,c)
+    \;+\; \lambda_{\mathrm{graph}}\,
+          \frac{w(\tau(e_{c}))}{\mathrm{dist}(\mathit{seed},c)},
+\]
+where $e_c$ is the edge that brought $c$ into the candidate set,
+$w:T\to\mathbb{R}_+$ assigns DO-178C-aligned semantic priorities
+($\mathrm{derives\_from}>\mathrm{satisfies}>
+\mathrm{references}>\mathrm{traces\_to}$), and $\lambda_{\mathrm{text}},
+\lambda_{\mathrm{graph}}$ are tuned on a validation split. The tool
+filters out edge types not in $T$ to avoid retrieval dilution from
+auxiliary schema relations such as \textit{ALLOCATED\_TO} or
+\textit{IMPLEMENTS}.

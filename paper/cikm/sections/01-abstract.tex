@@ -1,0 +1,22 @@
+\begin{abstract}
+Multi-hop traceability over typed requirement graphs is a
+safety-critical retrieval problem in regulated domains such as
+DO-178C aerospace software certification. Existing approaches address
+parts of this problem in isolation: Adaptive-RAG routes by query
+complexity but is hop-blind and graph-blind; Microsoft GraphRAG
+exploits graph structure but is non-agentic; LiSSA performs single-shot
+retrieval-augmented generation for traceability without typed-graph
+reasoning. We propose a \emph{hop-adaptive, link-type-aware agentic}
+retrieval architecture that (i)~routes queries among four retrieval
+pipelines based on a query-conditioned hop-distance estimator and
+(ii)~exposes a typed-edge graph-lookup tool inside an agentic critic
+loop, exploiting DO-178C edge semantics
+(\textit{derives\_from}, \textit{satisfies}, \textit{references},
+\textit{traces\_to}) for retrieval reranking. We evaluate on a
+1{,}132-row synthetic DO-178C corpus with 300 hop-stratified queries,
+two-judge bias controls, BCa bootstrap confidence intervals, and a
+200-query MuSiQue cross-evaluation for external validity.
+[PLACEHOLDER: headline result --- e.g., adaptive routing matches the
+best fixed pipeline per stratum at $X\%$ of cost, $p<0.05$ under Holm
+correction.] Code and data are released for reproducibility.
+\end{abstract}
