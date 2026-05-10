@@ -56,6 +56,7 @@ from pathlib import Path
 
 import httpx
 from dotenv import load_dotenv
+from tqdm import tqdm
 
 from llm_compat import GPT5Client
 
@@ -399,75 +400,98 @@ def main() -> int:
     chunks_by_id = load_query_chunks(args.corpus)
     print(f"Loaded {len(chunks_by_id)} chunks for context hydration")
 
+    # Incremental writer — write each scored row to disk immediately so
+    # mid-run kills don't lose progress. Schema is all DictReader fields
+    # of the input row plus the judge-specific columns we add.
+    judge_keys = [
+        "judge_gpt5_faithful", "judge_gpt5_reason",
+        "judge_gpt41_faithful", "judge_gpt41_reason",
+        "judge_gemini_faithful", "judge_gemini_reason",
+        "judge_unanimous",
+    ]
+    out_keys = list(sample[0].keys()) + judge_keys
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    out_f = args.out.open("w", newline="", encoding="utf-8")
+    out_w = csv.DictWriter(out_f, fieldnames=out_keys, extrasaction="ignore")
+    out_w.writeheader()
+    out_f.flush()
+
     enriched: list[dict] = []
-    # Pool of rows where all enabled judges scored cleanly
     labels_gpt5: list[bool] = []
     labels_gpt41: list[bool] = []
     labels_gem: list[bool] = []
     n_gpt5_err = 0
     n_gpt41_err = 0
     n_gem_err = 0
-    t0 = time.time()
-    for i, r in enumerate(sample, 1):
-        contexts = _format_contexts(r.get("source_ids", ""), chunks_by_id)
-        question = r.get("query", "")
-        answer = r.get("answer", "")
-        gpt5 = score_with_gpt5(question, contexts, answer)
-        gpt41 = score_with_gpt41(question, contexts, answer)
-        gem = (score_with_gemini(question, contexts, answer, model=args.gemini_model)
-               if use_gemini else {"skipped": True})
-        gpt5_ok = "faithful" in gpt5
-        gpt41_ok = "faithful" in gpt41
-        gem_ok = "faithful" in gem
-        if not gpt5_ok:
-            n_gpt5_err += 1
-        if not gpt41_ok:
-            n_gpt41_err += 1
-        if use_gemini and not gem_ok:
-            n_gem_err += 1
-        # Build the κ-pool: require all ENABLED judges to be ok
-        pool_ok = gpt5_ok and gpt41_ok and (gem_ok or not use_gemini)
-        if pool_ok:
-            labels_gpt5.append(gpt5["faithful"])
-            labels_gpt41.append(gpt41["faithful"])
+
+    try:
+        pbar = tqdm(sample, desc="Judging", unit="row", ncols=100,
+                    leave=True, dynamic_ncols=False)
+        for r in pbar:
+            contexts = _format_contexts(r.get("source_ids", ""), chunks_by_id)
+            question = r.get("query", "")
+            answer = r.get("answer", "")
+            gpt5 = score_with_gpt5(question, contexts, answer)
+            gpt41 = score_with_gpt41(question, contexts, answer)
+            gem = (score_with_gemini(question, contexts, answer, model=args.gemini_model)
+                   if use_gemini else {"skipped": True})
+            gpt5_ok = "faithful" in gpt5
+            gpt41_ok = "faithful" in gpt41
+            gem_ok = "faithful" in gem
+            if not gpt5_ok:
+                n_gpt5_err += 1
+            if not gpt41_ok:
+                n_gpt41_err += 1
+            if use_gemini and not gem_ok:
+                n_gem_err += 1
+            pool_ok = gpt5_ok and gpt41_ok and (gem_ok or not use_gemini)
+            if pool_ok:
+                labels_gpt5.append(gpt5["faithful"])
+                labels_gpt41.append(gpt41["faithful"])
+                if use_gemini:
+                    labels_gem.append(gem["faithful"])
             if use_gemini:
-                labels_gem.append(gem["faithful"])
-        if use_gemini:
-            agree = pool_ok and gpt5["faithful"] == gpt41["faithful"] == gem["faithful"]
-        else:
-            agree = pool_ok and gpt5["faithful"] == gpt41["faithful"]
-        enriched.append({
-            **r,
-            "judge_gpt5_faithful": gpt5.get("faithful") if gpt5_ok else None,
-            "judge_gpt5_reason": gpt5.get("reason") if gpt5_ok else gpt5.get("error"),
-            "judge_gpt41_faithful": gpt41.get("faithful") if gpt41_ok else None,
-            "judge_gpt41_reason": gpt41.get("reason") if gpt41_ok else gpt41.get("error"),
-            "judge_gemini_faithful": gem.get("faithful") if gem_ok else None,
-            "judge_gemini_reason": (gem.get("reason") if gem_ok
-                                    else gem.get("error", "skipped")),
-            "judge_unanimous": agree,
-        })
-        elapsed = time.time() - t0
-        rate = i / elapsed if elapsed else 0
-        eta = (len(sample) - i) / rate if rate else 0
-        if i % 10 == 0 or i == len(sample):
-            err_str = f"gpt5={n_gpt5_err}, gpt41={n_gpt41_err}"
+                agree = pool_ok and gpt5["faithful"] == gpt41["faithful"] == gem["faithful"]
+            else:
+                agree = pool_ok and gpt5["faithful"] == gpt41["faithful"]
+            row_out = {
+                **r,
+                "judge_gpt5_faithful": gpt5.get("faithful") if gpt5_ok else None,
+                "judge_gpt5_reason": gpt5.get("reason") if gpt5_ok else gpt5.get("error"),
+                "judge_gpt41_faithful": gpt41.get("faithful") if gpt41_ok else None,
+                "judge_gpt41_reason": gpt41.get("reason") if gpt41_ok else gpt41.get("error"),
+                "judge_gemini_faithful": gem.get("faithful") if gem_ok else None,
+                "judge_gemini_reason": (gem.get("reason") if gem_ok
+                                        else gem.get("error", "skipped")),
+                "judge_unanimous": agree,
+            }
+            enriched.append(row_out)
+            out_w.writerow(row_out)
+            out_f.flush()
+            if len(enriched) % 25 == 0:
+                os.fsync(out_f.fileno())
+            # Live status: faithfulness rates + pool size + per-judge errors
+            postfix = {
+                "g5": f"{(sum(labels_gpt5)/len(labels_gpt5)*100 if labels_gpt5 else 0):.0f}%",
+                "g41": f"{(sum(labels_gpt41)/len(labels_gpt41)*100 if labels_gpt41 else 0):.0f}%",
+                "κpool": len(labels_gpt5),
+                "err": n_gpt5_err + n_gpt41_err + (n_gem_err if use_gemini else 0),
+            }
             if use_gemini:
-                err_str += f", gem={n_gem_err}"
-            print(f"  [{i:>3}/{len(sample)}] κ-pool: {len(labels_gpt5)}, "
-                  f"errs: {err_str}, rate {rate:.2f}/s, eta {eta:.0f}s")
+                postfix["gem"] = f"{(sum(labels_gem)/len(labels_gem)*100 if labels_gem else 0):.0f}%"
+            pbar.set_postfix(postfix)
+    finally:
+        try:
+            os.fsync(out_f.fileno())
+        except OSError:
+            pass
+        out_f.close()
 
     if not enriched:
         print("No rows scored.", file=sys.stderr)
         return 1
 
-    args.out.parent.mkdir(parents=True, exist_ok=True)
-    keys = list(enriched[0].keys())
-    with args.out.open("w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=keys, extrasaction="ignore")
-        w.writeheader()
-        w.writerows(enriched)
-    print(f"\nWrote {len(enriched)} rows -> {args.out}")
+    print(f"\nWrote {len(enriched)} rows -> {args.out} (incremental)")
 
     n_pool = len(labels_gpt5)
     if n_pool < 2:
