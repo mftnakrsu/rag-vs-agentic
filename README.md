@@ -11,6 +11,23 @@ subsystem specs across 30 modules — ADS, FCC, NAV, GPS, …).
 Goal: measurable deltas in **latency, tokens, cited-source overlap, and answer
 groundedness** between the two paradigms — not production hardening.
 
+## Paper
+
+A short-paper draft for an anonymous CIKM 2026 submission lives in
+[`paper/cikm/`](paper/cikm/) (4-page ACM `sigconf`, double-blind review).
+It extends the v0 baseline below by adding two graph-aware pipelines
+(GraphRAG and agentic+graph over Neo4j Aura), a 300-query hop-stratified
+evaluation protocol, and a two-judge bias control.
+
+**Build:** `cd paper/cikm && make` (requires TeX Live + `acmart`), or
+upload `paper/cikm/` to Overleaf and Recompile. The architecture figure
+renders inline via TikZ — no separate sub-compile needed. See
+[`paper/cikm/README.md`](paper/cikm/README.md) for the anonymisation
+checklist, page-budget guardrails, and submission notes.
+
+> Title, full author info, and final figures will be added here after
+> the review period.
+
 ## Pipelines
 
 | | Vanilla | Agentic (LangGraph) |

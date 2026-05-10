@@ -1,0 +1,24 @@
+# LaTeX build artefacts
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+*.lof
+*.lot
+*.nav
+*.snm
+*.vrb
+
+# Built artefacts (uncomment to keep PDFs out of git)
+# main.pdf
+# CIKM-2026-anonymous.pdf
+# CIKM-2026-anonymous.zip
+
+# Editor
+*.swp
+.vscode/
