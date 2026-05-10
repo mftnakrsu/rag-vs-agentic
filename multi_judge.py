@@ -356,7 +356,14 @@ def main() -> int:
     parser.add_argument("--out", type=Path, default=None,
                         help="Output scored CSV. Default: <input>-judged.csv")
     parser.add_argument("--gemini-model", default="gemini-flash-latest")
+    parser.add_argument("--no-gemini", action="store_true",
+                        help="Skip Gemini judge (default since free tier dropped to "
+                             "20 RPD in May 2026). Then κ is GPT-5.4 × GPT-4.1.")
+    parser.add_argument("--with-gemini", action="store_true",
+                        help="Force Gemini judge ON (needs paid tier or fresh free quota)")
     args = parser.parse_args()
+    # Default: skip Gemini unless explicitly requested
+    use_gemini = args.with_gemini and not args.no_gemini
 
     if args.out is None:
         args.out = args.results_csv.with_name(args.results_csv.stem + "-judged.csv")
@@ -393,7 +400,7 @@ def main() -> int:
     print(f"Loaded {len(chunks_by_id)} chunks for context hydration")
 
     enriched: list[dict] = []
-    # Triples where ALL THREE judges scored cleanly (used for κ pools)
+    # Pool of rows where all enabled judges scored cleanly
     labels_gpt5: list[bool] = []
     labels_gpt41: list[bool] = []
     labels_gem: list[bool] = []
@@ -407,7 +414,8 @@ def main() -> int:
         answer = r.get("answer", "")
         gpt5 = score_with_gpt5(question, contexts, answer)
         gpt41 = score_with_gpt41(question, contexts, answer)
-        gem = score_with_gemini(question, contexts, answer, model=args.gemini_model)
+        gem = (score_with_gemini(question, contexts, answer, model=args.gemini_model)
+               if use_gemini else {"skipped": True})
         gpt5_ok = "faithful" in gpt5
         gpt41_ok = "faithful" in gpt41
         gem_ok = "faithful" in gem
@@ -415,16 +423,19 @@ def main() -> int:
             n_gpt5_err += 1
         if not gpt41_ok:
             n_gpt41_err += 1
-        if not gem_ok:
+        if use_gemini and not gem_ok:
             n_gem_err += 1
-        if gpt5_ok and gpt41_ok and gem_ok:
+        # Build the κ-pool: require all ENABLED judges to be ok
+        pool_ok = gpt5_ok and gpt41_ok and (gem_ok or not use_gemini)
+        if pool_ok:
             labels_gpt5.append(gpt5["faithful"])
             labels_gpt41.append(gpt41["faithful"])
-            labels_gem.append(gem["faithful"])
-        agree = (
-            gpt5_ok and gpt41_ok and gem_ok
-            and gpt5["faithful"] == gpt41["faithful"] == gem["faithful"]
-        )
+            if use_gemini:
+                labels_gem.append(gem["faithful"])
+        if use_gemini:
+            agree = pool_ok and gpt5["faithful"] == gpt41["faithful"] == gem["faithful"]
+        else:
+            agree = pool_ok and gpt5["faithful"] == gpt41["faithful"]
         enriched.append({
             **r,
             "judge_gpt5_faithful": gpt5.get("faithful") if gpt5_ok else None,
@@ -432,16 +443,19 @@ def main() -> int:
             "judge_gpt41_faithful": gpt41.get("faithful") if gpt41_ok else None,
             "judge_gpt41_reason": gpt41.get("reason") if gpt41_ok else gpt41.get("error"),
             "judge_gemini_faithful": gem.get("faithful") if gem_ok else None,
-            "judge_gemini_reason": gem.get("reason") if gem_ok else gem.get("error"),
+            "judge_gemini_reason": (gem.get("reason") if gem_ok
+                                    else gem.get("error", "skipped")),
             "judge_unanimous": agree,
         })
         elapsed = time.time() - t0
         rate = i / elapsed if elapsed else 0
         eta = (len(sample) - i) / rate if rate else 0
         if i % 10 == 0 or i == len(sample):
+            err_str = f"gpt5={n_gpt5_err}, gpt41={n_gpt41_err}"
+            if use_gemini:
+                err_str += f", gem={n_gem_err}"
             print(f"  [{i:>3}/{len(sample)}] κ-pool: {len(labels_gpt5)}, "
-                  f"errs: gpt5={n_gpt5_err}, gpt41={n_gpt41_err}, gem={n_gem_err}, "
-                  f"rate {rate:.2f}/s, eta {eta:.0f}s")
+                  f"errs: {err_str}, rate {rate:.2f}/s, eta {eta:.0f}s")
 
     if not enriched:
         print("No rows scored.", file=sys.stderr)
@@ -460,35 +474,51 @@ def main() -> int:
         print("\nNot enough successful triples for κ.", file=sys.stderr)
         return 1
 
-    # Pairwise Cohen's κ across all 3 pairs
-    k_gpt5_gpt41 = cohens_kappa(labels_gpt5, labels_gpt41)
-    k_gpt41_gem = cohens_kappa(labels_gpt41, labels_gem)  # PRIMARY (generator-independent)
-    k_gpt5_gem = cohens_kappa(labels_gpt5, labels_gem)
-    # 3-rater Fleiss' κ
-    fleiss = fleiss_kappa([labels_gpt5, labels_gpt41, labels_gem])
-
     pos_gpt5 = sum(labels_gpt5) / n_pool
     pos_gpt41 = sum(labels_gpt41) / n_pool
-    pos_gem = sum(labels_gem) / n_pool
-    unan = sum(1 for a, b, c in zip(labels_gpt5, labels_gpt41, labels_gem)
-               if a == b == c) / n_pool
 
-    print(f"\nInter-judge agreement (n_triples={n_pool}):")
-    print(f"  Faithful% per judge:")
-    print(f"    GPT-5.4 (generator, biased)   : {pos_gpt5:.3f}")
-    print(f"    GPT-4.1 (generator-independent): {pos_gpt41:.3f}")
-    print(f"    Gemini  (generator-independent): {pos_gem:.3f}")
-    print(f"  Pairwise Cohen's κ:")
-    print(f"    GPT-4.1 × Gemini  (PRIMARY): {k_gpt41_gem:.3f}")
-    print(f"    GPT-5.4 × GPT-4.1          : {k_gpt5_gpt41:.3f}")
-    print(f"    GPT-5.4 × Gemini           : {k_gpt5_gem:.3f}")
-    print(f"  3-rater Fleiss' κ            : {fleiss:.3f}")
-    print(f"  Unanimous (all 3 agree)      : {unan:.3f}")
-    print(f"  Errors: gpt5={n_gpt5_err}, gpt41={n_gpt41_err}, gem={n_gem_err}")
+    if use_gemini:
+        k_gpt5_gpt41 = cohens_kappa(labels_gpt5, labels_gpt41)
+        k_gpt41_gem = cohens_kappa(labels_gpt41, labels_gem)
+        k_gpt5_gem = cohens_kappa(labels_gpt5, labels_gem)
+        fleiss = fleiss_kappa([labels_gpt5, labels_gpt41, labels_gem])
+        pos_gem = sum(labels_gem) / n_pool
+        unan = sum(1 for a, b, c in zip(labels_gpt5, labels_gpt41, labels_gem)
+                   if a == b == c) / n_pool
+        print(f"\nInter-judge agreement (n_triples={n_pool}):")
+        print(f"  Faithful% per judge:")
+        print(f"    GPT-5.4 (generator, biased)    : {pos_gpt5:.3f}")
+        print(f"    GPT-4.1 (generator-independent): {pos_gpt41:.3f}")
+        print(f"    Gemini  (generator-independent): {pos_gem:.3f}")
+        print(f"  Pairwise Cohen's κ:")
+        print(f"    GPT-4.1 × Gemini  (PRIMARY)  : {k_gpt41_gem:.3f}")
+        print(f"    GPT-5.4 × GPT-4.1            : {k_gpt5_gpt41:.3f}")
+        print(f"    GPT-5.4 × Gemini             : {k_gpt5_gem:.3f}")
+        print(f"  3-rater Fleiss' κ              : {fleiss:.3f}")
+        print(f"  Unanimous (all 3 agree)        : {unan:.3f}")
+        print(f"  Errors: gpt5={n_gpt5_err}, gpt41={n_gpt41_err}, gem={n_gem_err}")
+        primary = k_gpt41_gem
+        primary_name = "GPT-4.1 × Gemini"
+    else:
+        k_gpt5_gpt41 = cohens_kappa(labels_gpt5, labels_gpt41)
+        agree_rate = sum(1 for a, b in zip(labels_gpt5, labels_gpt41) if a == b) / n_pool
+        print(f"\nInter-judge agreement (n_pairs={n_pool}, Gemini disabled):")
+        print(f"  Faithful% per judge:")
+        print(f"    GPT-5.4 (generator-self):  {pos_gpt5:.3f}")
+        print(f"    GPT-4.1 (4.x family)    :  {pos_gpt41:.3f}")
+        print(f"  Pairwise Cohen's κ:")
+        print(f"    GPT-5.4 × GPT-4.1 (PRIMARY): {k_gpt5_gpt41:.3f}")
+        print(f"  Raw agreement              : {agree_rate:.3f}")
+        print(f"  Errors: gpt5={n_gpt5_err}, gpt41={n_gpt41_err}")
+        print(f"  Paper limitation note: both judges are OpenAI-family. GPT-5.4 is the")
+        print(f"  pipeline generator (self-preference risk); GPT-4.1 (4.x line) is the")
+        print(f"  independent within-family judge. Gemini was disabled because free")
+        print(f"  tier dropped to 20 RPD in May 2026 (insufficient for our 300-row scope).")
+        primary = k_gpt5_gpt41
+        primary_name = "GPT-5.4 × GPT-4.1"
 
-    primary = k_gpt41_gem
     if primary < 0.4:
-        print(f"\n⚠ PRIMARY κ (GPT-4.1 × Gemini) = {primary:.3f} < 0.4")
+        print(f"\n⚠ PRIMARY κ ({primary_name}) = {primary:.3f} < 0.4")
         print("  CIKM kill switch: judges don't agree → halt and inspect.")
         return 1
     elif primary < 0.6:
