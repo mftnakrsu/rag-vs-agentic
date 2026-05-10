@@ -2,13 +2,23 @@
 
 Defuses the #1 reviewer attack on RAG-eval LLM-as-judge protocols:
 self-preference bias (Wataoka et al., arXiv:2410.21819). A single LLM
-rating its own family's outputs is suspect; two independent judges with
-Cohen's κ ≥ 0.4 (moderate agreement) is the published bar.
+rating its own family's outputs is suspect.
 
-Two judges:
-- **GPT-5.4** via Azure OpenAI Foundry (existing `llm_compat.GPT5Client`)
+Three judges:
+- **GPT-5.4** via Azure (existing `llm_compat.GPT5Client`).
+  ⚠ This is the SAME model used as generator in the pipelines, so its
+  judgments carry self-preference bias. Reported for transparency only —
+  primary κ excludes it.
+- **GPT-4.1** via Azure (Chris's `gpt-4.1-meftun` deployment, same project
+  base URL, 10M TPM cap). Different model in OpenAI family, independent
+  of the GPT-5.4 generator.
 - **Gemini Flash** via Google `generativelanguage.googleapis.com` (raw HTTP
-  to avoid pulling another SDK; key in `.env` as `GOOGLE_API_KEY`)
+  to avoid pulling another SDK; key in `.env` as `GOOGLE_API_KEY`,
+  free-tier 15 RPM throttled). Different family, independent of generator.
+
+Primary inter-judge agreement: GPT-4.1 × Gemini (both generator-independent).
+Tertiary: GPT-5.4 included for transparency (expected to over-rate).
+Aggregate: Fleiss' κ across all 3 raters.
 
 Both judges receive the same template asking for a strict-JSON binary
 faithfulness verdict: `{"faithful": true|false, "reason": "<short>"}`. The
@@ -139,6 +149,49 @@ def score_with_gpt5(question: str, contexts: str, answer: str) -> dict:
         return {"error": f"{type(e).__name__}: {e}"}
 
 
+def score_with_gpt41(question: str, contexts: str, answer: str) -> dict:
+    """3rd judge — GPT-4.1 via Azure (Chris's deployment).
+
+    Independent of GPT-5.4 generator (different family member), so suitable
+    as an unbiased faithfulness judge. 10M TPM cap means no per-request
+    throttling needed. Uses the OpenAI SDK against the /openai/v1 base URL
+    with response_format=json_object for structured output.
+
+    Returns {'faithful': bool, 'reason': str, 'tokens': int} or {'error': ...}.
+    """
+    api_key = os.environ.get("AZURE_OPENAI_LLM_API_KEY")
+    base_url = os.environ.get("AZURE_OPENAI_LLM_BASE_URL")
+    deployment = os.environ.get("AZURE_GPT41_DEPLOYMENT", "gpt-4.1-meftun")
+    if not api_key or not base_url:
+        return {"error": "AZURE_OPENAI_LLM_API_KEY / BASE_URL not set"}
+
+    msg = JUDGE_PROMPT_TEMPLATE.format(
+        question=question, contexts=contexts, answer=answer,
+    )
+    try:
+        from openai import OpenAI
+        client = OpenAI(api_key=api_key, base_url=base_url)
+        resp = client.chat.completions.create(
+            model=deployment,
+            messages=[
+                {"role": "system",
+                 "content": "You are a strict-JSON faithfulness judge."},
+                {"role": "user", "content": msg},
+            ],
+            response_format={"type": "json_object"},
+            max_completion_tokens=500,
+        )
+        raw = (resp.choices[0].message.content or "").strip()
+        m = json.loads(raw if raw.startswith("{") else raw[raw.find("{"):raw.rfind("}") + 1])
+        return {
+            "faithful": bool(m.get("faithful", False)),
+            "reason": str(m.get("reason", ""))[:200],
+            "tokens": resp.usage.total_tokens if resp.usage else 0,
+        }
+    except Exception as e:  # noqa: BLE001
+        return {"error": f"{type(e).__name__}: {e}"}
+
+
 def score_with_gemini(question: str, contexts: str, answer: str,
                       *, model: str = "gemini-flash-latest",
                       max_retries: int = 3) -> dict:
@@ -232,6 +285,47 @@ def cohens_kappa(labels_a: list[bool], labels_b: list[bool]) -> float:
     return (p_o - p_e) / (1 - p_e)
 
 
+def fleiss_kappa(labels_per_rater: list[list[bool]]) -> float:
+    """Fleiss' κ for binary labels across N raters on the same items.
+
+    labels_per_rater: list of N rater label-lists; each inner list aligns by
+        item index. All must have the same length.
+
+    Returns κ in (−∞, 1]. NaN if degenerate (all raters always agree on a
+    single category, so chance agreement is 1.0).
+
+    Reference: Fleiss 1971; standard formulation for binary categories.
+    """
+    n_raters = len(labels_per_rater)
+    if n_raters < 2:
+        return float("nan")
+    n_items = len(labels_per_rater[0])
+    if any(len(lr) != n_items for lr in labels_per_rater):
+        raise ValueError("rater label lists have unequal length")
+    if n_items == 0:
+        return float("nan")
+
+    # n_true_per_item[i] = how many of the N raters said True on item i.
+    n_true = [sum(1 for lr in labels_per_rater if lr[i]) for i in range(n_items)]
+    n_false = [n_raters - t for t in n_true]
+
+    # Per-item agreement P_i = (sum_k n_ik*(n_ik − 1)) / (N*(N − 1))
+    P_i = [
+        (t * (t - 1) + f * (f - 1)) / (n_raters * (n_raters - 1))
+        for t, f in zip(n_true, n_false)
+    ]
+    P_bar = sum(P_i) / n_items
+
+    # Marginal proportion of True across all rater-item assignments.
+    p_true = sum(n_true) / (n_items * n_raters)
+    p_false = 1 - p_true
+    P_e = p_true ** 2 + p_false ** 2
+
+    if P_e >= 1.0:
+        return float("nan")
+    return (P_bar - P_e) / (1 - P_e)
+
+
 def load_query_chunks(corpus_jsonl: Path) -> dict[str, str]:
     """Index requirement id -> full_text from the corpus jsonl."""
     out: dict[str, str] = {}
@@ -299,40 +393,54 @@ def main() -> int:
     print(f"Loaded {len(chunks_by_id)} chunks for context hydration")
 
     enriched: list[dict] = []
-    labels_gpt: list[bool] = []
+    # Triples where ALL THREE judges scored cleanly (used for κ pools)
+    labels_gpt5: list[bool] = []
+    labels_gpt41: list[bool] = []
     labels_gem: list[bool] = []
-    n_gpt_err = 0
+    n_gpt5_err = 0
+    n_gpt41_err = 0
     n_gem_err = 0
     t0 = time.time()
     for i, r in enumerate(sample, 1):
         contexts = _format_contexts(r.get("source_ids", ""), chunks_by_id)
         question = r.get("query", "")
         answer = r.get("answer", "")
-        gpt = score_with_gpt5(question, contexts, answer)
+        gpt5 = score_with_gpt5(question, contexts, answer)
+        gpt41 = score_with_gpt41(question, contexts, answer)
         gem = score_with_gemini(question, contexts, answer, model=args.gemini_model)
-        gpt_ok = "faithful" in gpt
+        gpt5_ok = "faithful" in gpt5
+        gpt41_ok = "faithful" in gpt41
         gem_ok = "faithful" in gem
-        if not gpt_ok:
-            n_gpt_err += 1
+        if not gpt5_ok:
+            n_gpt5_err += 1
+        if not gpt41_ok:
+            n_gpt41_err += 1
         if not gem_ok:
             n_gem_err += 1
-        if gpt_ok and gem_ok:
-            labels_gpt.append(gpt["faithful"])
+        if gpt5_ok and gpt41_ok and gem_ok:
+            labels_gpt5.append(gpt5["faithful"])
+            labels_gpt41.append(gpt41["faithful"])
             labels_gem.append(gem["faithful"])
+        agree = (
+            gpt5_ok and gpt41_ok and gem_ok
+            and gpt5["faithful"] == gpt41["faithful"] == gem["faithful"]
+        )
         enriched.append({
             **r,
-            "judge_gpt5_faithful": gpt.get("faithful") if gpt_ok else None,
-            "judge_gpt5_reason": gpt.get("reason") if gpt_ok else gpt.get("error"),
+            "judge_gpt5_faithful": gpt5.get("faithful") if gpt5_ok else None,
+            "judge_gpt5_reason": gpt5.get("reason") if gpt5_ok else gpt5.get("error"),
+            "judge_gpt41_faithful": gpt41.get("faithful") if gpt41_ok else None,
+            "judge_gpt41_reason": gpt41.get("reason") if gpt41_ok else gpt41.get("error"),
             "judge_gemini_faithful": gem.get("faithful") if gem_ok else None,
             "judge_gemini_reason": gem.get("reason") if gem_ok else gem.get("error"),
-            "judge_agree": (gpt_ok and gem_ok and gpt["faithful"] == gem["faithful"]),
+            "judge_unanimous": agree,
         })
         elapsed = time.time() - t0
         rate = i / elapsed if elapsed else 0
         eta = (len(sample) - i) / rate if rate else 0
         if i % 10 == 0 or i == len(sample):
-            print(f"  [{i:>3}/{len(sample)}] κ-pool: {len(labels_gpt)}, "
-                  f"errs: gpt={n_gpt_err}, gem={n_gem_err}, "
+            print(f"  [{i:>3}/{len(sample)}] κ-pool: {len(labels_gpt5)}, "
+                  f"errs: gpt5={n_gpt5_err}, gpt41={n_gpt41_err}, gem={n_gem_err}, "
                   f"rate {rate:.2f}/s, eta {eta:.0f}s")
 
     if not enriched:
@@ -347,28 +455,46 @@ def main() -> int:
         w.writerows(enriched)
     print(f"\nWrote {len(enriched)} rows -> {args.out}")
 
-    if len(labels_gpt) >= 2:
-        kappa = cohens_kappa(labels_gpt, labels_gem)
-        agree = sum(1 for x, y in zip(labels_gpt, labels_gem) if x == y) / len(labels_gpt)
-        gpt_pos = sum(labels_gpt) / len(labels_gpt)
-        gem_pos = sum(labels_gem) / len(labels_gem)
-        print(f"\nInter-judge agreement (n={len(labels_gpt)}):")
-        print(f"  raw agreement       : {agree:.3f}")
-        print(f"  Cohen's κ           : {kappa:.3f}")
-        print(f"  GPT-5.4 faithful%   : {gpt_pos:.3f}")
-        print(f"  Gemini  faithful%   : {gem_pos:.3f}")
-        print(f"  errors: gpt={n_gpt_err}, gem={n_gem_err}")
-        if kappa < 0.4:
-            print("\n⚠ Cohen's κ < 0.4 — moderate-or-better agreement NOT achieved.")
-            print("  CIKM plan kill switch: halt and inspect.")
-            return 1
-        elif kappa < 0.6:
-            print("\nκ in [0.4, 0.6): moderate agreement. Acceptable but disclose in paper limitations.")
-        else:
-            print("\nκ ≥ 0.6: substantial agreement. Paper-grade.")
-    else:
-        print("\nNot enough successful pairs for κ.", file=sys.stderr)
+    n_pool = len(labels_gpt5)
+    if n_pool < 2:
+        print("\nNot enough successful triples for κ.", file=sys.stderr)
         return 1
+
+    # Pairwise Cohen's κ across all 3 pairs
+    k_gpt5_gpt41 = cohens_kappa(labels_gpt5, labels_gpt41)
+    k_gpt41_gem = cohens_kappa(labels_gpt41, labels_gem)  # PRIMARY (generator-independent)
+    k_gpt5_gem = cohens_kappa(labels_gpt5, labels_gem)
+    # 3-rater Fleiss' κ
+    fleiss = fleiss_kappa([labels_gpt5, labels_gpt41, labels_gem])
+
+    pos_gpt5 = sum(labels_gpt5) / n_pool
+    pos_gpt41 = sum(labels_gpt41) / n_pool
+    pos_gem = sum(labels_gem) / n_pool
+    unan = sum(1 for a, b, c in zip(labels_gpt5, labels_gpt41, labels_gem)
+               if a == b == c) / n_pool
+
+    print(f"\nInter-judge agreement (n_triples={n_pool}):")
+    print(f"  Faithful% per judge:")
+    print(f"    GPT-5.4 (generator, biased)   : {pos_gpt5:.3f}")
+    print(f"    GPT-4.1 (generator-independent): {pos_gpt41:.3f}")
+    print(f"    Gemini  (generator-independent): {pos_gem:.3f}")
+    print(f"  Pairwise Cohen's κ:")
+    print(f"    GPT-4.1 × Gemini  (PRIMARY): {k_gpt41_gem:.3f}")
+    print(f"    GPT-5.4 × GPT-4.1          : {k_gpt5_gpt41:.3f}")
+    print(f"    GPT-5.4 × Gemini           : {k_gpt5_gem:.3f}")
+    print(f"  3-rater Fleiss' κ            : {fleiss:.3f}")
+    print(f"  Unanimous (all 3 agree)      : {unan:.3f}")
+    print(f"  Errors: gpt5={n_gpt5_err}, gpt41={n_gpt41_err}, gem={n_gem_err}")
+
+    primary = k_gpt41_gem
+    if primary < 0.4:
+        print(f"\n⚠ PRIMARY κ (GPT-4.1 × Gemini) = {primary:.3f} < 0.4")
+        print("  CIKM kill switch: judges don't agree → halt and inspect.")
+        return 1
+    elif primary < 0.6:
+        print(f"\nPRIMARY κ in [0.4, 0.6): moderate. Acceptable but disclose in limitations.")
+    else:
+        print(f"\nPRIMARY κ ≥ 0.6: substantial agreement. Paper-grade.")
     return 0
 
 
