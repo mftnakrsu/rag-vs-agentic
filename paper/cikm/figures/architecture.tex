@@ -1,0 +1,17 @@
+%% architecture.tex --- standalone wrapper that compiles
+%% architecture-tikz.tex into a vector PDF.
+%% Run: pdflatex architecture.tex   (in paper/cikm/figures/)
+%% Output: architecture.pdf
+%%
+%% You only need this path if you prefer a pre-compiled PDF over
+%% inline TikZ. Otherwise main.tex picks up the figure via
+%% \input{figures/architecture-tikz} in sections/04-method.tex.
+
+\documentclass[tikz,border=4pt]{standalone}
+\usepackage{tikz}
+\usetikzlibrary{positioning, arrows.meta, shapes.geometric,
+                fit, backgrounds, calc}
+
+\begin{document}
+\input{architecture-tikz}
+\end{document}

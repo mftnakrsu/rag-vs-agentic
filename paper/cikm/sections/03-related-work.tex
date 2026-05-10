@@ -1,0 +1,34 @@
+\section{Related Work}
+\label{sec:related}
+
+\subsection{Agentic and Adaptive RAG}
+Self-RAG~\cite{selfrag2024} introduced reflective retrieval tokens.
+CRAG~\cite{crag2024} added a corrective lightweight retrieval evaluator.
+Adaptive-RAG~\cite{adaptiverag2024} routes among no-retrieval,
+single-step, and multi-step retrieval based on a classifier-predicted
+query complexity. Search-R1~\cite{searchr1_2025} trains the retrieving
+agent to interleave search and reasoning via reinforcement learning.
+RAG-Critic~\cite{ragcritic2025} adds an agentic critic loop with
+iterative refinement. None of these systems condition routing on
+typed-graph distance, and none expose a typed graph-lookup tool;
+retrieval is treated as flat text top-$k$.
+
+\subsection{GraphRAG Family}
+Microsoft GraphRAG~\cite{graphrag2024} builds entity--relation graphs
+and answers via community summaries; LightRAG~\cite{lightrag2024} and
+HippoRAG~2~\cite{hipporag2_2025} reduce graph-construction cost.
+Han et~al.~\cite{ragvsgraphrag2025} compare RAG and GraphRAG empirically;
+GraphRAG-Bench~\cite{graphragbench2026} provides a benchmark for
+\textit{when} graph structure helps. Graph-R1~\cite{graphr1_2025} trains
+a graph-aware retrieval policy with RL. These systems exploit graph
+structure but are non-agentic: they do not loop a critic over retrieved
+evidence, and they do not condition pipeline choice on hop distance.
+
+\subsection{RAG for Requirements Traceability}
+LiSSA~\cite{lissa2025} applies single-shot RAG to source--requirement
+traceability. TraceLLM~\cite{tracellm2026} and TVR~\cite{niu_tvr2025}
+extend LLM-based traceability with verification feedback. Graph-RAG
+for compliance~\cite{graphragcompliance2024} uses domain knowledge
+graphs without an agentic loop. To our knowledge, this is the first
+work to combine an agentic critic loop, a typed-edge graph tool, and
+hop-stratified evaluation in the requirements-traceability setting.

@@ -1,0 +1,85 @@
+\documentclass[sigconf,natbib=true,anonymous=true]{acmart}
+
+%% Submission-time hygiene -------------------------------------------------
+\settopmatter{printacmref=false}     % suppress ACM Reference Format box
+\setcopyright{none}                  % no copyright block in anonymous submission
+\renewcommand\footnotetextcopyrightpermission[1]{}
+\acmConference[CIKM '26]{Proceedings of the 35th ACM International
+  Conference on Information and Knowledge Management}{November 7--11,
+  2026}{Rome, Italy}
+\acmYear{2026}
+\acmISBN{}
+\acmDOI{}
+\acmPrice{}
+
+%% Optional packages -------------------------------------------------------
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{tikz}
+\usetikzlibrary{positioning, arrows.meta, shapes.geometric,
+                fit, backgrounds, calc}
+
+\begin{document}
+
+\title{Hop-Adaptive, Link-Type-Aware Agentic Retrieval for
+  Requirement Traceability}
+
+%% Double-blind anonymized author block.
+%% acmart's `anonymous=true' suppresses these fields in the rendered PDF;
+%% they are kept here as a defensive backup.
+\author{Anonymous Author(s)}
+\affiliation{%
+  \institution{Anonymous Institution}
+  \country{}
+}
+
+\input{sections/01-abstract}
+
+%% --- ACM CCS concepts --------------------------------------------------
+%% [TODO: regenerate via the ACM CCS tool at
+%%   https://dl.acm.org/ccs and replace the IDs below.]
+\begin{CCSXML}
+<ccs2012>
+  <concept>
+    <concept_id>10002951.10003317.10003331</concept_id>
+    <concept_desc>Information systems~Retrieval models and ranking</concept_desc>
+    <concept_significance>500</concept_significance>
+  </concept>
+  <concept>
+    <concept_id>10010147.10010178.10010179.10010181</concept_id>
+    <concept_desc>Computing methodologies~Question answering</concept_desc>
+    <concept_significance>300</concept_significance>
+  </concept>
+  <concept>
+    <concept_id>10011007.10011074.10011076</concept_id>
+    <concept_desc>Software and its engineering~Requirements analysis</concept_desc>
+    <concept_significance>300</concept_significance>
+  </concept>
+</ccs2012>
+\end{CCSXML}
+
+\ccsdesc[500]{Information systems~Retrieval models and ranking}
+\ccsdesc[300]{Computing methodologies~Question answering}
+\ccsdesc[300]{Software and its engineering~Requirements analysis}
+
+\keywords{agentic RAG, GraphRAG, requirements traceability,
+  hop-adaptive routing, DO-178C, retrieval-augmented generation}
+
+\maketitle
+
+\input{sections/02-introduction}
+\input{sections/03-related-work}
+\input{sections/04-method}
+\input{sections/05-experiments}
+\input{sections/06-results}
+\input{sections/07-discussion}
+\input{sections/08-conclusion}
+
+%% --- GenAI disclosure (does NOT count toward 4-page limit) -------------
+\input{sections/99-genai-disclosure}
+
+%% --- References (do NOT count toward 4-page limit) ---------------------
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{refs}
+
+\end{document}

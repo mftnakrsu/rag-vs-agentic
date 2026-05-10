@@ -28,3 +28,20 @@ results/cross-*.jsonl
 .DS_Store
 .idea/
 .vscode/
+
+# Paper build artefacts (track .tex / .bib sources, not byproducts)
+paper/cikm-skeleton.zip
+paper/cikm/main.pdf
+paper/cikm/CIKM-2026-anonymous.pdf
+paper/cikm/CIKM-2026-anonymous.zip
+paper/cikm/*.aux
+paper/cikm/*.bbl
+paper/cikm/*.blg
+paper/cikm/*.log
+paper/cikm/*.out
+paper/cikm/*.toc
+paper/cikm/*.synctex.gz
+paper/cikm/*.fls
+paper/cikm/*.fdb_latexmk
+paper/cikm/sections/*.aux
+paper/cikm/figures/architecture.pdf

@@ -1,0 +1,79 @@
+\section{Results}
+\label{sec:results}
+
+\begin{table*}[t]
+  \centering
+  \caption{Hop-stratified main results. Cells are mean accuracy with
+    95\% BCa bootstrap CIs; $\dagger$ marks Holm-significant
+    ($p<0.05$) improvement over the best non-adaptive baseline.
+    [PLACEHOLDER: fill from \texttt{results/results.csv}.]}
+  \label{tab:main}
+  \small
+  \begin{tabular}{lcccccc}
+    \toprule
+    System & 1-hop & 2-hop & 3+-hop & Overall & Cost (USD/q) & Latency (s) \\
+    \midrule
+    Vanilla                  & --- & --- & --- & --- & --- & --- \\
+    Agentic                  & --- & --- & --- & --- & --- & --- \\
+    GraphRAG                 & --- & --- & --- & --- & --- & --- \\
+    Agentic+Graph            & --- & --- & --- & --- & --- & --- \\
+    \textbf{Adaptive (ours)} & --- & --- & --- & --- & --- & --- \\
+    \bottomrule
+  \end{tabular}
+\end{table*}
+
+\begin{figure}[t]
+  \centering
+  \IfFileExists{figures/pareto.pdf}
+    {\includegraphics[width=\columnwidth]{figures/pareto.pdf}}%
+    {\fbox{\parbox[c][3.4cm][c]{0.92\columnwidth}{\centering\itshape
+       [PLACEHOLDER: cost--quality Pareto plot] \\[2pt]
+       $x$: cost/query (USD), $y$: composite quality \\[2pt]
+       systems $\times$ \{low, med, high\} reasoning effort}}}%
+  \caption{Cost--quality Pareto frontier across systems and
+    reasoning-effort settings.}
+  \label{fig:pareto}
+\end{figure}
+
+\begin{figure}[t]
+  \centering
+  \IfFileExists{figures/hop-curves.pdf}
+    {\includegraphics[width=\columnwidth]{figures/hop-curves.pdf}}%
+    {\fbox{\parbox[c][3.4cm][c]{0.92\columnwidth}{\centering\itshape
+       [PLACEHOLDER: hop-stratified accuracy curves] \\[2pt]
+       $x$: hop count (1, 2, 3+), $y$: answer correctness \\[2pt]
+       five systems, shaded 95\% BCa CIs}}}%
+  \caption{Hop-stratified accuracy. Each line is one system; shaded
+    bands are 95\% BCa bootstrap confidence intervals.}
+  \label{fig:hop}
+\end{figure}
+
+\subsection{Main Findings}
+\label{sec:main-findings}
+[PLACEHOLDER: headline. Adaptive routing achieves $X\%$ overall
+correctness, matching the best fixed pipeline per stratum at $Y\%$ of
+its cost. The improvement is significant under Holm correction
+($p<0.05$, $d=Z$).]
+
+\subsection{When Does Each Pipeline Win?}
+[PLACEHOLDER: per-stratum analysis.] At 1-hop, vanilla retrieval is
+competitive---the answer often lies in a single chunk. At 2-hop,
+GraphRAG dominates because typed-edge walks recover cross-module links
+that vector retrieval misses. At 3+-hop, agentic+graph dominates
+because composing multi-edge chains requires iterative refinement. The
+adaptive router approaches the best-per-stratum upper bound while
+avoiding the agentic loop on easy queries.
+
+\subsection{Judge Calibration}
+\label{sec:judges}
+[PLACEHOLDER: pairwise Cohen's $\kappa$ between GPT-5.4 and
+Claude-Sonnet~4 on the 50-query human-gold slice; position-swap delta;
+correlation $r$ with human-gold faithfulness.]
+
+\subsection{MuSiQue Cross-Evaluation}
+\label{sec:musique}
+[PLACEHOLDER: ranking on MuSiQue.] System ranking on 200 MuSiQue
+multi-hop questions is consistent with the in-domain ranking,
+supporting external validity of the method. We do not claim
+state-of-the-art on MuSiQue; the cross-evaluation is a robustness
+check, not a benchmark submission.

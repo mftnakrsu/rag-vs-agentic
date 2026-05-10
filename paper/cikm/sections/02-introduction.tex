@@ -1,0 +1,54 @@
+\section{Introduction}
+\label{sec:intro}
+
+Software requirements in safety-critical domains such as aerospace are
+authored as typed link graphs: each requirement \textit{derives\_from}
+parent requirements, \textit{satisfies} system-level intent, and
+\textit{traces\_to} verification artifacts. DO-178C compliance demands
+end-to-end traceability across these typed edges, and certification
+authorities increasingly require auditable chains spanning two or more
+hops across modules~\cite{do178c,arp4754a,easa2025npa,faa2024airoadmap}.
+A practitioner asking ``how does the air-data system feed
+angle-of-attack to the flight-control computer?'' needs an answer that
+walks \textit{interface} edges across modules, not a paragraph
+reranked by surface-level cosine similarity.
+
+Existing retrieval-augmented generation (RAG) systems address parts of
+this problem but never the whole. Vanilla dense retrieval misses
+cross-module links that share little surface vocabulary.
+Adaptive-RAG~\cite{adaptiverag2024} routes queries by lexical complexity
+but is hop-blind and graph-blind. Microsoft GraphRAG~\cite{graphrag2024}
+and follow-ups such as LightRAG~\cite{lightrag2024},
+HippoRAG~2~\cite{hipporag2_2025}, and Graph-R1~\cite{graphr1_2025}
+exploit graph structure but are non-agentic and untyped.
+LiSSA~\cite{lissa2025} applies single-shot RAG to traceability without
+typed-graph reasoning. RAG-Critic~\cite{ragcritic2025} introduces an
+agentic critic loop but is evaluated on Wikipedia rather than typed
+regulatory graphs.
+
+This paper introduces a hop-adaptive, link-type-aware agentic
+retrieval architecture for requirement traceability. Our contributions
+are:
+\begin{itemize}
+  \item A \emph{hop-adaptive router} that selects among four retrieval
+    pipelines---\textit{vanilla}, \textit{agentic}, \textit{graph-walk},
+    \textit{agentic+graph}---conditioned on a query-derived typed-edge
+    distance estimator.
+  \item A \emph{link-type-aware graph-lookup tool} that exploits
+    DO-178C-style edge semantics
+    (\textit{derives\_from}~$>$~\textit{satisfies}~$>$~\textit{references}
+    $>$~\textit{traces\_to}) for retrieval reranking inside an agentic
+    ReAct loop.
+  \item A \emph{hop-stratified evaluation protocol} with two-judge bias
+    controls, applied to a 1{,}132-row synthetic DO-178C corpus and
+    cross-evaluated on 200 multi-hop questions sampled from
+    MuSiQue~\cite{musique2022}.
+\end{itemize}
+
+[PLACEHOLDER: headline empirical claim --- e.g., ``hop-adaptive routing
+matches the best fixed pipeline per stratum at lower aggregate cost
+($p<0.05$, Holm corrected, Cohen's $d=Z$).''] Section~\ref{sec:related}
+surveys related work; Section~\ref{sec:method} describes the method;
+Section~\ref{sec:experiments} details the evaluation;
+Section~\ref{sec:results} reports results; and
+Section~\ref{sec:discussion} discusses limitations.

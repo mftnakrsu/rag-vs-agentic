@@ -1,0 +1,101 @@
+%% architecture-tikz.tex --- the tikzpicture body for Figure 1.
+%% Single source of truth. Consumed in two ways:
+%%   (a) figures/architecture.tex (standalone) for separate compile.
+%%   (b) sections/04-method.tex via \input{figures/architecture-tikz}
+%%       so the figure renders inline when main.tex is compiled.
+%%
+%% Required preamble in the host document:
+%%   \usepackage{tikz}
+%%   \usetikzlibrary{positioning, arrows.meta, shapes.geometric,
+%%                   fit, backgrounds, calc}
+
+\begin{tikzpicture}[
+  node distance=4mm,
+  >={Stealth[length=2mm]},
+  every node/.style={font=\sffamily\scriptsize}
+]
+\tikzset{
+  box/.style    ={draw=black, line width=0.5pt, rounded corners=2pt,
+                  align=center, inner sep=2pt},
+  light/.style  ={box, fill=black!8},
+  mid/.style    ={box, fill=black!18},
+  pipe/.style   ={light, text width=1.55cm, minimum width=1.7cm,
+                  minimum height=7.5mm},
+  lp/.style     ={light, text width=1.45cm, minimum width=1.55cm,
+                  minimum height=6.5mm},
+  store/.style  ={cylinder, shape border rotate=90, aspect=0.25,
+                  draw=black, line width=0.5pt, fill=black!18,
+                  align=center, inner sep=2pt,
+                  text width=1.7cm, minimum height=7mm},
+  arr/.style    ={->, line width=0.4pt},
+  darr/.style   ={arr, dashed},
+  lab/.style    ={font=\sffamily\tiny, fill=white, inner sep=1pt},
+  group/.style  ={draw=black, line width=0.5pt, rounded corners=2pt,
+                  dotted, inner sep=4pt}
+}
+
+%% ----- Top: Query, Router -----
+\node[light, text width=1.7cm] (q) at (0,0) {Query $q$};
+\node[mid, below=4mm of q, text width=4.4cm] (router)
+  {Hop-Adaptive Router\\{\tiny predicts $\widehat{H}(q) \in \{1, 2, 3{+}\}$}};
+\draw[arr] (q) -- (router);
+
+%% ----- Pipelines (centered at x=0) -----
+\node[pipe, below=5mm of router, xshift=-2.775cm] (p1)
+  {Vanilla\\{\tiny embed $\to$ top-$k$ $\to$ LLM}};
+\node[pipe, right=1.5mm of p1] (p2)
+  {Agentic\\{\tiny LangGraph loop}};
+\node[pipe, right=1.5mm of p2] (p3)
+  {GraphRAG\\{\tiny seeds + 2-hop walk}};
+\node[pipe, right=1.5mm of p3] (p4)
+  {Agentic+Graph\\{\tiny LangGraph + graph}};
+\foreach \i in {1,2,3,4}
+  \draw[arr] (router.south) -- (p\i.north);
+
+%% ----- Agentic Loop subgraph (centered below pipelines) -----
+\node[lp] (critic) at (-1.7,-4.6) {Router/Critic};
+\node[lp, right=1.5mm of critic] (retr)  {Retriever};
+\node[lp, right=1.5mm of retr]   (tools) {Tools\\{\tiny search, graph}};
+\node[lp, below=4mm of retr]     (synth) {Synthesizer};
+
+\draw[arr] (critic) -- (retr);
+\draw[arr] (retr)   -- (tools);
+\draw[arr] (tools.north) to[out=90,in=90,looseness=0.5]
+  node[lab, midway, yshift=1mm] {iter $\le 3$} (critic.north);
+\draw[arr] (critic.south) |- (synth.west);
+
+\begin{scope}[on background layer]
+  \node[group, fit=(critic)(retr)(tools)(synth)] (loop) {};
+\end{scope}
+\node[lab, anchor=north west]
+  at ([xshift=2pt,yshift=-1pt]loop.north west) {Agentic Loop};
+
+%% ----- P2, P4 -> Loop (dashed "uses"; right-angle elbows) -----
+\draw[darr] (p2.south) -- ++(0,-2mm) -| (loop.north west)
+  node[lab, pos=0.4, above] {uses};
+\draw[darr] (p4.south) -- ++(0,-2mm) -| (loop.north east)
+  node[lab, pos=0.4, above] {uses};
+
+%% ----- Output -----
+\node[light, below=6mm of synth, text width=4.5cm] (out)
+  {Answer $a(q)$ + cited IDs $C(q)$};
+\draw[arr] (synth.south) -- (out.north);
+
+%% ----- P1, P3 -> Output (bypass loop on the sides) -----
+\draw[arr] (p1.south) -- ++(0,-2mm) -|
+  ([xshift=-4mm]loop.south west) |- (out.west);
+\draw[arr] (p3.south) -- ++(0,-2mm) -|
+  ([xshift=4mm]loop.south east)  |- (out.east);
+
+%% ----- Data stores at the bottom; consolidated arrows -----
+\node[store, below=10mm of out, xshift=-22mm] (s1)
+  {Vector Store\\{\tiny (Chroma)}};
+\node[store, below=10mm of out, xshift=22mm]  (s2)
+  {Graph Store\\{\tiny (Neo4j Aura)}};
+
+\draw[darr] (s1.north) -- ++(0,4mm)
+  node[lab, anchor=south] {$\to$ P1--P4};
+\draw[darr] (s2.north) -- ++(0,4mm)
+  node[lab, anchor=south] {$\to$ P3, P4};
+
+\end{tikzpicture}
