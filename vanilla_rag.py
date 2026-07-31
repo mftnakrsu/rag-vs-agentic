@@ -7,6 +7,7 @@ Returns a dict the comparison harness can serialize.
 from __future__ import annotations
 
 import os
+import re
 import sys
 import time
 from typing import Optional
@@ -26,6 +27,15 @@ Rules:
  3. Prefer concise, technical wording. Reproduce numeric thresholds (Hz, kt, ft, ms, °) verbatim.
  4. When requirements interact (e.g., FCC <-> ADS), explain the relationship.
 """
+
+
+# Same pattern as agentic_rag._ID_PATTERN (kept local: agentic_rag pulls in
+# langgraph, too heavy for this module's import chain).
+_ID_RE = re.compile(r"\b([A-Z]{2,5}-(?:[A-Z]?\d+))\b")
+
+
+def _parse_cited(answer: str) -> list[str]:
+    return list(dict.fromkeys(_ID_RE.findall(answer or "")))
 
 
 def _coll_for(embedder_name: str) -> tuple[str, int]:
@@ -88,7 +98,8 @@ def vanilla_rag(
         "query": query,
         "answer": answer,
         "sources": hits,
-        "cited_ids": [h["id"] for h in hits],
+        # answer-parsed citations (ALCE-style); the context set lives in `sources`
+        "cited_ids": _parse_cited(answer),
         "latency_ms": int((time.time() - t0) * 1000),
         "tokens": usage,
     }
