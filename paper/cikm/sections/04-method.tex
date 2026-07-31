@@ -1,83 +1,70 @@
 \section{Method}
 \label{sec:method}
 
-\begin{figure}[t]
+\begin{figure}[t!]
   \centering
-  \IfFileExists{figures/architecture.pdf}
-    {\includegraphics[width=\columnwidth]{figures/architecture.pdf}}%
-    {\input{figures/architecture-tikz}}%
-  \caption{Architecture. A hop-adaptive router selects among four
-    retrieval pipelines based on a query-conditioned hop-distance
-    estimator. Pipelines~2 and~4 share a LangGraph
-    router--retriever--critic--synthesizer skeleton; the typed
-    graph-lookup tool is exposed in pipelines~3 and~4. Tools
-    abbreviated: \texttt{search} = \texttt{search\_documents},
-    \texttt{graph} = \texttt{graph\_lookup}.}
-  \label{fig:arch}
+  \resizebox{0.74\columnwidth}{!}{\input{figures/architecture-tikz}}%
+  \caption{Five-pipeline architecture with shared embedder, vector store,
+    and typed-edge graph. Vanilla and GraphRAG bypass the agentic loop;
+    Agentic and Agentic+Graph route through router/critic--retriever--tools
+    (iter${\leq}3$) before synthesis. The adaptive pipeline (V1 rule-based
+    or V2 learned) selects one of the four base pipelines per query.}
+  \Description{Block diagram of the five-pipeline RAG architecture: a
+    query enters a hop-adaptive router that selects one of four base
+    pipelines (Vanilla, Agentic, GraphRAG, Agentic+Graph). The Agentic
+    and Agentic+Graph pipelines invoke an inner Agentic Loop comprising
+    a router/critic, retriever, tools (search and graph), and a
+    synthesizer that iterates up to three times. Outputs combine into
+    an answer with cited IDs. A shared vector store (Chroma) feeds
+    P1--P4 and a shared graph store (Neo4j Aura) feeds P3 and P4.}
+  \label{fig:architecture}
 \end{figure}
 
-\subsection{Problem Formulation}
-\label{sec:problem}
-We model the requirement corpus as a typed graph $G=(V,E,\tau)$ where
-$V$ is the set of requirements, $E\subseteq V\times V$ is the set of
-traceability links, and $\tau:E\to T$ assigns each edge a type from
-$T=\{\mathrm{derives\_from},\mathrm{satisfies},\mathrm{references},
-\mathrm{traces\_to}\}$. A traceability query $q$ has an unobserved hop
-class $H(q)\in\{1,2,3{+}\}$ that summarizes the minimum graph distance
-between the entities mentioned in $q$ and the gold answer. The system
-produces an answer $a(q)$ together with cited requirement IDs
-$C(q)\subseteq V$.
-
-\subsection{Four Retrieval Pipelines}
+\subsection{Pipelines}
 \label{sec:pipelines}
-We consider four pipelines that share an embedder, a vector store, and
-a synthesizer prompt and differ only in retrieval strategy:
-\textbf{(i)~Vanilla} performs dense top-$k$ retrieval over text chunks
-followed by one synthesis call.
-\textbf{(ii)~Agentic} runs a LangGraph
-router--retriever--critic--synthesizer loop with a
-\texttt{search\_documents} tool and an iteration cap of three.
-\textbf{(iii)~GraphRAG} retrieves vector seeds and then walks the typed
-graph for up to two hops via a Cypher query against
-Neo4j, synthesizing once at the end.
-\textbf{(iv)~Agentic+Graph} extends pipeline~(ii) with a
-\texttt{graph\_lookup} tool node alongside \texttt{search\_documents},
-allowing the critic to request typed-edge expansion when text retrieval
-fails.
+All pipelines share embedder, ChromaDB vector store, Neo4j typed-edge
+graph, Azure GPT-5.4 generator, and grounded synthesis prompt; they
+differ only in retrieval. \textbf{(i)~Vanilla}: dense top-$k$ + one
+synthesis call. \textbf{(ii)~Agentic}: LangGraph
+router-retriever-critic loop, \texttt{search\_documents} tool only, iter
+cap 3. \textbf{(iii)~GraphRAG}: vector seeds + up-to-2-hop typed-graph
+walk via Cypher, single synthesis --- a typed-edge local-walk retriever
+in the GraphRAG family, not Edge et~al.'s community-summarization
+system~\cite{graphrag2024}; we use ``GraphRAG'' as the family label. \textbf{(iv)~Agentic+Graph}: (ii) plus
+a typed-edge \texttt{graph\_lookup} tool. \textbf{(v)~Adaptive}: chooses
+among (i)--(iv) per query; we evaluate a rule-based router (V1) and a
+learned out-of-fold logistic regression (V2).
 
-\subsection{Hop-Adaptive Router}
-\label{sec:router}
-The router predicts $\widehat{H}(q)\in\{1,2,3{+}\}$ from $q$ alone and
-selects the pipeline with the best expected reward in that hop bucket
-on a held-out validation set. Features include (a)~entity count via
-named-entity recognition, (b)~explicit requirement-ID patterns
-(regex \texttt{REQ-[A-Z]+-\textbackslash d+}), (c)~question-type cues
-(e.g., \textit{trace from}, \textit{how does $X$ relate to $Y$}), and
-(d)~the embedding-space norm of $q$. We instantiate two variants:
-\textbf{V1}, a transparent rule-based router, and \textbf{V2}, a
-multinomial logistic regressor trained on 30\% of labelled queries with
-a held-out test split. Hop labels for training are obtained by walking
-$G$ from gold answer chains at evaluation-set construction time.
+\subsection{Triple-Robustness Axes}
+\label{sec:axes}
+\textbf{Embedder:} local intfloat/multilingual-e5-small (384d) vs.\ Azure
+\texttt{text-embedding-3-small} (1536d); ChromaDB collections rebuilt per
+embedder, Neo4j shared. \textbf{Corpus:} a 1{,}132-requirement
+DO-178C-style aerospace certification corpus across 32 modules,
+LLM-anonymized from proprietary source artifacts for release
+(\S\ref{sec:disclosure}); and a 200-query
+MuSiQue~\cite{musique2022} subset (67/67/66 across 2/3/4-hop, mapped to
+our 1/2/3+-hop strata, \textit{REFERENCES} edges only between consecutive
+supporting paragraphs). \textbf{Judge:} GPT-5.4 $+$ GPT-4.1 on both the
+DO-178C main matrix and MuSiQue.
 
-\subsection{Link-Type-Aware Graph Tool}
-\label{sec:graphtool}
-The graph-lookup tool has signature
-\[
-  \texttt{graph\_lookup}(\mathit{seed\_ids},\,\mathit{hops},\,
-                         \mathit{edge\_types})
-\]
-and returns chunks ranked by a hybrid score
-\[
-  s(c\mid q) \;=\;
-    \lambda_{\mathrm{text}}\,\cos(q,c)
-    \;+\; \lambda_{\mathrm{graph}}\,
-          \frac{w(\tau(e_{c}))}{\mathrm{dist}(\mathit{seed},c)},
-\]
-where $e_c$ is the edge that brought $c$ into the candidate set,
-$w:T\to\mathbb{R}_+$ assigns DO-178C-aligned semantic priorities
-($\mathrm{derives\_from}>\mathrm{satisfies}>
-\mathrm{references}>\mathrm{traces\_to}$), and $\lambda_{\mathrm{text}},
-\lambda_{\mathrm{graph}}$ are tuned on a validation split. The tool
-filters out edge types not in $T$ to avoid retrieval dilution from
-auxiliary schema relations such as \textit{ALLOCATED\_TO} or
-\textit{IMPLEMENTS}.
+\subsection{Metrics and Judging}
+\label{sec:metrics}
+We report ALCE-style citation $P/R/F_1$~\cite{alce2023} against gold
+requirement-ID sets and retrieval recall on retrieved contexts. Each
+faithfulness judgment is a strict-JSON binary verdict over the
+retrieved-context block. We report Cohen's $\kappa$, Gwet's
+AC1~\cite{gwet2008,feinstein1990}, raw agreement, and McNemar
+exact-binomial $p$; per faithfulness cell, Wilson 95\% CIs and
+Cochran--Armitage hop-trend tests; and three same-judge controls
+(test--retest, embedder swap, eleven-week re-judge) on a paired
+300-tuple subset (\S\ref{sec:c3}).
+
+\subsection{V2 Learned Router}
+\label{sec:routerdesign}
+14 features per query: 11 hand text features (ID regex, keyword flags,
+log token length) and 3 PCs of the query embedding (fit per fold).
+Multinomial logistic regression, $L_2$ ($C{=}1$), Platt-calibrated,
+under stratified 10-fold $\times$ 5-repeat CV (50 fits). The per-stratum
+routing target is the empirical mean-$F_1$ winner from the locked main
+matrix; we report out-of-fold predictions for all 296 queries.

@@ -1,34 +1,39 @@
 \section{Related Work}
 \label{sec:related}
 
-\subsection{Agentic and Adaptive RAG}
-Self-RAG~\cite{selfrag2024} introduced reflective retrieval tokens.
-CRAG~\cite{crag2024} added a corrective lightweight retrieval evaluator.
-Adaptive-RAG~\cite{adaptiverag2024} routes among no-retrieval,
-single-step, and multi-step retrieval based on a classifier-predicted
-query complexity. Search-R1~\cite{searchr1_2025} trains the retrieving
-agent to interleave search and reasoning via reinforcement learning.
-RAG-Critic~\cite{ragcritic2025} adds an agentic critic loop with
-iterative refinement. None of these systems condition routing on
-typed-graph distance, and none expose a typed graph-lookup tool;
-retrieval is treated as flat text top-$k$.
+\noindent\textbf{Agentic and Adaptive RAG.}
+Self-RAG~\cite{selfrag2024} and CRAG~\cite{crag2024} introduced reflective
+and corrective retrieval. Adaptive-RAG~\cite{adaptiverag2024} routes by
+predicted query complexity; Probing-RAG~\cite{probingrag2025} extends with
+internal-state probes; Search-R1~\cite{searchr1_2025} trains agentic
+retrieval via RL; RAG-Critic~\cite{ragcritic2025} adds an iterative critic.
+None condition routing on typed-graph hop distance or expose a typed
+graph-lookup tool.
 
-\subsection{GraphRAG Family}
-Microsoft GraphRAG~\cite{graphrag2024} builds entity--relation graphs
-and answers via community summaries; LightRAG~\cite{lightrag2024} and
-HippoRAG~2~\cite{hipporag2_2025} reduce graph-construction cost.
-Han et~al.~\cite{ragvsgraphrag2025} compare RAG and GraphRAG empirically;
-GraphRAG-Bench~\cite{graphragbench2026} provides a benchmark for
-\textit{when} graph structure helps. Graph-R1~\cite{graphr1_2025} trains
-a graph-aware retrieval policy with RL. These systems exploit graph
-structure but are non-agentic: they do not loop a critic over retrieved
-evidence, and they do not condition pipeline choice on hop distance.
+\noindent\textbf{GraphRAG and multi-hop QA.}
+Microsoft GraphRAG~\cite{graphrag2024} and follow-ups~\cite{lightrag2024,
+hipporag2_2025,graphr1_2025} construct entity-relation graphs at indexing
+time. Han et~al.~\cite{ragvsgraphrag2025} and GraphRAG-Bench~\cite{graphragbench2026}
+report that GraphRAG \emph{does not} dominate vector RAG across all query
+types --- our C2a confirms this with quantified over-citation metrics in
+safety-critical RE, and C2b localises \emph{why} (mechanism vs.~consequence)
+across corpora. MuSiQue~\cite{musique2022} and
+MultiHop-RAG~\cite{multihoprag2024} are adjacent multi-hop benchmarks; we
+use MuSiQue for cross-corpus replication of C2a and C2b.
 
-\subsection{RAG for Requirements Traceability}
-LiSSA~\cite{lissa2025} applies single-shot RAG to source--requirement
-traceability. TraceLLM~\cite{tracellm2026} and TVR~\cite{niu_tvr2025}
-extend LLM-based traceability with verification feedback. Graph-RAG
-for compliance~\cite{graphragcompliance2024} uses domain knowledge
-graphs without an agentic loop. To our knowledge, this is the first
-work to combine an agentic critic loop, a typed-edge graph tool, and
-hop-stratified evaluation in the requirements-traceability setting.
+\noindent\textbf{RAG for requirements traceability.}
+LiSSA~\cite{lissa2025}, TVR~\cite{niu_tvr2025}, and Graph-RAG for
+compliance~\cite{graphragcompliance2024} evaluate single regulated domains
+without hop stratification or dual-judge protocols.
+
+\noindent\textbf{Citation evaluation, judge bias, and the $\kappa$ paradox.}
+ALCE~\cite{alce2023} introduced citation $P/R/F_1$ for grounded generation;
+Wallat~et~al.~\cite{wallat2024} show that ALCE-style correctness is not
+faithfulness, motivating LLM judges. RAGChecker~\cite{ragchecker2024}
+provides a single-judge framework. Self-preference
+bias~\cite{selfpref_bias2024} motivates judge ensembles, and the
+Feinstein--Cicchetti $\kappa$ paradox~\cite{feinstein1990} with Gwet's
+AC1~\cite{gwet2008} establishes the prevalence correction we apply. Our C3
+extends this with same-judge self-$\kappa$ across embedders as a sharper
+fragility statistic.
+

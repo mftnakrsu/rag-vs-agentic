@@ -1,24 +1,48 @@
-\section{Discussion and Limitations}
+\section{Discussion}
 \label{sec:discussion}
 
-\subsection{Threats to Validity}
-\textit{Construct validity.} The corpus is synthetic. We mitigate this
-by following the Synthline methodology~\cite{synthline2025} for
-synthetic requirements engineering, by enforcing DO-178C-style typed
-edges, and by cross-evaluating on MuSiQue~\cite{musique2022}.
-\textit{Internal validity.} LLM-as-judge is known to exhibit
-self-preference bias~\cite{selfpref_bias2024}. We mitigate via a
-two-judge ensemble, position-swap robustness, and a 50-query
-human-gold calibration slice.
-\textit{External validity.} Our domain is single (aerospace
-requirements). The MuSiQue cross-evaluation is a partial mitigation;
-full external validity awaits a real-DOORS triangulation, which is
-left for future work.
+\paragraph{Why does over-citation's consequence depend on corpus?}
+GraphRAG's traversal expands candidates beyond what dense retrieval
+surfaces; the synthesizer then cites every ID it touches. Whether that
+hurts faithfulness depends on what the edges connect:
+\textit{derives\_from} and \textit{references} expansion on DO-178C
+drags in cross-module artifacts whose claims contradict the question,
+while Wikipedia expansion stays topically adjacent and typically
+satisfies the judge's support criterion. We predict the same
+coupling in any regulated-domain RAG exposing typed-edge expansion over
+an adversarial gold structure.
 
-\subsection{Limitations}
-The synthetic corpus is not certified DO-178C data and does not
-substitute for evaluation on industry artifacts. Hop labels for router
-training are LLM-derived and may inherit LLM biases on entity-recall
-boundaries. Edge-type weights $w(\tau)$ are set per DO-178C semantic
-priority rather than learned end-to-end; a learned variant is left for
-future work.
+\paragraph{Implications for LLM-judge practice.}
+Same-judge self-$\kappa{=}0.137$ across embedders --- against a same-day
+test--retest floor of $0.76$, and with $\kappa{=}0.14$ drift on frozen
+inputs over eleven weeks --- means: comparing faithfulness across
+retrieval modules with different embedders, using a single judge,
+reports embedder- and date-conditional verdicts, not invariant
+faithfulness. Multi-judge ensembles mitigate only partially: inter-judge
+$\kappa$ itself halves under embedder swap. Triple-robustness, or at
+minimum embedder-controlled paired-tuple judging, is the minimum
+defensible bar for LLM-judge faithfulness.
+
+\paragraph{Threats to validity.}
+\textit{Construct.} ALCE-style $F_1$ does not measure rationale quality;
+we pair it with multi-judge faithfulness, while acknowledging LLM-judge
+bias~\cite{selfpref_bias2024,wallat2024}. C3 is the explicit reckoning;
+both judges share a vendor, and cross-vendor replication is future work.
+\textit{External.} The DO-178C corpus is a single proprietary aerospace
+certification dataset that has been LLM-anonymized for release because
+the raw source artifacts are subject to IP and export-control
+restrictions (\S\ref{sec:disclosure}); absolute $F_1$ levels
+characterize this single regulated-domain setting and may not
+transfer. The MuSiQue
+cross-corpus replication (C2a, C2b) is the load-bearing
+external-validity check for the universality claim; cross-corpus
+replication of C1 is left for the journal extension. Our graph pipeline
+is one typed-edge walk implementation; other GraphRAG-family systems
+may over-cite differently. The 296 queries are LLM-generated per
+stratum, so C4's hop-decodability may partly reflect the generator's
+per-stratum phrasing.
+\textit{Statistical.} Per-stratum $n\!\in\![95,111]$ is at the lower
+edge of BCa stability under heavy skew; a percentile fallback shows no
+qualitative reversal. \textit{Reranker / router engineering.} No cross-encoder
+reranker is included (orthogonal axis, future work); C4 is a diagnostic
+instrument, not a production routing system.
