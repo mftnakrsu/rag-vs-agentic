@@ -1,5 +1,5 @@
 PAPER     := main
-TEX_FILES := $(wildcard sections/*.tex) $(PAPER).tex
+TEX_FILES := $(wildcard sections/*.tex) $(wildcard tables/*.tex) $(wildcard figures/*.tex) $(PAPER).tex
 BIB_FILE  := refs.bib
 SUBMIT    := CIKM-2026-anonymous
 

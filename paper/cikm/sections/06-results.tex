@@ -59,9 +59,9 @@ dominance.
 (Table~\ref{tab:pathology}, top).
 Across embedder \emph{and} corpus swaps GraphRAG cites a mean of 11--15
 IDs per answer at citation precision 0.12--0.23 with retrieval recall
-in the 0.68--0.87 range. This is not a corpus-specific artifact: the same
-mechanism manifests on Wikipedia paragraph chains with a different gold
-structure.
+in the 0.68--0.87 range. Against the context cap of 15, a mean of
+14.9--15.0 cited IDs on DO-178C means the synthesizer cites essentially
+every context supplied.
 
 \noindent\textbf{(C2b) The faithfulness consequence is corpus-conditional.}
 The bottom block reveals the consequence split. On DO-178C, GraphRAG
@@ -84,8 +84,11 @@ Table~\ref{tab:judges} reports inter-judge agreement on the paired
 300-tuple subset and three same-judge controls. Inter-judge $\kappa$
 between GPT-5.4 and GPT-4.1 halves under embedder swap on identical
 tuples (0.30 $\to$ 0.17 overall); McNemar rejects symmetric disagreement
-(exact $p{<}0.001$; GPT-4.1 systematically more lenient). The
-headline is the joint read of the same-judge block: same-input same-day
+(exact $p{<}0.001$; GPT-4.1 systematically more lenient). On MuSiQue
+the same pair agrees at chance level ($\kappa{=}0.02$, raw agreement
+0.48; GPT-4.1 judges 88\% faithful vs.\ GPT-5.4's 47\%): C2b's
+cross-corpus statements are per judge, each independently showing no
+collapse. The headline is the joint read of the same-judge block: same-input same-day
 test--retest gives $\kappa{=}0.76$ (12\% of verdicts flip on pure
 resampling), while re-judging the same tuples after an embedder swap
 gives $\kappa{=}0.14$ (41\% flip). The swap changes retrieved contexts

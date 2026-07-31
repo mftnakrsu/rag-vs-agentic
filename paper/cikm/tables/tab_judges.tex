@@ -3,12 +3,15 @@
   \caption{Judge fragility on the same 300 paired tuples. Top: inter-judge agreement halves under embedder swap (v2 local $\to$ v3 Azure). Bottom: same-judge controls --- test--retest (noise floor), embedder swap (41\% flip; GPT-4.1 more stable), and an eleven-week re-judge of frozen inputs (temporal drift).}
   \label{tab:judges}
   \small
+  \setlength{\tabcolsep}{4pt}
+  \resizebox{\columnwidth}{!}{%
   \begin{tabular}{l rrrr}
     \toprule
     \textbf{Inter-judge $\kappa$} & 1-hop & 2-hop & 3+-hop & overall \\
     \midrule
     v2 main & 0.28 & 0.22 & 0.04 & 0.30 \\
     v3 main (pinned) & 0.27 & 0.07 & 0.07 & 0.17 \\
+    MuSiQue (600 rows) & 0.00 & 0.01 & 0.07 & 0.02 \\
     \midrule
     \textbf{Gwet's AC1} & 1-hop & 2-hop & 3+-hop & overall \\
     \midrule
@@ -17,10 +20,11 @@
     \midrule
     \multicolumn{5}{l}{\textbf{Same-judge controls (paired 300 tuples)}} \\
     \midrule
-    GPT-5.4 test--retest (same input, same day) & \multicolumn{4}{r}{$\kappa = 0.764$, raw agreement 0.88} \\
-    GPT-5.4 across embedders (v2 vs v3) & \multicolumn{4}{r}{$\kappa = 0.137$, raw agreement 0.59} \\
-    GPT-4.1 across embedders (v2 vs v3) & \multicolumn{4}{r}{$\kappa = 0.480$, raw agreement 0.74} \\
-    GPT-5.4 same input, 11 weeks apart & \multicolumn{4}{r}{$\kappa = 0.138$, raw agreement 0.56} \\
+    GPT-5.4 test--retest (same day) & \multicolumn{4}{r}{$\kappa = 0.764$, raw agr.\ 0.88} \\
+    GPT-5.4 across embedders (v2 vs v3) & \multicolumn{4}{r}{$\kappa = 0.137$, raw agr.\ 0.59} \\
+    GPT-4.1 across embedders (v2 vs v3) & \multicolumn{4}{r}{$\kappa = 0.480$, raw agr.\ 0.74} \\
+    GPT-5.4 same input, 11 wk apart & \multicolumn{4}{r}{$\kappa = 0.138$, raw agr.\ 0.56} \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}%
+  }
 \end{table}

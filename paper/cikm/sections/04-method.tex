@@ -24,11 +24,11 @@
 \label{sec:pipelines}
 All pipelines share embedder, ChromaDB vector store, Neo4j typed-edge
 graph, Azure GPT-5.4 generator, and grounded synthesis prompt; they
-differ only in retrieval. \textbf{(i)~Vanilla}: dense top-$k$ + one
+differ only in retrieval. \textbf{(i)~Vanilla}: dense top-$k$ ($k{=}10$) + one
 synthesis call. \textbf{(ii)~Agentic}: LangGraph
 router-retriever-critic loop, \texttt{search\_documents} tool only, iter
-cap 3. \textbf{(iii)~GraphRAG}: vector seeds + up-to-2-hop typed-graph
-walk via Cypher, single synthesis --- a typed-edge local-walk retriever
+cap 3. \textbf{(iii)~GraphRAG}: vector seeds (8) + up-to-2-hop typed-graph
+walk via Cypher (walk cap 30, context cap 15), single synthesis --- a typed-edge local-walk retriever
 in the GraphRAG family, not Edge et~al.'s community-summarization
 system~\cite{graphrag2024}; we use ``GraphRAG'' as the family label. \textbf{(iv)~Agentic+Graph}: (ii) plus
 a typed-edge \texttt{graph\_lookup} tool. \textbf{(v)~Adaptive}: chooses
@@ -66,5 +66,6 @@ Cochran--Armitage hop-trend tests; and three same-judge controls
 log token length) and 3 PCs of the query embedding (fit per fold).
 Multinomial logistic regression, $L_2$ ($C{=}1$), Platt-calibrated,
 under stratified 10-fold $\times$ 5-repeat CV (50 fits). The per-stratum
-routing target is the empirical mean-$F_1$ winner from the locked main
-matrix; we report out-of-fold predictions for all 296 queries.
+routing target is the empirical mean-$F_1$ winner, derived once from
+the full locked matrix (not re-fit per fold); only hop prediction is
+out-of-fold, reported for all 296 queries.
