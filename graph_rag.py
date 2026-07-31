@@ -19,6 +19,7 @@ import time
 
 from dotenv import load_dotenv
 
+from agentic_rag import _ID_PATTERN
 from embedders import get_embedder
 from graph_store import TRACEABILITY_LINK_TYPES, get_driver, walk_2hop
 from llm_compat import GPT5Client
@@ -101,7 +102,8 @@ def graph_rag(
         "query": query,
         "answer": answer,
         "sources": context_chunks,
-        "cited_ids": [c["id"] for c in context_chunks],
+        # answer-parsed citations (ALCE-style); the context set lives in `sources`
+        "cited_ids": [i for i in dict.fromkeys(_ID_PATTERN.findall(answer))],
         "latency_ms": int((time.time() - t0) * 1000),
         "tokens": usage,
         "n_seeds": len(seeds),
