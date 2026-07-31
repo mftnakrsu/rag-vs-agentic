@@ -1,54 +1,43 @@
 \section{Introduction}
 \label{sec:intro}
 
-Software requirements in safety-critical domains such as aerospace are
-authored as typed link graphs: each requirement \textit{derives\_from}
-parent requirements, \textit{satisfies} system-level intent, and
-\textit{traces\_to} verification artifacts. DO-178C compliance demands
-end-to-end traceability across these typed edges, and certification
-authorities increasingly require auditable chains spanning two or more
-hops across modules~\cite{do178c,arp4754a,easa2025npa,faa2024airoadmap}.
-A practitioner asking ``how does the air-data system feed
-angle-of-attack to the flight-control computer?'' needs an answer that
-walks \textit{interface} edges across modules, not a paragraph
-reranked by surface-level cosine similarity.
+DO-178C-style aerospace requirements are authored as typed link graphs:
+each requirement \textit{derives\_from} parents, \textit{satisfies}
+system-level intent, and \textit{traces\_to} verification artifacts.
+Certification authorities increasingly require auditable chains spanning
+two or more hops~\cite{do178c,arp4754a,easa2025npa,faa2024airoadmap}.
+RAG architectures for this task have produced contradictory verdicts:
+Microsoft GraphRAG~\cite{graphrag2024} exploits structure but
+under-performs vector RAG on detailed queries~\cite{ragvsgraphrag2025,
+graphragbench2026}; Adaptive-RAG~\cite{adaptiverag2024} routes by
+complexity yet is hop-blind; LiSSA~\cite{lissa2025} and
+TVR~\cite{niu_tvr2025} omit typed-graph reasoning. The literature
+describes \emph{what} sometimes works in \emph{which} setting; what is
+missing is a mechanism-level account of \emph{why} the verdicts shift.
 
-Existing retrieval-augmented generation (RAG) systems address parts of
-this problem but never the whole. Vanilla dense retrieval misses
-cross-module links that share little surface vocabulary.
-Adaptive-RAG~\cite{adaptiverag2024} routes queries by lexical complexity
-but is hop-blind and graph-blind. Microsoft GraphRAG~\cite{graphrag2024}
-and follow-ups such as LightRAG~\cite{lightrag2024},
-HippoRAG~2~\cite{hipporag2_2025}, and Graph-R1~\cite{graphr1_2025}
-exploit graph structure but are non-agentic and untyped.
-LiSSA~\cite{lissa2025} applies single-shot RAG to traceability without
-typed-graph reasoning. RAG-Critic~\cite{ragcritic2025} introduces an
-agentic critic loop but is evaluated on Wikipedia rather than typed
-regulatory graphs.
+We address this with a \textbf{triple-robustness} analysis. Holding a
+five-pipeline architecture matrix fixed (vanilla, agentic, agentic+graph,
+GraphRAG, learned adaptive), we vary three orthogonal axes: the retrieval
+embedder (e5-small 384d $\to$ Azure 3-small 1536d), the corpus (DO-178C
+$\to$ Wikipedia paragraph chains via MuSiQue mapped to 1/2/3+-hop
+strata), and the faithfulness judge (paired GPT-5.4 $+$ GPT-4.1 on both
+corpora). The design produces $2{\times}4{,}440$ main-matrix runs (one
+full matrix per embedder), 600 cross-corpus runs, and 2{,}400
+faithfulness judgments.
 
-This paper introduces a hop-adaptive, link-type-aware agentic
-retrieval architecture for requirement traceability. Our contributions
-are:
-\begin{itemize}
-  \item A \emph{hop-adaptive router} that selects among four retrieval
-    pipelines---\textit{vanilla}, \textit{agentic}, \textit{graph-walk},
-    \textit{agentic+graph}---conditioned on a query-derived typed-edge
-    distance estimator.
-  \item A \emph{link-type-aware graph-lookup tool} that exploits
-    DO-178C-style edge semantics
-    (\textit{derives\_from}~$>$~\textit{satisfies}~$>$~\textit{references}
-    $>$~\textit{traces\_to}) for retrieval reranking inside an agentic
-    ReAct loop.
-  \item A \emph{hop-stratified evaluation protocol} with two-judge bias
-    controls, applied to a 1{,}132-row synthetic DO-178C corpus and
-    cross-evaluated on 200 multi-hop questions sampled from
-    MuSiQue~\cite{musique2022}.
-\end{itemize}
+We make four contributions.
+\textbf{(C2a)} Over-citation is \emph{universal across our settings}:
+GraphRAG cites 11--15 IDs at citation precision 0.12--0.23 with retrieval
+recall 0.68--0.87 across all three settings (Table~\ref{tab:pathology}).
+\textbf{(C2b)} Its faithfulness consequence is \emph{corpus-conditional}:
+DO-178C declines across hops (74\%$\to$40\% local); MuSiQue shows no
+collapse under either judge.
+\textbf{(C1)} Stratum-conditional winners are
+\emph{corpus-conditional but embedder-robust} (Table~\ref{tab:dominance}):
+vanilla wins 2-hop on DO-178C; GraphRAG wins 2-hop on MuSiQue.
+\textbf{(C3)} \emph{Single-judge faithfulness is embedder-fragile}: GPT-5.4
+self-$\kappa$ across embedders is just $0.137$ on the paired 300-tuple
+subset (Table~\ref{tab:judges}).
+\textbf{(C4, supporting)} a logistic-regression router on dense embeddings
+alone reaches macro-$F_1$ $0.86$ on hop classification.
 
-[PLACEHOLDER: headline empirical claim --- e.g., ``hop-adaptive routing
-matches the best fixed pipeline per stratum at lower aggregate cost
-($p<0.05$, Holm corrected, Cohen's $d=Z$).''] Section~\ref{sec:related}
-surveys related work; Section~\ref{sec:method} describes the method;
-Section~\ref{sec:experiments} details the evaluation;
-Section~\ref{sec:results} reports results; and
-Section~\ref{sec:discussion} discusses limitations.

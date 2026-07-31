@@ -1,45 +1,34 @@
 \section{Experimental Setup}
 \label{sec:experiments}
 
-\subsection{Corpus}
-We use a 1{,}132-row synthetic DO-178C-style requirements corpus
-spanning 32 modules (e.g., ADS, FCC, NAV, GPS, EPS, ICE) with
-$\approx 3{,}000$ typed traceability edges. Synthetic generation is
-necessary because certified aerospace artifacts are
-intellectual-property restricted; we follow the
-Synthline~\cite{synthline2025} methodology for synthetic requirements
-engineering. To probe external validity we cross-evaluate on 200
-multi-hop questions sampled from MuSiQue~\cite{musique2022}.
+\textbf{Main matrix and cross-corpus sample.} DO-178C: 5 pipelines $\times$
+296 hop-stratified queries $\times$ 3 seeds $= 4{,}440$ runs, executed
+under both embedders (\emph{v2}, \emph{v3}). MuSiQue: 3 pipelines (vanilla,
+GraphRAG, agentic+graph) $\times$ 200 queries $\times$ 1 seed $= 600$ runs,
+Azure embedder only. Agentic and adaptive are not re-run on MuSiQue (C2a
+needs only the three-pipeline trio).
 
-\subsection{Evaluation Queries}
-We sample 300 hop-stratified queries (100 each at 1-hop, 2-hop, and
-3+-hop) by walking $G$ along typed edges and surface-realising each
-chain via GPT-5.4 with a constrained prompt. A 30/300 random subset
-undergoes manual sanity checks. The gold tuple per query is
-$(a^{\star}, C^{\star}, \tau^{\star})$---gold answer, supporting
-requirement IDs, and link-type chain. A 50-query human-gold subset is
-held out for judge calibration.
+\textbf{Faithfulness judging.} On DO-178C, multi-judge protocol
+(GPT-5.4 $+$ GPT-4.1) is applied to a 300-row stratified subset (60 per
+pipeline, seed 42), yielding 600 paired binary judgments per embedder.
+The v3 judged subset is explicitly \emph{pinned} to the same 300
+(query, pipeline, repeat) tuples as v2 so C3 deltas are computed on
+identical items. On MuSiQue, we dual-judge all 600 rows. Same-input controls re-judge
+the 300 v2 tuples twice with GPT-5.4 (test--retest) and once eleven
+weeks later (temporal drift).
 
-\subsection{Metrics}
-We report RAGAS~\cite{ragas2024} faithfulness, context precision,
-context recall, and answer relevancy; answer correctness against gold
-IDs; cost in tokens and USD; and end-to-end latency. All metrics are
-reported with hop-stratified breakdowns.
+\textbf{Statistical protocol.} 95\% BCa bootstrap
+intervals~\cite{du2025bootstrap} ($B{=}1000$, paired at the query
+level), Wilcoxon signed-rank with Holm correction across the 30
+pipeline-pair $\times$ stratum
+contrasts~\cite{bergkirkpatrick2012,koehn2004}, and Cliff's $\delta$
+(negligible ${<}0.147$). A pipeline pair
+is reported as significantly different only when the BCa interval excludes
+zero, Holm $p{<}0.05$, and $|\delta|\!\geq\!0.147$ jointly hold.
 
-\subsection{Statistical Protocol}
-The design is 5 systems $\times$ 300 queries $\times$ 3 random seeds.
-We report 95\% bias-corrected and accelerated (BCa) bootstrap intervals
-with 1000 resamples~\cite{jung_owen2025}, paired permutation tests
-(10{,}000 permutations) for system-pair comparisons~\cite{koehn2004,
-bergkirkpatrick2012}, Holm correction across the family of pairwise
-contrasts, and Cohen's~$d$ effect sizes. Three seeds are adequate under
-paired BCa per Jung and Owen~\cite{jung_owen2025}.
-
-\subsection{Judge Bias Control}
-Two judges score each output: GPT-5.4 (primary) and Claude-Sonnet~4
-(cross-check). We report pairwise Cohen's~$\kappa$ on the 50-query
-human-gold slice and a position-swap robustness check (answer~A first
-versus B first) to mitigate self-preference
-bias~\cite{selfpref_bias2024}. Where applicable we further compare
-with established judge frameworks such as
-RAGChecker~\cite{ragchecker2024} and RAGBench~\cite{ragbench2024}.
+\textbf{Reproducibility.} The full pipeline regenerates from one
+\texttt{Makefile} target on locked CSVs; seeds, sampling protocols, and
+Azure model snapshots are in supplementary materials. The MuSiQue
+subgraph (3{,}996 paragraph chunks, 399 \textit{REFERENCES} edges) is
+built deterministically from \texttt{dgslibisey/MuSiQue} (validation
+split, seed $20260511$).

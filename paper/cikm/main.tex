@@ -10,23 +10,25 @@
 \acmYear{2026}
 \acmISBN{}
 \acmDOI{}
-\acmPrice{}
 
 %% Optional packages -------------------------------------------------------
 \usepackage{booktabs}
 \usepackage{amsmath}
+\usepackage{graphicx}
 \usepackage{tikz}
 \usetikzlibrary{positioning, arrows.meta, shapes.geometric,
                 fit, backgrounds, calc}
 
 \begin{document}
 
-\title{Hop-Adaptive, Link-Type-Aware Agentic Retrieval for
-  Requirement Traceability}
+\title{Universal Pathologies, Conditional Consequences:
+  A Triple-Robustness Analysis of RAG for Multi-Hop Traceability}
 
-%% Double-blind anonymized author block.
-%% acmart's `anonymous=true' suppresses these fields in the rendered PDF;
-%% they are kept here as a defensive backup.
+%% Double-blind anonymized author block for CIKM 2026 submission.
+%% acmart's `anonymous=true' (in \documentclass options) suppresses these
+%% fields in the rendered PDF. For ArXiv camera-ready, switch back to:
+%%   \author{Meftun Akarsu} ... Technische Hochschule Ingolstadt ...
+%%   \author{Burak \"Ozdemir} ... Independent Researcher, Ankara, Turkey
 \author{Anonymous Author(s)}
 \affiliation{%
   \institution{Anonymous Institution}
@@ -36,8 +38,6 @@
 \input{sections/01-abstract}
 
 %% --- ACM CCS concepts --------------------------------------------------
-%% [TODO: regenerate via the ACM CCS tool at
-%%   https://dl.acm.org/ccs and replace the IDs below.]
 \begin{CCSXML}
 <ccs2012>
   <concept>
@@ -62,8 +62,9 @@
 \ccsdesc[300]{Computing methodologies~Question answering}
 \ccsdesc[300]{Software and its engineering~Requirements analysis}
 
-\keywords{agentic RAG, GraphRAG, requirements traceability,
-  hop-adaptive routing, DO-178C, retrieval-augmented generation}
+\keywords{retrieval-augmented generation, GraphRAG, requirements
+  traceability, DO-178C, MuSiQue, LLM-as-judge, kappa paradox,
+  triple-robustness, embedder fragility}
 
 \maketitle
 

@@ -1,9 +1,29 @@
 \section*{GenAI Usage Disclosure}
-GPT-5.4 was used to (a)~generate the synthetic DO-178C-style
-requirements corpus, (b)~surface-realise hop-stratified evaluation
-queries from graph walks (with manual sanity checks on a 30-query
-subset), and (c)~act as one of two judges in faithfulness scoring.
-Light copy-editing of paper text used GPT-5.4 and Claude. No section of
-this paper was generated entirely by AI; all claims, methodology, and
-analyses are the authors' own. Code and data will be released for
-reproducibility.
+\label{sec:disclosure}
+We disclose all uses of generative AI in this work in accordance with
+the ACM Policy on Authorship and the CIKM 2026 disclosure requirement.
+\textbf{(a)~Corpus anonymization.} The DO-178C-style corpus used in
+this paper is derived from proprietary aerospace certification
+artifacts that cannot be released directly due to intellectual-property
+and export-control restrictions. Azure OpenAI GPT-5.4 was used under
+a structured reformatting prompt (provided in the supplementary
+material) to anonymize and rewrite the source material into 1{,}132
+standalone requirement records while preserving the original typed-edge
+structure (\textit{derives\_from}, \textit{satisfies},
+\textit{references}, \textit{traces\_to}, \textit{verifies}) and
+module taxonomy. All resulting records were programmatically validated
+for format and uniqueness; no semantic validation or fact synthesis
+was performed by GenAI.
+\textbf{(b)~Pipeline components.} GPT-5.4 is the generation backbone
+of all five RAG pipelines under study; it is the \textit{object} of
+evaluation, not an authorial tool.
+\textbf{(c)~LLM-as-judge.} GPT-5.4 and GPT-4.1 are used as the two
+faithfulness judges in the locked dual-judge protocol; this is part
+of the paper's experimental analysis and is fully documented in
+\S\ref{sec:experiments}.
+\textbf{(d)~Writing.} GenAI tools (Claude Sonnet 4.5, GPT-5.4) were
+used for prose polishing, LaTeX-table assembly, and code-comment
+generation. No section of the paper was authored \textit{de novo} by
+an LLM. All claims, numbers, citations, and conclusions were verified
+by the author(s). The author(s) take full responsibility for the
+content.
