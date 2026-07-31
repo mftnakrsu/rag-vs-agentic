@@ -1,0 +1,10 @@
+slice,n,tt,tf,ft,ff
+stratum=1-hop,95,46,5,28,16
+stratum=2-hop,111,33,16,28,34
+stratum=3+-hop,94,4,15,13,62
+pipeline=adaptive,60,14,7,10,29
+pipeline=agentic,60,16,7,14,23
+pipeline=agentic-graph,60,10,9,20,21
+pipeline=graphrag,60,27,10,14,9
+pipeline=vanilla,60,16,3,11,30
+overall,300,83,36,69,112

@@ -1,0 +1,27 @@
+V2 Router Acceptance Check
+==========================
+
+N queries (paired, all 3 variants present): 296
+
+V1 overall mean F1:     0.4390
+V2 overall mean F1:     0.5588
+Oracle overall mean F1: 0.6405
+V2 - V1:                +0.1197
+Oracle - V1 gap:        +0.2015
+
+CHECK 1: V2 - V1 >= 0.02: PASS (got +0.1197)
+
+CHECK 2: Holm-adj Wilcoxon (V2>V1) p<0.05 in >=2/3 strata: PASS (3/3 strata)
+  1-hop  : V2-V1 mean=+0.1209, raw_p=4.028e-06, holm_p=8.056e-06
+  2-hop  : V2-V1 mean=+0.1944, raw_p=7.717e-07, holm_p=2.315e-06
+  3+-hop : V2-V1 mean=+0.0424, raw_p=0.02459, holm_p=0.02459
+
+CHECK 3: V2 closes >= 30% of (oracle - V1) gap overall: PASS (closed 59.4%)
+  (V2 - V1) / (Oracle - V1) = +0.1197 / +0.2015
+
+OVERALL: V2_ACCEPTANCE_PASS
+
+Per-stratum mean F1 (paired, n=296):
+  1-hop  : V1=0.6296  V2=0.7505  Oracle=0.8331  (n=100)
+  2-hop  : V1=0.4995  V2=0.6939  Oracle=0.7928  (n=99)
+  3+-hop : V1=0.1808  V2=0.2232  Oracle=0.2866  (n=97)
