@@ -39,6 +39,32 @@ from pathlib import Path
 from typing import Iterable
 
 
+def make_citation_parser(corpus_ids: Iterable[str]):
+    """Build an answer-text citation parser for a given ID vocabulary.
+
+    Matches exact corpus IDs (longest-first, so ALX2-AUTO-001 wins over
+    AUTO-001) plus hallucinated near-IDs that reuse a real module prefix
+    (e.g. HMI-105 when HMI-105 does not exist) — those count against
+    citation precision, as in ALCE. Non-corpus tokens that merely look
+    like IDs (SHA-256, DO-254, RS-422) are ignored.
+    """
+    import re
+    ids = sorted(set(corpus_ids), key=len, reverse=True)
+    vocab_re = re.compile(r"\b(?:" + "|".join(re.escape(i) for i in ids) + r")\b")
+    prefixes = sorted({i.split("-")[0] for i in ids}, key=len, reverse=True)
+    halluc_re = re.compile(
+        r"\b(?:" + "|".join(re.escape(p) for p in prefixes) + r")-[A-Z0-9_-]*\d\b"
+    )
+
+    def parse(answer: str | None) -> list[str]:
+        found = list(dict.fromkeys(vocab_re.findall(answer or "")))
+        rest = vocab_re.sub(" ", answer or "")
+        found += [m for m in dict.fromkeys(halluc_re.findall(rest)) if m not in found]
+        return found
+
+    return parse
+
+
 def _split_ids(s: str | None) -> set[str]:
     """Split a semicolon-joined id field into a set, dropping blanks."""
     if not s:
