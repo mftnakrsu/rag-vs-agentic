@@ -24,8 +24,8 @@
 \label{sec:pipelines}
 All pipelines share embedder, ChromaDB vector store, Neo4j typed-edge
 graph, Azure GPT-5.4 generator, and grounded synthesis prompt; they
-differ only in retrieval. \textbf{(i)~Vanilla}: dense top-$k$ ($k{=}10$) + one
-synthesis call. \textbf{(ii)~Agentic}: LangGraph
+differ only in retrieval. \textbf{(i)~Vanilla}: dense top-10 retrieval,
+top-5 context, one synthesis call. \textbf{(ii)~Agentic}: LangGraph
 router-retriever-critic loop, \texttt{search\_documents} tool only, iter
 cap 3. \textbf{(iii)~GraphRAG}: vector seeds (8) + up-to-2-hop typed-graph
 walk via Cypher (walk cap 30, context cap 15), single synthesis. This
@@ -52,7 +52,14 @@ DO-178C main matrix and MuSiQue.
 \subsection{Metrics and Judging}
 \label{sec:metrics}
 We report ALCE-style citation $P/R/F_1$~\cite{alce2023} against gold
-requirement-ID sets and retrieval recall on retrieved contexts. Each
+requirement-ID sets. Cited IDs are parsed from the answer text with a
+vocabulary-anchored parser (exact corpus IDs, longest match first);
+hallucinated IDs that reuse a real module prefix count against
+precision, and incidental tokens (SHA-256, DO-254) are excluded. We
+separately report \emph{context precision} -- the gold fraction of the
+retrieved set handed to the synthesizer -- and retrieval recall, since
+conflating the context set with the answer's citations changes which
+architecture appears to win (\S\ref{sec:c2}). Each
 faithfulness judgment is a strict-JSON binary verdict over the
 retrieved-context block. We report Cohen's $\kappa$, Gwet's
 AC1~\cite{gwet2008,feinstein1990}, raw agreement, and McNemar
