@@ -1,0 +1,177 @@
+{
+  "overall": {
+    "label": "overall",
+    "n": 300,
+    "gpt5_faithful_rate": 0.39666666666666667,
+    "gpt41_faithful_rate": 0.5066666666666667,
+    "observed_agreement": 0.65,
+    "pe_cohen": 0.4986222222222222,
+    "cohens_kappa": 0.3019235883343676,
+    "gwets_ac1": 0.30648055393489737,
+    "confusion_gpt5_x_gpt41": {
+      "tt": 83,
+      "tf": 36,
+      "ft": 69,
+      "ff": 112
+    }
+  },
+  "per_pipeline": {
+    "adaptive": {
+      "label": "pipeline=adaptive",
+      "n": 60,
+      "gpt5_faithful_rate": 0.35,
+      "gpt41_faithful_rate": 0.4,
+      "observed_agreement": 0.7166666666666667,
+      "pe_cohen": 0.53,
+      "cohens_kappa": 0.39716312056737585,
+      "gwets_ac1": 0.4666666666666667,
+      "confusion_gpt5_x_gpt41": {
+        "tt": 14,
+        "tf": 7,
+        "ft": 10,
+        "ff": 29
+      }
+    },
+    "agentic": {
+      "label": "pipeline=agentic",
+      "n": 60,
+      "gpt5_faithful_rate": 0.38333333333333336,
+      "gpt41_faithful_rate": 0.5,
+      "observed_agreement": 0.65,
+      "pe_cohen": 0.5,
+      "cohens_kappa": 0.30000000000000004,
+      "gwets_ac1": 0.3093998355713895,
+      "confusion_gpt5_x_gpt41": {
+        "tt": 16,
+        "tf": 7,
+        "ft": 14,
+        "ff": 23
+      }
+    },
+    "agentic-graph": {
+      "label": "pipeline=agentic-graph",
+      "n": 60,
+      "gpt5_faithful_rate": 0.31666666666666665,
+      "gpt41_faithful_rate": 0.5,
+      "observed_agreement": 0.5166666666666667,
+      "pe_cohen": 0.5,
+      "cohens_kappa": 0.03333333333333344,
+      "gwets_ac1": 0.06476753560870747,
+      "confusion_gpt5_x_gpt41": {
+        "tt": 10,
+        "tf": 9,
+        "ft": 20,
+        "ff": 21
+      }
+    },
+    "graphrag": {
+      "label": "pipeline=graphrag",
+      "n": 60,
+      "gpt5_faithful_rate": 0.6166666666666667,
+      "gpt41_faithful_rate": 0.6833333333333333,
+      "observed_agreement": 0.6,
+      "pe_cohen": 0.5427777777777778,
+      "cohens_kappa": 0.12515188335358435,
+      "gwets_ac1": 0.26605504587155965,
+      "confusion_gpt5_x_gpt41": {
+        "tt": 27,
+        "tf": 10,
+        "ft": 14,
+        "ff": 9
+      }
+    },
+    "vanilla": {
+      "label": "pipeline=vanilla",
+      "n": 60,
+      "gpt5_faithful_rate": 0.31666666666666665,
+      "gpt41_faithful_rate": 0.45,
+      "observed_agreement": 0.7666666666666667,
+      "pe_cohen": 0.5183333333333333,
+      "cohens_kappa": 0.5155709342560555,
+      "gwets_ac1": 0.5574288724973657,
+      "confusion_gpt5_x_gpt41": {
+        "tt": 16,
+        "tf": 3,
+        "ft": 11,
+        "ff": 30
+      }
+    }
+  },
+  "monotonic_check": {
+    "adaptive": {
+      "gpt5_rates_1h_2h_3h": [
+        0.4444444444444444,
+        0.43478260869565216,
+        0.15789473684210525
+      ],
+      "gpt41_rates_1h_2h_3h": [
+        0.7777777777777778,
+        0.30434782608695654,
+        0.15789473684210525
+      ],
+      "gpt5_monotonic_decrease": true,
+      "gpt41_monotonic_decrease": true,
+      "both_agree_on_decrease": true
+    },
+    "agentic": {
+      "gpt5_rates_1h_2h_3h": [
+        0.47368421052631576,
+        0.4230769230769231,
+        0.2
+      ],
+      "gpt41_rates_1h_2h_3h": [
+        0.7368421052631579,
+        0.5,
+        0.2
+      ],
+      "gpt5_monotonic_decrease": true,
+      "gpt41_monotonic_decrease": true,
+      "both_agree_on_decrease": true
+    },
+    "agentic-graph": {
+      "gpt5_rates_1h_2h_3h": [
+        0.4444444444444444,
+        0.2631578947368421,
+        0.2608695652173913
+      ],
+      "gpt41_rates_1h_2h_3h": [
+        0.7222222222222222,
+        0.631578947368421,
+        0.21739130434782608
+      ],
+      "gpt5_monotonic_decrease": true,
+      "gpt41_monotonic_decrease": true,
+      "both_agree_on_decrease": true
+    },
+    "graphrag": {
+      "gpt5_rates_1h_2h_3h": [
+        0.7391304347826086,
+        0.6363636363636364,
+        0.4
+      ],
+      "gpt41_rates_1h_2h_3h": [
+        0.782608695652174,
+        0.8181818181818182,
+        0.3333333333333333
+      ],
+      "gpt5_monotonic_decrease": true,
+      "gpt41_monotonic_decrease": false,
+      "both_agree_on_decrease": false
+    },
+    "vanilla": {
+      "gpt5_rates_1h_2h_3h": [
+        0.5294117647058824,
+        0.42857142857142855,
+        0.045454545454545456
+      ],
+      "gpt41_rates_1h_2h_3h": [
+        0.8823529411764706,
+        0.5238095238095238,
+        0.045454545454545456
+      ],
+      "gpt5_monotonic_decrease": true,
+      "gpt41_monotonic_decrease": true,
+      "both_agree_on_decrease": true
+    }
+  }
+}

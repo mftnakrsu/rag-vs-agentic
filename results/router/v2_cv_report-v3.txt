@@ -1,0 +1,50 @@
+V2 Router Cross-Validation Report
+=================================
+
+N queries: 296
+Features: 1536 embedding (PCA->3) + 11 text = 14 effective dims
+
+Model:
+  LogisticRegression(penalty=l2, C=1.0, solver=lbfgs, max_iter=1000)
+  + CalibratedClassifierCV(method=sigmoid, cv=3)  [Platt scaling]
+  + ColumnTransformer: PCA(n_components=3) on emb_*, passthrough on text feats
+
+CV: RepeatedStratifiedKFold(n_splits=10, n_repeats=5, random_state=20260511)
+
+Macro-F1 across 50 folds:
+  mean = 0.8611
+  std  = 0.0547
+  min  = 0.7215
+  max  = 0.9666
+
+OOF classification report (single 10-fold, seed=20260511):
+              precision    recall  f1-score   support
+
+       1-hop       0.85      0.76      0.80       100
+       2-hop       0.82      0.87      0.84        99
+      3+-hop       0.92      0.97      0.94        97
+
+    accuracy                           0.86       296
+   macro avg       0.86      0.87      0.86       296
+weighted avg       0.86      0.86      0.86       296
+
+
+Routing map (locked from Step 1 mean-F1 winners):
+  1-hop   -> vanilla
+  2-hop   -> graphrag
+  3+-hop  -> agentic-graph
+
+OOF prediction distribution:
+  1-hop  : 89 / 296
+  2-hop  : 105 / 296
+  3+-hop : 102 / 296
+
+OOF recommended_pipeline distribution (after routing map):
+  agentic-graph  : 102
+  graphrag       : 105
+  vanilla        : 89
+
+Per-stratum routing accuracy (OOF predicted_hop == true hop_stratum):
+  1-hop  : 0.760 (76/100)
+  2-hop  : 0.869 (86/99)
+  3+-hop : 0.969 (94/97)
