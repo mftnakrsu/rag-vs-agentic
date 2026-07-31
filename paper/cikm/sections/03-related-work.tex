@@ -14,10 +14,10 @@ graph-lookup tool.
 Microsoft GraphRAG~\cite{graphrag2024} and follow-ups~\cite{lightrag2024,
 hipporag2_2025,graphr1_2025} construct entity-relation graphs at indexing
 time. Han et~al.~\cite{ragvsgraphrag2025} and GraphRAG-Bench~\cite{graphragbench2026}
-report that GraphRAG \emph{does not} dominate vector RAG across all query
-types --- our C2a confirms this with quantified over-citation metrics in
-safety-critical RE, and C2b localises \emph{why} (mechanism vs.~consequence)
-across corpora. MuSiQue~\cite{musique2022} and
+report that GraphRAG does not dominate vector RAG across all query
+types. Our C2a adds quantified over-citation measurements in
+safety-critical RE, and C2b separates the mechanism from its
+consequence across corpora. MuSiQue~\cite{musique2022} and
 MultiHop-RAG~\cite{multihoprag2024} are adjacent multi-hop benchmarks; we
 use MuSiQue for cross-corpus replication of C2a and C2b.
 
@@ -33,7 +33,7 @@ faithfulness, motivating LLM judges. RAGChecker~\cite{ragchecker2024}
 provides a single-judge framework. Self-preference
 bias~\cite{selfpref_bias2024} motivates judge ensembles, and the
 Feinstein--Cicchetti $\kappa$ paradox~\cite{feinstein1990} with Gwet's
-AC1~\cite{gwet2008} establishes the prevalence correction we apply. Our C3
-extends this with same-judge self-$\kappa$ across embedders as a sharper
-fragility statistic.
+AC1~\cite{gwet2008} establishes the prevalence correction we apply. Our C3 adds a
+statistic this literature does not track: the judge's agreement with
+itself under retrieval-state and date changes.
 
