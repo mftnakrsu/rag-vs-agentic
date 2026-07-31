@@ -18,11 +18,11 @@ the 300 v2 tuples twice with GPT-5.4 (test--retest) and once eleven
 weeks later (temporal drift).
 
 \textbf{Statistical protocol.} 95\% BCa bootstrap
-intervals~\cite{du2025bootstrap} ($B{=}1000$, paired at the query
-level), Wilcoxon signed-rank with Holm correction across the 30
+intervals~\cite{efron1987,du2025bootstrap} ($B{=}1000$, paired at the
+query level), Wilcoxon signed-rank with Holm correction across the 30
 pipeline-pair $\times$ stratum
-contrasts~\cite{bergkirkpatrick2012,koehn2004}, and Cliff's $\delta$
-(negligible ${<}0.147$). A pipeline pair
+contrasts~\cite{bergkirkpatrick2012,koehn2004}, and Cliff's
+$\delta$~\cite{cliff1993} (negligible ${<}0.147$). A pipeline pair
 is reported as significantly different only when the BCa interval excludes
 zero, Holm $p{<}0.05$, and $|\delta|\!\geq\!0.147$ jointly hold.
 

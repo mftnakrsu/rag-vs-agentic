@@ -1,12 +1,10 @@
-\documentclass[sigconf,natbib=true,anonymous=true]{acmart}
+%% ArXiv preprint build. For the CIKM camera-ready, restore
+%% anonymous=true / the \acmConference block from git history.
+\documentclass[sigconf,natbib=true,nonacm]{acmart}
 
-%% Submission-time hygiene -------------------------------------------------
 \settopmatter{printacmref=false}     % suppress ACM Reference Format box
-\setcopyright{none}                  % no copyright block in anonymous submission
+\setcopyright{none}
 \renewcommand\footnotetextcopyrightpermission[1]{}
-\acmConference[CIKM '26]{Proceedings of the 35th ACM International
-  Conference on Information and Knowledge Management}{November 7--11,
-  2026}{Rome, Italy}
 \acmYear{2026}
 \acmISBN{}
 \acmDOI{}
@@ -24,14 +22,28 @@
 \title{Universal Pathologies, Conditional Consequences:
   A Triple-Robustness Analysis of RAG for Multi-Hop Traceability}
 
-%% Double-blind anonymized author block for CIKM 2026 submission.
-%% acmart's `anonymous=true' (in \documentclass options) suppresses these
-%% fields in the rendered PDF. For ArXiv camera-ready, switch back to:
-%%   \author{Meftun Akarsu} ... Technische Hochschule Ingolstadt ...
-%%   \author{Burak \"Ozdemir} ... Independent Researcher, Ankara, Turkey
-\author{Anonymous Author(s)}
+\author{Meftun Akarsu}
 \affiliation{%
-  \institution{Anonymous Institution}
+  \institution{Turkish Aerospace Industries}
+  \country{}
+}
+
+\author{Burak \"Ozdemir}
+\affiliation{%
+  \institution{Turkish Aerospace Industries}
+  \country{}
+}
+
+\author{Do\u{g}ancan B\"uy\"uk\c{c}olak}
+\affiliation{%
+  \institution{Turkish Aerospace Industries}
+  \country{}
+}
+
+\author{Recep Kaan Karaman}
+\authornote{Corresponding author: kaan.karaman@tum.de}
+\affiliation{%
+  \institution{Technical University of Munich}
   \country{}
 }
 
