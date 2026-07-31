@@ -15,9 +15,11 @@ Microsoft GraphRAG~\cite{graphrag2024} and follow-ups~\cite{lightrag2024,
 hipporag2_2025,graphr1_2025} construct entity-relation graphs at indexing
 time. Han et~al.~\cite{ragvsgraphrag2025} and GraphRAG-Bench~\cite{graphragbench2026}
 report that GraphRAG does not dominate vector RAG across all query
-types. Our C2a adds quantified over-citation measurements in
-safety-critical RE, and C2b separates the mechanism from its
-consequence across corpora. MuSiQue~\cite{musique2022} and
+types. Our C2a shows one reason such verdicts disagree: whether
+citation quality is scored over the retrieved set or over the answer's
+citations decides which side wins, and C2b separates the
+context-flooding mechanism from its faithfulness consequence across
+corpora. MuSiQue~\cite{musique2022} and
 MultiHop-RAG~\cite{multihoprag2024} are adjacent multi-hop benchmarks; we
 use MuSiQue for cross-corpus replication of C2a and C2b.
 

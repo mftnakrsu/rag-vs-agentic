@@ -1,29 +1,31 @@
 \begin{abstract}
-Recent studies report that GraphRAG underperforms vector RAG on
-citation precision, but the evidence is typically tied to a single
-corpus, embedder, and judge. We present a triple-robustness analysis
-that holds the retrieval architecture fixed and varies all three:
-embedder (local e5-small vs.\ Azure text-embedding-3-small), corpus
-(DO-178C typed-edge requirements vs.\ Wikipedia paragraph chains via
-MuSiQue), and judge (paired GPT-5.4 $\times$ GPT-4.1 on both corpora),
-over $2{\times}4{,}440$ main-matrix runs, 600 cross-corpus runs, and
-2{,}400 faithfulness judgments. \textbf{(C2a)} Over-citation is universal
-across all our settings:
-GraphRAG emits 11--15 IDs per answer at citation precision 0.12--0.23 and
-retrieval recall 0.68--0.87.
-\textbf{(C2b)} Its faithfulness consequence is corpus-conditional: on
-typed-edge DO-178C, faithfulness declines with hop distance (trend
+Reported verdicts on GraphRAG versus vector RAG disagree, and the
+evidence is typically tied to a single corpus, embedder, and judge --
+and, we show, to where citation quality is measured. We present a
+triple-robustness analysis that holds a five-pipeline architecture
+matrix fixed and varies embedder (local e5-small vs.\ Azure
+text-embedding-3-small), corpus (DO-178C typed-edge requirements vs.\
+Wikipedia paragraph chains via MuSiQue), and judge (paired GPT-5.4
+$\times$ GPT-4.1 on both corpora), over $2{\times}4{,}440$ main-matrix
+runs, 600 cross-corpus runs, and over 3{,}000 faithfulness judgments.
+\textbf{(C2a)} GraphRAG's graph walk floods the context window at
+precision 0.12--0.23, but the synthesizer cites selectively at
+precision 0.48--0.65; scoring the retrieved set as the attribution set
+inverts the architecture ranking, which reconciles part of the
+disagreement in prior reports. \textbf{(C1)} Answer-level citation
+winners are corpus- and stratum-conditional but embedder-robust:
+GraphRAG ties vanilla on short-hop DO-178C queries and wins every
+MuSiQue stratum, while agentic pipelines lead only on 3+-hop
+requirements queries. \textbf{(C2b)} Faithfulness is
+corpus-conditional: on DO-178C it declines with hop distance (trend
 $p{<}0.05$ in three of four judge$\times$embedder combinations); on
-Wikipedia chains neither judge shows a collapse, because over-cited
-paragraphs remain topically supporting.
-\textbf{(C1)} Stratum-conditional winners are corpus-conditional but
-embedder-robust: vanilla wins 2-hop on DO-178C, GraphRAG wins 2-hop on
-MuSiQue, identical under either embedder.
-\textbf{(C3)} Single-judge LLM faithfulness is fragile to retrieval
-state: GPT-5.4's self-$\kappa$ across embedders is $0.137$ (41\% verdict
-change) against a same-day test--retest floor of $0.76$; re-judging
-frozen inputs eleven weeks later also gives $\kappa{=}0.14$. A learned
-router on dense embeddings alone reaches macro-$F_1$ $0.86$ on hop
+Wikipedia chains neither judge shows a collapse. \textbf{(C3)}
+Single-judge LLM faithfulness is fragile to retrieval state: GPT-5.4's
+self-$\kappa$ across embedders is $0.137$ (41\% verdict change)
+against a same-day test--retest floor of $0.76$, and re-judging frozen
+inputs eleven weeks later gives $\kappa{=}0.14$. A learned router on
+dense embeddings alone reaches macro-$F_1$ $0.86$ on hop
 classification \textbf{(C4)}. We argue that RAG architecture claims
-should be tested at this level of robustness before they are trusted.
+should be tested at this level of robustness -- including robustness
+to the citation-measurement point -- before they are trusted.
 \end{abstract}

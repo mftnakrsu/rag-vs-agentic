@@ -5,17 +5,23 @@
 296 hop-stratified queries $\times$ 3 seeds $= 4{,}440$ runs, executed
 under both embedders (\emph{v2}, \emph{v3}). MuSiQue: 3 pipelines (vanilla,
 GraphRAG, agentic+graph) $\times$ 200 queries $\times$ 1 seed $= 600$ runs,
-Azure embedder only. Agentic and adaptive are not re-run on MuSiQue (C2a
-needs only the three-pipeline trio).
+Azure embedder only, plus a 200-run GraphRAG distractor-edge control
+(\S\ref{sec:c1}) on the same queries and vector seeds. Agentic and
+adaptive are not re-run on MuSiQue (C2a needs only the three-pipeline
+trio).
 
-\textbf{Faithfulness judging.} On DO-178C, multi-judge protocol
-(GPT-5.4 $+$ GPT-4.1) is applied to a 300-row stratified subset (60 per
-pipeline, seed 42), yielding 600 paired binary judgments per embedder.
-The v3 judged subset is explicitly \emph{pinned} to the same 300
-(query, pipeline, repeat) tuples as v2 so C3 deltas are computed on
-identical items. On MuSiQue, we dual-judge all 600 rows. Same-input controls re-judge
-the 300 v2 tuples twice with GPT-5.4 (test--retest) and once eleven
-weeks later (temporal drift).
+\textbf{Faithfulness judging.} On DO-178C, the multi-judge protocol
+(GPT-5.4 $+$ GPT-4.1) is applied to two disjoint 300-row stratified
+batches (60 per pipeline; seeds 42 and 43), the second judged eleven
+weeks after the first, yielding 1{,}200 paired binary judgments per
+embedder. Each batch is \emph{pinned} to the same 300 (query,
+pipeline, repeat) tuples across embedders so C3 deltas are computed
+on identical items; batches are reported separately, never pooled
+across judging dates. On MuSiQue, we dual-judge all 600 rows.
+Same-input controls re-judge 300 v2 tuples twice with GPT-5.4
+(test--retest) and once eleven weeks later (temporal drift); a
+generator-swap control re-synthesizes 332 v3 rows with GPT-4.1 on
+frozen retrievals and dual-judges them.
 
 \textbf{Statistical protocol.} 95\% BCa bootstrap
 intervals~\cite{du2025bootstrap} ($B{=}1000$, paired at the query

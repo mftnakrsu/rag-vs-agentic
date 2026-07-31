@@ -1,22 +1,20 @@
 \begin{table}[t]
   \centering
-  \caption{V2 router replication. Same 14-feature schema under both embedders; text features remain mostly inert (4/11 non-zero), so the +0.08 macro-$F_1$ gain comes from the dense embedding.}
+  \caption{V2 router replication and Azure-embedder boost. Same 14-feature schema (11 hand text features, 3 PCs of the query embedding); only the embedder differs. Text features remain mostly inert (4/11 non-zero), so the +0.08 macro-$F_1$ gain is attributable to dense-embedding hop-decodability.}
   \label{tab:router}
   \small
-  \setlength{\tabcolsep}{3pt}
   \resizebox{\columnwidth}{!}{%
   \begin{tabular}{l rr}
     \toprule
      & v2 (local 384d $\to$ PCA-3) & v3 (Azure 1536d $\to$ PCA-3) \\
     \midrule
     50-fold macro-$F_1$ & $0.78 \pm 0.08$ & $\mathbf{0.86 \pm 0.05}$ \\
-    Adaptive-V2 overall $F_1$ & 0.419 & 0.443 \\
-    Adaptive-V1 overall $F_1$ & 0.307 & 0.325 \\
-    Oracle overall $F_1$ & 0.512 & 0.535 \\
-    V2 $-$ V1 (absolute) & $+0.112$ & $+0.118$ \\
-    Gap closure (V1$\to$Oracle) & 54.7\% & 56.2\% \\
-    Holm-Wilcoxon strata sig & 3/3 & 3/3 \\
+    Adaptive-V2 overall $F_1$ & 0.559 & 0.569 \\
+    Adaptive-V1 overall $F_1$ & 0.439 & 0.468 \\
+    Oracle overall $F_1$ & 0.641 & 0.652 \\
+    V2 $-$ V1 (absolute) & $+0.120$ & $+0.101$ \\
+    Gap closure (V1$\to$Oracle) & 59.4\% & 54.8\% \\
+    Holm-Wilcoxon strata sig & 3/3 & 2/3 \\
     \bottomrule
-  \end{tabular}%
-  }
+  \end{tabular}}
 \end{table}

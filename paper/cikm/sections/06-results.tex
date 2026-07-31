@@ -22,14 +22,25 @@
 \subsection{C1: Winners are Corpus-Conditional, Embedder-Robust}
 \label{sec:c1}
 Table~\ref{tab:dominance} reports per-stratum $F_1$ across three settings.
-On DO-178C the dominance pattern is identical under both embedders:
-agentic-graph wins 1-hop and 3+-hop, vanilla wins 2-hop. The 1-hop and
-3+-hop wins do not separate agentic-graph from agentic (Cliff's
-$\delta{<}0.147$ in every stratum) and are read as an \{agentic-graph,
-agentic\} tie. On MuSiQue (three-pipeline field: vanilla, agentic-graph, GraphRAG) the
-winners shift: agentic-graph retains 1-hop, but GraphRAG wins both 2-hop
-($F_1{=}0.375$) and 3+-hop ($F_1{=}0.342$), reversing vanilla's 2-hop
-dominance.
+On DO-178C the pattern is the same under both embedders: vanilla and
+GraphRAG are statistically tied on 1-hop and 2-hop (Wilcoxon
+$p{=}0.12/0.65$ local, negligible $\delta$), the agentic loop costs
+0.19--0.30 $F_1$ on those strata, and on 3+-hop the ordering inverts --
+vanilla drops to last and the graph-aided pipelines lead (local
+embedder: agentic-graph 0.219 vs.\ vanilla 0.089, Holm
+$p{<}10^{-6}$; under the Azure embedder the same ordering holds but no
+3+-hop pair passes the joint significance criterion). On MuSiQue
+(three-pipeline field) GraphRAG wins every stratum outright
+($F_1{=}0.841/0.632/0.463$; vs.\ vanilla, Wilcoxon
+$p{\leq}5{\times}10^{-4}$, $\delta{=}0.27$--$0.43$). Because the
+MuSiQue graph's \textit{REFERENCES} edges connect only gold supporting
+paragraphs, we re-ran the GraphRAG arm on a control graph with
+consecutive-distractor edges added (context precision falls
+$0.23{\to}0.14$; the walk cap is always reached). GraphRAG loses only
+$0.02/0.05/0.09$ $F_1$ per stratum and still beats vanilla everywhere
+($+0.08/+0.16/+0.10$, $p{\leq}0.014$): the MuSiQue win is not an
+artifact of gold-only edges. Which architecture wins is thus corpus-
+and stratum-conditional, but stable under embedder swap.
 
 \input{tables/tab_pathology}
 
@@ -53,28 +64,41 @@ dominance.
   \label{fig:faithheatmap}
 \end{figure}
 
-\subsection{C2: GraphRAG's Universal Pathology, Conditional Consequence}
+\subsection{C2: Context Flooding, Citation Selectivity, and Faithfulness}
 \label{sec:c2}
-\noindent\textbf{(C2a) Over-citation is setting-universal}
-(Table~\ref{tab:pathology}, top).
-Across embedder \emph{and} corpus swaps GraphRAG cites a mean of 11--15
-IDs per answer at citation precision 0.12--0.23 with retrieval recall
-in the 0.68--0.87 range. Against the context cap of 15, a mean of
-14.9--15.0 cited IDs on DO-178C means the synthesizer cites essentially
-every context supplied.
+\noindent\textbf{(C2a) The walk floods the context; the synthesizer
+filters it} (Table~\ref{tab:pathology}, top). Across embedder \emph{and}
+corpus swaps, GraphRAG's walk fills 11--15 context slots at context
+precision 0.12--0.23 -- five in six retrieved chunks are off-gold. The
+synthesizer then cites only 3.4--5.0 IDs per answer, at citation
+precision 0.48--0.65: a 3--5$\times$ precision enrichment over its own
+context. GraphRAG's $F_1$ edge is therefore a \emph{recall} effect
+(citation recall 0.68--0.74 vs.\ vanilla's 0.46--0.65): the walk
+surfaces gold chunks dense retrieval misses, and the synthesizer
+declines to cite most of the noise that rides along. Evaluations that
+score the retrieved set as the attribution set -- as some GraphRAG
+comparisons do -- measure the flooding and miss the filtering, and
+invert the ranking: by context precision GraphRAG is the worst pipeline
+in every setting; by answer citations it is the best or tied-best.
 
 \noindent\textbf{(C2b) The faithfulness consequence is corpus-conditional.}
 The bottom block shows the split. On DO-178C, GraphRAG
 faithfulness declines with hop distance: Cochran--Armitage trend
 $p{=}0.040/0.008$ (GPT-5.4/GPT-4.1, local embedder) and $p{<}10^{-4}$
-(GPT-4.1, Azure); only GPT-5.4-under-Azure is flat ($p{=}0.51$). On
-MuSiQue neither judge collapses: GPT-5.4 \emph{rises} (n.s.,
-$p{=}0.068$) while GPT-4.1 declines mildly from a 94\% base to 80\%
-($p{=}0.017$), and both 3+-hop endpoints sit far above the DO-178C
-endpoints (58\%/80\% vs.\ 40\%/33\%). The same retrieval behavior thus
-has different faithfulness consequences on different corpora, so
-citation precision alone does not predict faithfulness; we hypothesize
-the mechanism in \S\ref{sec:discussion}.
+(GPT-4.1, Azure); only GPT-5.4-under-Azure is flat ($p{=}0.51$). An
+independent 300-tuple replication batch per embedder, drawn eleven
+weeks later, reproduces the decline under GPT-5.4 in both embedders
+($0.71{\to}0.20$, $p{=}0.002$ local; $0.79{\to}0.00$, $p{<}10^{-4}$
+Azure) while GPT-4.1 -- by then judging 93--95\% of everything
+faithful -- shows no trend ($p{=}0.89/0.30$). The decline thus
+replicates across batches, but \emph{which judge carries it swaps
+with the judging date} (cf.\ C3). On MuSiQue neither judge collapses:
+GPT-5.4 \emph{rises} (n.s., $p{=}0.068$) while GPT-4.1 declines mildly
+from a 94\% base to 80\% ($p{=}0.017$), and both 3+-hop endpoints sit
+far above the DO-178C endpoints (58\%/80\% vs.\ 40\%/33\%). The same
+retrieval behavior thus has different faithfulness consequences on
+different corpora; we hypothesize the mechanism in
+\S\ref{sec:discussion}.
 
 \input{tables/tab_judges}
 
@@ -87,7 +111,8 @@ between GPT-5.4 and GPT-4.1 halves under embedder swap on identical
 tuples (0.30 $\to$ 0.17 overall); McNemar rejects symmetric disagreement
 (exact $p{<}0.001$; GPT-4.1 systematically more lenient). On MuSiQue
 the same pair agrees at chance level ($\kappa{=}0.02$, raw agreement
-0.48; GPT-4.1 judges 88\% faithful vs.\ GPT-5.4's 47\%): C2b's
+0.48, Gwet's AC1 0.08 -- genuine disagreement, not a prevalence
+artifact; GPT-4.1 judges 88\% faithful vs.\ GPT-5.4's 47\%): C2b's
 cross-corpus statements are per judge, each independently showing no
 collapse. The same-judge controls carry the central result: same-input
 same-day test--retest gives $\kappa{=}0.76$ (12\% of verdicts flip on
@@ -99,15 +124,21 @@ response jointly) against a known noise floor. A judge-specific
 component remains: GPT-4.1 flips only 26\% ($\kappa{=}0.48$). A final
 control: re-judging the identical 300 inputs eleven weeks later agrees
 with the earlier verdicts at only $\kappa{=}0.14$ ($+15$\,pp leniency
-shift).
+shift). The replication batches (C2b) show what that drift does at
+scale: eleven weeks on, GPT-4.1 marks 93--95\% of fresh same-distribution
+tuples faithful, inter-judge $\kappa$ falls to $0.05/0.01$
+(local/Azure), and the trend GPT-4.1 itself had established in the
+original batches disappears.
 
 \input{tables/tab_router}
 
 \paragraph{C4 (supporting): Dense embeddings alone classify hop.}
 Table~\ref{tab:router} shows the V2 router replication. The 50-fold
 macro-$F_1$ improves $0.78\pm0.08\to 0.86\pm0.05$ under embedder swap,
-and Adaptive-V2 closes 56\% of the V1$\to$Oracle gap with Holm-significant
-gains in all three strata under both embedders. Only 4 of the 11 hand text
+and Adaptive-V2 closes 59\%/55\% of the V1$\to$Oracle gap
+(local/Azure), with Holm-significant per-stratum gains in 3/3 strata
+locally and 2/3 under Azure (the 3+-hop routing targets are
+statistically tied there). Only 4 of the 11 hand text
 features are ever non-zero on the 296 queries; the rest are inert. The router therefore operates almost
 exclusively on the 3 query-embedding PCs, suggesting hop distance is
 largely an embedding-decodable property of the query text in our
