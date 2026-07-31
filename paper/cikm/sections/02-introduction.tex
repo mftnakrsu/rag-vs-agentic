@@ -11,33 +11,32 @@ Microsoft GraphRAG~\cite{graphrag2024} exploits structure but
 under-performs vector RAG on detailed queries~\cite{ragvsgraphrag2025,
 graphragbench2026}; Adaptive-RAG~\cite{adaptiverag2024} routes by
 complexity yet is hop-blind; LiSSA~\cite{lissa2025} and
-TVR~\cite{niu_tvr2025} omit typed-graph reasoning. The literature
-describes \emph{what} sometimes works in \emph{which} setting; what is
-missing is a mechanism-level account of \emph{why} the verdicts shift.
+TVR~\cite{niu_tvr2025} omit typed-graph reasoning. Prior evaluations
+report which architecture wins in a given setting, but not why the
+outcome changes when the setting changes.
 
 We address this with a \textbf{triple-robustness} analysis. Holding a
 five-pipeline architecture matrix fixed (vanilla, agentic, agentic+graph,
 GraphRAG, learned adaptive), we vary three orthogonal axes: the retrieval
 embedder (e5-small 384d $\to$ Azure 3-small 1536d), the corpus (DO-178C
-$\to$ Wikipedia paragraph chains via MuSiQue mapped to 1/2/3+-hop
-strata), and the faithfulness judge (paired GPT-5.4 $+$ GPT-4.1 on both
-corpora). The design produces $2{\times}4{,}440$ main-matrix runs (one
+$\to$ Wikipedia paragraph chains via MuSiQue), and the faithfulness
+judge (paired GPT-5.4 $+$ GPT-4.1 on both corpora). The design produces $2{\times}4{,}440$ main-matrix runs (one
 full matrix per embedder), 600 cross-corpus runs, and 2{,}400
 faithfulness judgments.
 
 We make four contributions.
 \textbf{(C2a)} Over-citation is \emph{universal across our settings}:
-GraphRAG cites 11--15 IDs at citation precision 0.12--0.23 with retrieval
-recall 0.68--0.87 across all three settings (Table~\ref{tab:pathology}).
+GraphRAG cites 11--15 IDs at citation precision 0.12--0.23 with
+retrieval recall 0.68--0.87 (Table~\ref{tab:pathology}).
 \textbf{(C2b)} Its faithfulness consequence is \emph{corpus-conditional}:
 DO-178C declines across hops (74\%$\to$40\% local); MuSiQue shows no
 collapse under either judge.
 \textbf{(C1)} Stratum-conditional winners are
 \emph{corpus-conditional but embedder-robust} (Table~\ref{tab:dominance}):
 vanilla wins 2-hop on DO-178C; GraphRAG wins 2-hop on MuSiQue.
-\textbf{(C3)} \emph{Single-judge faithfulness is embedder-fragile}: GPT-5.4
-self-$\kappa$ across embedders is just $0.137$ on the paired 300-tuple
-subset (Table~\ref{tab:judges}).
+\textbf{(C3)} \emph{Single-judge faithfulness is unstable}: GPT-5.4
+self-$\kappa$ across embedders is $0.137$ against a $0.76$
+test--retest floor (Table~\ref{tab:judges}).
 \textbf{(C4, supporting)} a logistic-regression router on dense embeddings
 alone reaches macro-$F_1$ $0.86$ on hop classification.
 

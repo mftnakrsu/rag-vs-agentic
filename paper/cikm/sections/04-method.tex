@@ -28,9 +28,10 @@ differ only in retrieval. \textbf{(i)~Vanilla}: dense top-$k$ ($k{=}10$) + one
 synthesis call. \textbf{(ii)~Agentic}: LangGraph
 router-retriever-critic loop, \texttt{search\_documents} tool only, iter
 cap 3. \textbf{(iii)~GraphRAG}: vector seeds (8) + up-to-2-hop typed-graph
-walk via Cypher (walk cap 30, context cap 15), single synthesis --- a typed-edge local-walk retriever
-in the GraphRAG family, not Edge et~al.'s community-summarization
-system~\cite{graphrag2024}; we use ``GraphRAG'' as the family label. \textbf{(iv)~Agentic+Graph}: (ii) plus
+walk via Cypher (walk cap 30, context cap 15), single synthesis. This
+is a typed-edge local-walk retriever in the GraphRAG family, not Edge
+et~al.'s community-summarization system~\cite{graphrag2024}; we use
+``GraphRAG'' as the family label. \textbf{(iv)~Agentic+Graph}: (ii) plus
 a typed-edge \texttt{graph\_lookup} tool. \textbf{(v)~Adaptive}: chooses
 among (i)--(iv) per query; we evaluate a rule-based router (V1) and a
 learned out-of-fold logistic regression (V2).
