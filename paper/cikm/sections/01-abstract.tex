@@ -1,12 +1,12 @@
 \begin{abstract}
-GraphRAG underperforms vector RAG on citation precision in many reports,
-but \emph{where} and \emph{why} have remained corpus-bound. We present a
-triple-robustness analysis that holds the retrieval architecture fixed and
-varies three orthogonal axes --- \textbf{embedder} (local e5-small $\to$
-Azure text-embedding-3-small), \textbf{corpus} (DO-178C typed-edge
-requirements $\to$ Wikipedia paragraph chains via MuSiQue),
-and \textbf{judge} (paired GPT-5.4 $\times$ GPT-4.1 on both corpora) ---
-across $2{\times}4{,}440$ main-matrix runs, 600 cross-corpus runs, and
+Recent studies report that GraphRAG underperforms vector RAG on
+citation precision, but the evidence is typically tied to a single
+corpus, embedder, and judge. We present a triple-robustness analysis
+that holds the retrieval architecture fixed and varies all three:
+embedder (local e5-small vs.\ Azure text-embedding-3-small), corpus
+(DO-178C typed-edge requirements vs.\ Wikipedia paragraph chains via
+MuSiQue), and judge (paired GPT-5.4 $\times$ GPT-4.1 on both corpora),
+over $2{\times}4{,}440$ main-matrix runs, 600 cross-corpus runs, and
 2{,}400 faithfulness judgments. \textbf{(C2a)} Over-citation is universal
 across all our settings:
 GraphRAG emits 11--15 IDs per answer at citation precision 0.12--0.23 and
@@ -21,9 +21,9 @@ embedder-robust: vanilla wins 2-hop on DO-178C, GraphRAG wins 2-hop on
 MuSiQue, identical under either embedder.
 \textbf{(C3)} Single-judge LLM faithfulness is fragile to retrieval
 state: GPT-5.4's self-$\kappa$ across embedders is $0.137$ (41\% verdict
-change) against a same-day test--retest floor of $0.76$ --- and
-$\kappa{=}0.14$ re-judging frozen inputs eleven weeks later. A learned router on dense embeddings alone
-reaches macro-$F_1$ $0.86$ on hop classification \textbf{(C4)}. We argue
-triple-robustness is the minimum bar for trustworthy RAG architecture
-claims.
+change) against a same-day test--retest floor of $0.76$; re-judging
+frozen inputs eleven weeks later also gives $\kappa{=}0.14$. A learned
+router on dense embeddings alone reaches macro-$F_1$ $0.86$ on hop
+classification \textbf{(C4)}. We argue that RAG architecture claims
+should be tested at this level of robustness before they are trusted.
 \end{abstract}

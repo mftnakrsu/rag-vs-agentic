@@ -5,7 +5,7 @@
 
 \begin{figure}[t!]
   \centering
-  \includegraphics[width=0.94\columnwidth]{figures/fig1_per_stratum_f1.pdf}
+  \includegraphics[width=0.88\columnwidth]{figures/fig1_per_stratum_f1.pdf}
   \caption{Per-stratum citation $F_1$ on the v2 main matrix (DO-178C,
     local e5-small embedder): five pipelines with BCa 95\% CIs;
     \mbox{$*$} marks pipelines significantly different from the
@@ -35,12 +35,12 @@ dominance.
 
 \begin{figure}[t!]
   \centering
-  \includegraphics[width=0.88\columnwidth]{figures/fig2_faithfulness_heatmap.pdf}
+  \includegraphics[width=0.84\columnwidth]{figures/fig2_faithfulness_heatmap.pdf}
   \caption{Multi-judge faithfulness on the v2 main matrix.
     \textit{Left}: faithfulness fraction (5 pipelines $\times$ 3 hop
     strata $\times$ 2 judges); the GraphRAG row shows the monotonic
     decline driving C2b on DO-178C. \textit{Right}: per-stratum Gwet
-    AC1 --- the $\kappa$ paradox at 3+-hop (AC1${=}0.57$,
+    AC1, showing the $\kappa$ paradox at 3+-hop (AC1${=}0.57$,
     $\kappa{<}0.10$; cf.\ Table~\ref{tab:judges}). v3 and MuSiQue:
     Table~\ref{tab:pathology}.}
   \Description{Heatmap of faithfulness percentages for five RAG
@@ -64,22 +64,23 @@ in the 0.68--0.87 range. Against the context cap of 15, a mean of
 every context supplied.
 
 \noindent\textbf{(C2b) The faithfulness consequence is corpus-conditional.}
-The bottom block reveals the consequence split. On DO-178C, GraphRAG
+The bottom block shows the split. On DO-178C, GraphRAG
 faithfulness declines with hop distance: Cochran--Armitage trend
 $p{=}0.040/0.008$ (GPT-5.4/GPT-4.1, local embedder) and $p{<}10^{-4}$
 (GPT-4.1, Azure); only GPT-5.4-under-Azure is flat ($p{=}0.51$). On
 MuSiQue neither judge collapses: GPT-5.4 \emph{rises} (n.s.,
 $p{=}0.068$) while GPT-4.1 declines mildly from a 94\% base to 80\%
-($p{=}0.017$) --- both 3+-hop endpoints sit far above the DO-178C
-endpoints (58\%/80\% vs.\ 40\%/33\%). Over-citation is
-therefore setting-universal but consequentially domain-bound ---
-a constraint on inferring faithfulness from citation precision alone;
-we hypothesize the mechanism in \S\ref{sec:discussion}.
+($p{=}0.017$), and both 3+-hop endpoints sit far above the DO-178C
+endpoints (58\%/80\% vs.\ 40\%/33\%). The same retrieval behavior thus
+has different faithfulness consequences on different corpora, so
+citation precision alone does not predict faithfulness; we hypothesize
+the mechanism in \S\ref{sec:discussion}.
 
 \input{tables/tab_judges}
 
 \subsection{C3: Single-Judge Faithfulness is Retrieval-State-Fragile}
 \label{sec:c3}
+\looseness=-1
 Table~\ref{tab:judges} reports inter-judge agreement on the paired
 300-tuple subset and three same-judge controls. Inter-judge $\kappa$
 between GPT-5.4 and GPT-4.1 halves under embedder swap on identical
@@ -88,17 +89,17 @@ tuples (0.30 $\to$ 0.17 overall); McNemar rejects symmetric disagreement
 the same pair agrees at chance level ($\kappa{=}0.02$, raw agreement
 0.48; GPT-4.1 judges 88\% faithful vs.\ GPT-5.4's 47\%): C2b's
 cross-corpus statements are per judge, each independently showing no
-collapse. The headline is the joint read of the same-judge block: same-input same-day
-test--retest gives $\kappa{=}0.76$ (12\% of verdicts flip on pure
-resampling), while re-judging the same tuples after an embedder swap
-gives $\kappa{=}0.14$ (41\% flip). The swap changes retrieved contexts
+collapse. The same-judge controls carry the central result: same-input
+same-day test--retest gives $\kappa{=}0.76$ (12\% of verdicts flip on
+resampling alone), while re-judging the same tuples after an embedder
+swap gives $\kappa{=}0.14$ (41\% flip). The swap changes retrieved contexts
 and answers on 94\% of tuples: the gap thus measures verdict
 sensitivity to \emph{upstream retrieval state} (output drift and judge
 response jointly) against a known noise floor. A judge-specific
-component remains: GPT-4.1 flips only 26\% on the same items
-($\kappa{=}0.48$). A final control: the same deployment re-judging the
-identical 300 inputs eleven weeks later agrees with its own earlier
-verdicts at only $\kappa{=}0.14$ ($+15$\,pp leniency shift).
+component remains: GPT-4.1 flips only 26\% ($\kappa{=}0.48$). A final
+control: re-judging the identical 300 inputs eleven weeks later agrees
+with the earlier verdicts at only $\kappa{=}0.14$ ($+15$\,pp leniency
+shift).
 
 \input{tables/tab_router}
 
