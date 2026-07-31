@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Adversarial Pre-Submission Review — Universal Pathologies, Conditional Consequences (CIKM 2026)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --surface:#fcfcfb; --page:#f9f9f7; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --baseline:#c3c2b7; --border:rgba(11,11,11,.10);
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100;
+  --seq100:#cde2fb; --seq150:#b7d3f6; --seq200:#9ec5f4; --seq250:#86b6ef; --seq300:#6da7ec; --seq400:#3987e5; --seq500:#256abf; --seq600:#184f95;
+  --crit:#d03b3b; --warn:#fab219; --serious:#ec835a; --good:#0ca30c; --goodtext:#006300;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--page);color:var(--ink);font:15px/1.6 "Inter",system-ui,sans-serif}
+.wrap{max-width:960px;margin:0 auto;padding:0 32px 80px}
+h1,h2,h3,h4{font-family:"Playfair Display",Georgia,serif;line-height:1.25;margin:1.4em 0 .5em}
+h1{font-size:34px;font-weight:700}
+h2{font-size:25px;font-weight:600;border-bottom:2px solid var(--ink);padding-bottom:6px}
+h3{font-size:19px;font-weight:600}
+h4{font-size:16px;font-weight:600}
+p{margin:.6em 0}
+a{color:var(--seq500);text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.88em;background:#f0efec;padding:1px 5px;border-radius:4px}
+table{border-collapse:collapse;width:100%;margin:14px 0;font-size:13.5px;background:var(--surface);break-inside:avoid}
+th{font-weight:600;text-align:left;border-bottom:2px solid var(--ink);padding:7px 9px;vertical-align:bottom}
+td{border-bottom:1px solid var(--grid);padding:7px 9px;vertical-align:top}
+tr:last-child td{border-bottom:none}
+.tight td,.tight th{padding:5px 7px;font-size:12.8px}
+.scrollx{overflow-x:auto}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 22px;margin:16px 0;break-inside:avoid}
+.chip{display:inline-block;font-size:11.5px;font-weight:600;padding:1px 9px;border-radius:999px;margin-right:6px;white-space:nowrap}
+.c-crit{background:#fbe4e4;color:#8f1f1f}
+.c-imp{background:#fdf0d3;color:#7a5200}
+.c-min{background:#e0f3e0;color:#1c5e1c}
+.c-nit{background:#eeedea;color:#52514e}
+.tag{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.04em;padding:1px 7px;border-radius:4px;vertical-align:1px}
+.t-leg{background:#0b0b0b;color:#fff}
+.t-unf{background:#fff;color:#0b0b0b;border:1.5px dashed #898781}
+.t-unv{background:#fdf0d3;color:#7a5200;border:1px solid #eda100}
+.pass{color:var(--goodtext);font-weight:600}
+.fail{color:var(--crit);font-weight:600}
+.risk{color:#a86a00;font-weight:600}
+.v-sup{background:#e0f3e0}
+.v-part{background:#fdf0d3}
+.v-unsup{background:#fbe4e4}
+.v-contra{background:#f3d1d1;font-weight:600}
+.kicker{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink2)}
+.cover{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:44px 48px;margin:40px 0 28px}
+.cover h1{margin:.2em 0 .3em}
+.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 32px;margin:18px 0;font-size:14px}
+.meta-grid b{font-weight:600}
+.verdictbar{display:flex;gap:14px;flex-wrap:wrap;margin-top:22px}
+.verdict{flex:1;min-width:150px;border:1px solid var(--border);border-radius:10px;padding:12px 16px;background:var(--page)}
+.verdict .big{font-family:"Playfair Display",serif;font-size:30px;font-weight:700;line-height:1.1}
+.verdict .lbl{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2)}
+.legend{font-size:12.5px;color:var(--ink2);margin-top:20px;border-top:1px solid var(--grid);padding-top:12px}
+.toc{columns:2;column-gap:40px;font-size:14px}
+.toc li{margin:3px 0;break-inside:avoid}
+ol,ul{padding-left:22px}
+li{margin:4px 0}
+.finding{border-left:4px solid var(--grid);padding:2px 0 2px 14px;margin:14px 0;break-inside:avoid}
+.f-crit{border-left-color:var(--crit)}
+.f-imp{border-left-color:var(--warn)}
+.f-min{border-left-color:var(--good)}
+.f-nit{border-left-color:var(--baseline)}
+.loc{font-size:12px;color:var(--muted);font-weight:600}
+.fix{font-size:13.5px;color:var(--ink2);margin-top:4px}
+.fix b{color:var(--goodtext)}
+.svgcard{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px 8px;margin:16px 0;break-inside:avoid}
+.svgcard .cap{font-size:12.5px;color:var(--ink2);margin:6px 0 8px}
+.review{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 22px;margin:18px 0;break-inside:avoid}
+.review .rating{font-weight:700}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media(max-width:760px){.two{grid-template-columns:1fr}.toc{columns:1}}
+.footer-note{position:fixed;bottom:0;left:0;right:0;display:none}
+blockquote{border-left:3px solid var(--baseline);margin:10px 0;padding:2px 16px;color:var(--ink2);font-size:13.5px}
+.heat td{text-align:center;font-weight:600}
+@media print{
+  body{background:#fff;font-size:11.5px}
+  .wrap{max-width:none;padding:0 4mm}
+  .pass-brk{page-break-before:always}
+  table,.card,.finding,.review,.svgcard{page-break-inside:avoid}
+  a{color:inherit}
+  .footer-note{display:block;position:fixed;bottom:2mm;left:0;right:0;text-align:center;font-size:8.5px;color:#898781}
+  @page{margin:14mm 12mm 16mm}
+}
+</style>
+</head>
+<body>
+<div class="footer-note">Adversarial Pre-Submission Review — Universal Pathologies, Conditional Consequences (CIKM 2026 short)</div>
+<div class="wrap">
+
+<!-- ============================ COVER ============================ -->
+<div class="cover">
+  <div class="kicker">Adversarial Pre-Submission Review · Simulated Program Committee</div>
+  <h1>Universal Pathologies, Conditional Consequences:<br>A Triple-Robustness Analysis of RAG for Multi-Hop Traceability</h1>
+  <div class="meta-grid">
+    <div><b>Target venue:</b> CIKM 2026 Short Research Paper (4 pp + refs + GenAI disclosure, double-blind)</div>
+    <div><b>Review date:</b> 31 July 2026</div>
+    <div><b>Declared contribution type:</b> Empirical analysis / evaluation study (inferred — not declared)</div>
+    <div><b>Primary subarea:</b> RAG evaluation; requirements traceability; LLM-as-judge methodology</div>
+    <div><b>Status:</b> Submitted 6 Jun 2026 · notification ~7 Aug 2026</div>
+    <div><b>Review purpose:</b> camera-ready hardening if accepted; arXiv v2 / UBMK resubmission if rejected</div>
+  </div>
+  <p style="font-size:13px;color:var(--ink2)"><b>Calibration note.</b> The review template targets CVPR/ECCV; all venue-policy passes below are re-calibrated to CIKM 2026 / ACM norms (4-page short excl. references and GenAI disclosure, <code>acmart sigconf anonymous</code>, mandatory GenAI disclosure, ACM authorship &amp; data-attribution policy). Where a CVPR-specific rule has no CIKM analogue it is marked N/A.</p>
+  <div class="verdictbar">
+    <div class="verdict"><div class="lbl">Overall grade</div><div class="big">C+</div><div style="font-size:12px;color:var(--ink2)">B/B+ reachable after Wave-1 fixes</div></div>
+    <div class="verdict"><div class="lbl">Predicted rating</div><div class="big">Borderline&nbsp;→&nbsp;WR</div><div style="font-size:12px;color:var(--ink2)">R1 WR · R2 WA · R3 R · AC borderline-reject</div></div>
+    <div class="verdict"><div class="lbl">Accept probability</div><div class="big">~25–30%</div><div style="font-size:12px;color:var(--ink2)">as submitted · ~50% with fixes at a future venue</div></div>
+  </div>
+  <div class="legend">
+    <b>Severity:</b>
+    <span class="chip c-crit">🔴 Critical</span>
+    <span class="chip c-imp">🟡 Important</span>
+    <span class="chip c-min">🟢 Minor</span>
+    <span class="chip c-nit">⚪ Nit</span>
+    &nbsp;·&nbsp; <b>Tags:</b>
+    <span class="tag t-leg">LEGITIMATE</span> fair criticism, reviewer would be right
+    &nbsp;<span class="tag t-unf">LIKELY-BUT-UNFAIR</span> probable but discountable — needs a defensive sentence
+    &nbsp;<span class="tag t-unv">⚠ UNVERIFIED</span> author must check
+  </div>
+</div>
+
+<!-- ============================ EXEC SUMMARY ============================ -->
+<h2 id="exec">Executive Summary — The Five Blockers</h2>
+<p>Everything below was verified against the paper source (<code>paper/cikm/</code>), the generated tables, and the underlying result CSVs (<code>results/stats-v3/</code>, <code>results/main-v2-judged.csv</code>, <code>results/main-v3-judged-pinned.csv</code>). Where a number in this review is stated as fact, it was recomputed from the repository data, not taken on faith from the paper.</p>
+
+<div class="finding f-crit">
+  <b>B1 🔴 The flagship C3 statistic does not measure what the text says it measures.</b> <span class="tag t-leg">LEGITIMATE</span>
+  <div class="loc">§6.3 (sec:c3) lines 91–93; Table 3 caption; Abstract C3</div>
+  <p>§6.3 claims: <i>"the same judge reading the same question and pipeline output changes verdict on 41% of items when only the retrieval embedding changes."</i> The pipeline output is <b>not</b> the same. Recomputation on the 300 pinned tuples: <b>283/300 (94%) have different cited-ID sets between v2 and v3</b> — the embedder swap changes retrieval, which changes the generated answer, which the judge then correctly judges as a different item. The verdict flips (123/300 for GPT-5.4 = 41% ✓; 78/300 for GPT-4.1 = 26% ✓) conflate output drift with judge instability. As written, C3's "first quantification of single-judge fragility in a controlled paired design" is refutable from the paper's own artifacts: the design is not controlled in the variable that matters.</p>
+  <div class="fix"><b>Fix:</b> (a) Reframe C3 as <i>"faithfulness verdicts are embedder-conditional because the full pipeline state is"</i> — which the Discussion (§7, "Implications") already states correctly; make §6.3 and the abstract match the Discussion, not vice versa. (b) The salvageable judge-specific evidence is the <i>differential</i>: on the identical set of changed items, GPT-5.4 flips 41% vs GPT-4.1's 26% — same inputs, 15 pp more instability is attributable to the judge. Lead with that. (c) Ideal (2–3 h, ~$3): re-judge the <i>identical v2 answers</i> twice with GPT-5.4 to establish the same-input flip-rate baseline (test–retest); report it next to the cross-embedder rate.</div>
+</div>
+
+<div class="finding f-crit">
+  <b>B2 🔴 C2b's cross-corpus leg rests on the judge configuration C3 discredits — and the Discussion concedes it while the Abstract claims it.</b> <span class="tag t-leg">LEGITIMATE</span>
+  <div class="loc">Abstract (C2b); §5 "Faithfulness judging"; §6.2; §7 Threats ("cross-corpus replication of C1 and C2b is left for the journal extension"); §2 ("we use MuSiQue for cross-corpus replication of C2a only")</div>
+  <p>The MuSiQue faithfulness numbers (42%→54%→58%) are single-judged by GPT-5.4 — the judge the paper itself shows to be the least stable (self-κ 0.137). So the headline "corpus-conditional consequence" contrast compares a two-judge DO-178C protocol against a one-fragile-judge MuSiQue protocol. Worse, the paper says this three different ways: the Abstract asserts C2b cross-corpus as a finding; Related Work says MuSiQue replicates <i>C2a only</i>; Threats defers C2b cross-corpus replication to a journal extension. A reviewer quoting these three sentences side by side writes the rejection paragraph for you.</p>
+  <div class="fix"><b>Fix:</b> Cheapest real fix (~$5, one evening): run GPT-4.1 over the same 600 MuSiQue rows and report both judges — if the rise holds under the stable judge, C2b becomes solid. Otherwise: downgrade the abstract to "single-judge evidence suggests the consequence reverses on Wikipedia chains" and make the three scope sentences agree.</div>
+</div>
+
+<div class="finding f-crit">
+  <b>B3 🔴 Corpus provenance story contradicts the public record attached to this project.</b> <span class="tag t-leg">LEGITIMATE</span> — integrity-level, worse than any reviewer comment
+  <div class="loc">§99 GenAI Disclosure (a); §7 Threats (External); vs. repo README, HF dataset card <code>meftun/aerosys-requirements</code>, Kaggle card</div>
+  <p>The paper states the corpus is <i>"derived from proprietary aerospace certification artifacts… LLM-anonymized for release because the raw source artifacts are subject to IP and export-control restrictions."</i> The project's own README, HANDOFF, and the <b>publicly published dataset cards</b> (Hugging Face + Kaggle, CC BY 4.0) describe the same 1,132-requirement corpus as a <b>synthetic</b> corpus, and the earlier disclosure draft (docs/plan.md §6) says GPT-5.4 <i>generated</i> it from a hand-authored taxonomy. Both stories cannot be true. If the paper's provenance claim is inaccurate, that is a research-integrity problem, not a reviewing problem. Additionally: (a) the public dataset is trivially findable (unique 1,132-requirement count, module names), and its slug carries an author handle — a de-anonymization vector during review; (b) "export-controlled source rewritten by an LLM and released CC BY 4.0" is self-undermining — if export control applied, an LLM paraphrase does not obviously discharge it, and a reviewer with aerospace exposure will say so; (c) module count is inconsistent (paper §4.2: 32 modules; README: 30).</p>
+  <div class="fix"><b>Fix:</b> Decide the single true provenance story and make paper, GenAI disclosure, dataset cards, and README say the same thing. If the corpus is synthetic-from-taxonomy, say exactly that (it is defensible — cite the anonymized-release precedent and keep the DO-178C-style framing); delete the export-control sentence entirely. This must be resolved before camera-ready or any arXiv posting.</div>
+</div>
+
+<div class="finding f-crit">
+  <b>B4 🔴 The pipeline named "GraphRAG" is not GraphRAG.</b> <span class="tag t-leg">LEGITIMATE</span>
+  <div class="loc">§1 (cites Edge et al. as "Microsoft GraphRAG"); §4.1(iii) ("vector seeds + up-to-2-hop typed-graph walk via Cypher, single synthesis")</div>
+  <p>The paper's headline pathology ("GraphRAG over-cites… architecturally universal") is measured on a custom vector-seed + 2-hop typed-edge Cypher walk. Edge et al.'s GraphRAG builds entity graphs with community detection and hierarchical summarization — a different architecture with different citation behavior. The intro invokes Microsoft GraphRAG and prior GraphRAG-vs-RAG literature, then evaluates a homegrown graph-walk retriever under the same name. An expert reviewer's cheapest kill-shot: "the universal pathology is a pathology of <i>your</i> graph walk; no published GraphRAG system was evaluated."</p>
+  <div class="fix"><b>Fix:</b> One honest sentence in §4.1 — "our graph pipeline is a typed-edge local-walk retriever in the GraphRAG family (vector seeds + bounded typed-edge expansion), not Edge et al.'s community-summarization system; we use 'GraphRAG' as the family label" — plus soften "architecturally universal" to "universal across our settings for typed-edge expansion retrievers." Better: rename the pipeline <i>graph-walk</i> throughout (mechanical, ~30 min).</div>
+</div>
+
+<div class="finding f-crit">
+  <b>B5 🔴 Compliance pair: main text spills past page 4, and the abstract's run count contradicts Table 1.</b> <span class="tag t-leg">LEGITIMATE</span>
+  <div class="loc">Compiled PDF p.5 (conclusion overrun above "GENAI USAGE DISCLOSURE"); Abstract ("4,440 main-matrix runs") vs Table 1 caption ("v2 main … 4,440 runs; v3 main … 4,440 runs")</div>
+  <p>(a) In the current build, the last two lines of the Conclusion land on page 5. CIKM's 4-page limit excludes references and the GenAI disclosure — not conclusion text. As compiled, this is a desk-reject-checkable violation. (b) The design is 4,440 runs <i>per embedder</i> (2 × 4,440 = 8,880 main-matrix runs) plus 600 MuSiQue runs; the abstract and intro say "4,440 main-matrix runs." The paper under-counts its own experiment and contradicts its own table caption — an easy credibility ding for a careful reviewer and a wrong number in every future citation of the paper.</p>
+  <div class="fix"><b>Fix:</b> Trim three lines (the TikZ figure or Related Work para 1 gives them up painlessly); change to "2×4,440 main-matrix runs (both embedders)". 20 minutes total.</div>
+</div>
+
+<!-- ============================ TOC ============================ -->
+<h2 id="toc">Contents</h2>
+<ol class="toc">
+<li><a href="#p1">Pass 1 — Desk-Reject &amp; Policy Compliance</a></li>
+<li><a href="#p2">Pass 2 — Contribution-Type Calibration</a></li>
+<li><a href="#p3">Pass 3 — First-Ten-Minutes Test</a></li>
+<li><a href="#p4">Pass 4 — Claim–Evidence Alignment</a></li>
+<li><a href="#p5">Pass 5 — Novelty &amp; Positioning</a></li>
+<li><a href="#p6">Pass 6 — Related Work &amp; Citation Integrity</a></li>
+<li><a href="#p7">Pass 7 — Method Clarity &amp; Soundness</a></li>
+<li><a href="#p8">Pass 8 — Experimental Design Rigor</a></li>
+<li><a href="#p9">Pass 9 — Baseline Sufficiency</a></li>
+<li><a href="#p10">Pass 10 — Ablation Completeness</a></li>
+<li><a href="#p11">Pass 11 — Results Interpretation</a></li>
+<li><a href="#p12">Pass 12 — Statistical Validity</a></li>
+<li><a href="#p13">Pass 13 — Efficiency &amp; Compute</a></li>
+<li><a href="#p14">Pass 14 — Generalization &amp; Scope</a></li>
+<li><a href="#p15">Pass 15 — Figures &amp; Tables</a></li>
+<li><a href="#p16">Pass 16 — Structure &amp; Page Budget</a></li>
+<li><a href="#p17">Pass 17 — Reviewer-Friction Heatmap</a></li>
+<li><a href="#p18">Pass 18 — Language &amp; Copy Edit</a></li>
+<li><a href="#p19">Pass 19 — Reproducibility &amp; Artifacts</a></li>
+<li><a href="#p20">Pass 20 — Ethics, Provenance &amp; Impact</a></li>
+<li><a href="#p21">Pass 21 — Simulated Review Panel (Appendix B)</a></li>
+<li><a href="#p22">Pass 22 — Synthesis, Rebuttal &amp; Roadmap</a></li>
+<li><a href="#appA">Appendix A — Full Claim–Evidence Matrix</a></li>
+<li><a href="#scorecard">Final Scorecard</a></li>
+</ol>
+
+<!-- ============================ PASS 1 ============================ -->
+<h2 id="p1" class="pass-brk">Pass 1 — Desk-Reject &amp; Policy Compliance Audit</h2>
+<div class="scrollx"><table class="tight">
+<tr><th>Check (CIKM-calibrated)</th><th>Status</th><th>Detail / Remedy</th></tr>
+<tr><td>Page count (4 pp excl. refs + GenAI disclosure)</td><td class="fail">FAIL</td><td>Conclusion tail renders on p.5 in the current build. Trim ~3 lines (see B5). Verify the actually-submitted PDF — if it also spilled, expect a desk-check flag.</td></tr>
+<tr><td>Template / class</td><td class="pass">PASS</td><td><code>\documentclass[sigconf,natbib=true,anonymous=true]{acmart}</code>, <code>printacmref=false</code>, correct conference block.</td></tr>
+<tr><td>PDF metadata anonymity</td><td class="pass">PASS</td><td><code>pdfinfo</code>: no Author field. Re-verify with <code>exiftool</code> after any recompile.</td></tr>
+<tr><td>Content anonymity</td><td class="risk">RISK</td><td>No names/links in text. But the corpus is uniquely identifiable (1,132 reqs, module names) with public HF/Kaggle cards under an author handle — a determined reviewer de-anonymizes in one search. Mitigation for future cycles: an anonymized dataset mirror, and don't quote the exact requirement count on the public card during review.</td></tr>
+<tr><td>Self-citation phrasing</td><td class="pass">PASS</td><td>No "our prior work" constructions found.</td></tr>
+<tr><td>External links in submission</td><td class="pass">PASS</td><td>No URLs in body; software URLs only in refs (acceptable).</td></tr>
+<tr><td>Dual submission / prior versions</td><td class="pass">PASS</td><td>Dataset release ≠ paper publication. arXiv preprint of the same text: permitted by ACM/CIKM non-anonymous preprint norms — <span class="tag t-unv">⚠ UNVERIFIED</span> confirm CIKM 2026 CFP wording before posting v2 during review of any resubmission.</td></tr>
+<tr><td>Hidden text / prompt injection</td><td class="pass">PASS</td><td>Source inspected; no white-on-white or hidden content.</td></tr>
+<tr><td>Citation integrity</td><td class="risk">RISK</td><td>5 entries need verification (Pass 6). Note <code>refs.bib</code> lines 4–6 <i>literally say</i> "verify these against DBLP/Semantic Scholar before camera-ready" — do it; hallucinated refs are treated as author responsibility.</td></tr>
+<tr><td>Withdrawn / restricted datasets</td><td class="risk">RISK</td><td>No withdrawn sets. But the "export-control" provenance sentence (B3) creates a restriction problem the paper itself asserts. MuSiQue: CC-BY-4.0 — cite license; the <code>dgslibisey/MuSiQue</code> HF mirror should be credited alongside Trivedi et al. <span class="tag t-unv">⚠ UNVERIFIED</span> mirror's license field.</td></tr>
+<tr><td>GenAI disclosure (mandatory at CIKM 2026)</td><td class="risk">PRESENT, but…</td><td>Section exists and is specific (good) — but its provenance paragraph is the B3 contradiction. Fix content, keep structure.</td></tr>
+<tr><td>In-text citation hygiene</td><td class="risk">MINOR</td><td>"Macbeth 2011" cited as plain text in §5 with no bib entry — add <code>@article{macbeth2011}</code> or cite Cliff (1993).</td></tr>
+</table></div>
+
+<!-- ============================ PASS 2 ============================ -->
+<h2 id="p2" class="pass-brk">Pass 2 — Contribution-Type Calibration</h2>
+<p><b>Actual center of gravity:</b> an empirical analysis / evaluation-methodology paper. It proposes no new model; its contributions are measurements (C1, C2a, C2b), a methodological warning (C3), and a diagnostic probe (C4). This is the right genre for a CIKM short and the framing mostly matches — no reclassification risk.</p>
+<p><b>The rubric it will actually be scored on:</b></p>
+<ol>
+<li><b>Claim–evidence alignment</b> — the weakest axis (Pass 4): C3's wording and C2b's judge asymmetry are exactly the kind of gap this rubric exists to catch.</li>
+<li><b>Protocol soundness</b> — strong on citation-F1 statistics (BCa/Holm/Cliff's δ is above the bar for shorts); weak on faithfulness statistics (no intervals, no tests — Pass 12).</li>
+<li><b>Insight novelty</b> — genuinely good: the mechanism-vs-consequence split and paired-tuple judging are new framings (Pass 5).</li>
+<li><b>Generality of the evaluated artifact</b> — vulnerable via B4 (one homegrown graph retriever carries a claim about an architecture family).</li>
+<li><b>Reproducibility</b> — middling (Pass 19).</li>
+</ol>
+<p><b>Do-not-penalize list</b> (don't waste page space defending): no new SOTA method; no reranker (already correctly scoped as orthogonal in §7); no third corpus; short-paper-scale N. One existing defensive sentence — the reranker one — is well judged; don't add more of these.</p>
+
+<!-- ============================ PASS 3 ============================ -->
+<h2 id="p3" class="pass-brk">Pass 3 — The First-Ten-Minutes Test</h2>
+<p><b>Minutes 0–10 (title, abstract, Table 1, intro):</b> The title is excellent — it states the thesis. The abstract is unusually information-dense and quantified; a methods-literate reviewer's prior lands at <i>weak accept</i>: "ambitious matrix, real statistics, falsifiable claims." Two frictions already visible: the contribution labels arrive out of order (C2a, C2b, C1, C3, C4 — the reader wonders whether they missed C1), and "v2/v3" appear in Table 1's header as unexplained internal codenames.</p>
+<p><b>Full read:</b> the prior <b>drops</b>. §6.3's "same … pipeline output" wording invites the exact check that falsifies it (B1); §2's "C2a only" and §7's "C2b … journal extension" contradict the abstract (B2); §4.1's pipeline description quietly reveals "GraphRAG" is a custom walk (B4). <b>Diagnosis: framing problem, not marketing problem.</b> The evidence base is stronger than the wording discipline — the paper over-promises in exactly three sentences that its own tables and its own Discussion don't back. All three are fixable with wording, which is the most favorable kind of framing problem to have.</p>
+
+<!-- ============================ PASS 4 ============================ -->
+<h2 id="p4" class="pass-brk">Pass 4 — Claim Inventory &amp; Claim–Evidence Alignment</h2>
+<p>Full color-coded matrix in <a href="#appA">Appendix A</a> (22 claims: 9 supported, 8 partial, 3 unsupported, 2 contradicted-by-own-text). The four gaps that matter, with tightened wording:</p>
+<div class="finding f-crit"><b>🔴 C3 "same question and pipeline output"</b> <span class="loc">§6.3</span> — Contradicted by artifacts (283/300 outputs differ). <div class="fix"><b>Tightened:</b> "the same judge, re-judging the same (query, pipeline, seed) tuple after an embedder swap changes the retrieved context and answer, flips its verdict on 41% of items — versus 26% for GPT-4.1 on the identical item set, isolating a judge-specific instability component of ≥15 pp."</div></div>
+<div class="finding f-crit"><b>🔴 Abstract C2b "GraphRAG faithfulness collapses 74%→40%"</b> <span class="loc">Abstract; §6.2</span> — Partially supported: that trajectory is the local-embedder run only; the paper's own Table 2 shows the Azure run is flat (52/55/40). The "collapse" is embedder-conditional too, which the abstract hides and §6.2 admits ("flattens to ≈50%"). <div class="fix"><b>Tightened:</b> "collapses under the local embedder (74→40) and degrades to ≈50% under the Azure embedder, while MuSiQue rises…" — one clause, honesty preserved, claim survives.</div></div>
+<div class="finding f-imp"><b>🟡 "4,440 main-matrix runs"</b> <span class="loc">Abstract, §1</span> — Contradicted by Table 1 caption (2 × 4,440). See B5.</div>
+<div class="finding f-imp"><b>🟡 §6.2 mechanism narration</b> <span class="loc">"over-cited IDs are adversarial distractors whose claims contradict the question"</span> — Unsupported as evidence: no failure-mode coding or contradiction measurement exists in the paper; this is an interpretation presented in mechanism language. <div class="fix"><b>Fix:</b> either mark it "we hypothesize", or spend 3 hours hand-coding 30 over-cited GraphRAG answers (the failure-taxonomy the project plan already scoped) and cite the counts — that single small table would convert C2b's story from narrative to evidence and is the highest-value 3 hours available.</div></div>
+
+<!-- ============================ PASS 5 ============================ -->
+<h2 id="p5" class="pass-brk">Pass 5 — Novelty &amp; Positioning</h2>
+<p><b>AC-summary of the advancement:</b> "Prior work established <i>that</i> GraphRAG sometimes loses to vector RAG; this paper separates the invariant mechanism (over-citation) from its corpus-conditional consequence (faithfulness), and shows LLM-judge verdicts are conditioned on upstream retrieval state — so single-judge, single-corpus, single-embedder RAG claims don't transfer." That is a real, quotable advancement — the paper's novelty is in the <i>factorization</i>, not in any component.</p>
+<p><b>Three most damaging "incremental over [X]" attacks and the counters:</b></p>
+<table>
+<tr><th>Attack</th><th>Named prior</th><th>Strongest honest counter</th></tr>
+<tr><td>"GraphRAG-vs-RAG comparison already done, including 'no universal winner'."</td><td>Han et al., arXiv:2502.11371; GraphRAG-Bench (arXiv:2506.05690)</td><td>Neither varies embedder or judge; neither measures over-citation as a mechanism metric (mean cited IDs + citP + retrieval recall triplet) or its faithfulness consequence separately. The mechanism/consequence split is not in either paper. This counter exists in §2 but is stated too meekly — sharpen to name what the priors <i>cannot</i> answer.</td></tr>
+<tr><td>"LLM-judge instability is known."</td><td>Wallat et al. 2412.18004; Wataoka et al. 2410.21819; the judge-robustness literature broadly</td><td>Known instabilities are prompt/position/verbosity-side. Conditioning on <i>upstream retrieval state</i> with pinned tuples is new — but only survives if C3 is reframed per B1; as worded it's refutable, which converts a novelty into a liability.</td></tr>
+<tr><td>"Known component A (graph walk) applied to known setting B (traceability); LiSSA/TVR already do RAG traceability."</td><td>LiSSA (ICSE'25); TVR (arXiv:2504.15427)</td><td>Fair on components, wrong on the question: those papers evaluate <i>one</i> pipeline for effectiveness; this paper's object of study is the evaluation itself (hop-stratified, typed-edge, triple-factored). The paper says this ("natural completion of this thread") — keep.</td></tr>
+</table>
+<div class="svgcard">
+<div class="cap"><b>Novelty vs. evidence-strength positioning</b> (this reviewer's placement; axes 0–10). The paper sits high-novelty / mid-evidence — the risky quadrant where wording discipline decides the outcome. Wave-1 fixes move it right, not up.</p></div>
+<svg viewBox="0 0 560 330" role="img" aria-label="Quadrant scatter of novelty versus evidence strength">
+  <line x1="60" y1="290" x2="530" y2="290" stroke="#c3c2b7" stroke-width="1.5"/>
+  <line x1="60" y1="290" x2="60" y2="20" stroke="#c3c2b7" stroke-width="1.5"/>
+  <line x1="295" y1="290" x2="295" y2="20" stroke="#e1e0d9" stroke-dasharray="4 4"/>
+  <line x1="60" y1="155" x2="530" y2="155" stroke="#e1e0d9" stroke-dasharray="4 4"/>
+  <text x="295" y="312" font-size="11" fill="#898781" text-anchor="middle" font-family="Inter">Evidence strength →</text>
+  <text x="24" y="155" font-size="11" fill="#898781" text-anchor="middle" font-family="Inter" transform="rotate(-90 24 155)">Novelty →</text>
+  <text x="80" y="36" font-size="10.5" fill="#898781" font-family="Inter">novel but fragile</text>
+  <text x="430" y="36" font-size="10.5" fill="#898781" font-family="Inter">accept zone</text>
+  <text x="80" y="282" font-size="10.5" fill="#898781" font-family="Inter">reject zone</text>
+  <text x="415" y="282" font-size="10.5" fill="#898781" font-family="Inter">solid but incremental</text>
+  <circle cx="271" cy="60" r="9" fill="#2a78d6"/>
+  <text x="271" y="46" font-size="11.5" font-weight="600" fill="#0b0b0b" text-anchor="middle" font-family="Inter">THIS PAPER (as submitted)</text>
+  <circle cx="390" cy="60" r="9" fill="none" stroke="#2a78d6" stroke-width="2" stroke-dasharray="3 3"/>
+  <text x="390" y="46" font-size="11" fill="#52514e" text-anchor="middle" font-family="Inter">after Wave 1</text>
+  <line x1="282" y1="60" x2="379" y2="60" stroke="#2a78d6" stroke-width="1.5" stroke-dasharray="3 3" marker-end="none"/>
+  <circle cx="436" cy="128" r="7" fill="#eb6834"/>
+  <text x="436" y="113" font-size="10.5" fill="#52514e" text-anchor="middle" font-family="Inter">Han et al. '25</text>
+  <circle cx="460" cy="101" r="7" fill="#1baf7a"/>
+  <text x="460" y="86" font-size="10.5" fill="#52514e" text-anchor="middle" font-family="Inter">GraphRAG-Bench</text>
+  <circle cx="342" cy="182" r="7" fill="#eda100"/>
+  <text x="342" y="167" font-size="10.5" fill="#52514e" text-anchor="middle" font-family="Inter">LiSSA</text>
+  <circle cx="318" cy="128" r="7" fill="#e87ba4"/>
+  <text x="318" y="113" font-size="10.5" fill="#52514e" text-anchor="middle" font-family="Inter">Wallat et al.</text>
+</svg>
+</div>
+
+<!-- ============================ PASS 6 ============================ -->
+<h2 id="p6" class="pass-brk">Pass 6 — Related Work Coverage &amp; Citation Integrity</h2>
+<h4>Integrity audit (all 30 bib entries checked; flagged items only)</h4>
+<table class="tight">
+<tr><th>Entry</th><th>Status</th><th>Detail</th></tr>
+<tr><td><code>ragcritic2025</code></td><td><span class="tag t-unv">⚠ UNVERIFIED</span></td><td>ACL 2025 Long, pages 3551–3578, "Anthology ID: 2025.acl-long.179" — the suspicious precision of an ID nobody looked up. Verify on aclanthology.org; if wrong, this is the classic hallucinated-metadata pattern.</td></tr>
+<tr><td><code>graphr1_2025</code></td><td><span class="tag t-unv">⚠ UNVERIFIED</span></td><td>arXiv:2507.21892 "Graph-R1" — plausible; confirm ID ↔ title ↔ author list.</td></tr>
+<tr><td><code>niu_tvr2025</code></td><td><span class="tag t-unv">⚠ UNVERIFIED</span></td><td>arXiv:2504.15427 TVR (Niu, Pan, Briand, Hu) — plausible (Briand group works on automotive RE); confirm ID and that TVR indeed "omits typed-graph reasoning" as §1 asserts.</td></tr>
+<tr><td><code>du2025bootstrap</code></td><td><span class="tag t-unv">⚠ UNVERIFIED</span></td><td>arXiv:2511.19794, single author — niche preprint carrying your CI-protocol citation. Anchor BCa to DiCiccio &amp; Efron (1996)/Efron (1987) instead and keep this one as "recent".</td></tr>
+<tr><td><code>easa2025npa</code></td><td><span class="tag t-unv">⚠ UNVERIFIED</span></td><td>"NPA 2025-07 AI Concept Paper" — EASA's AI guidance exists; the exact NPA number must be checked against easa.europa.eu.</td></tr>
+<tr><td><code>graphragbench2026</code></td><td class="risk">Check</td><td>Cited as ICLR 2026 — if the acceptance is real, fine (cite published version, correct per ACM guidance); if it's still under review, revert to arXiv.</td></tr>
+<tr><td><code>ragas2024</code>/<code>ares2024</code>/<code>ragbench2024</code>/software</td><td class="pass">OK</td><td>Uncited in text — bibtex will drop them; harmless.</td></tr>
+</table>
+<h4>Coverage gaps a subarea reviewer will notice</h4>
+<ul>
+<li><b>[should cite]</b> HotpotQA / 2WikiMultiHopQA — the standard multi-hop QA lineage; one clause in §2 ("MuSiQue over HotpotQA-style sets for its compositional hop labels") preempts "why MuSiQue?"</li>
+<li><b>[should cite]</b> At least one judge-robustness/meta-evaluation work beyond self-preference (e.g., JudgeBench or a judge-consistency study — <span class="tag t-unv">⚠ UNVERIFIED</span> pick one you can verify) to anchor C3's claim of being first <i>for retrieval state specifically</i>.</li>
+<li><b>[optional]</b> Adaptive-RAG follow-ups for C4 (Probing-RAG already covers this line adequately).</li>
+<li><b>Mis-characterization risk:</b> §1 says Adaptive-RAG "is hop-blind" — Adaptive-RAG routes by predicted complexity, which correlates with hops; "hop-blind" overstates. Say "does not condition on typed-edge hop distance." <span class="tag t-leg">LEGITIMATE</span></li>
+</ul>
+
+<!-- ============================ PASS 7 ============================ -->
+<h2 id="p7" class="pass-brk">Pass 7 — Method Clarity &amp; Technical Soundness</h2>
+<p><b>Reimplementation test: fails on retrieval hyperparameters.</b> A PhD student cannot reproduce from the paper alone:</p>
+<table class="tight">
+<tr><th>Underspecified element</th><th>Where</th><th>Severity</th></tr>
+<tr><td>top-<i>k</i> for dense retrieval — never stated anywhere</td><td>§4.1(i)</td><td>🔴 for a retrieval paper; also gates interpretation of vanilla's citation precision (vanilla cites what it retrieves)</td></tr>
+<tr><td>Number of vector seeds for the graph walk; walk depth stated (≤2 hops) but seed count and expansion cap not</td><td>§4.1(iii)</td><td>🟡 — directly controls the 14.9 mean-cited-IDs number, i.e. the C2a headline</td></tr>
+<tr><td>Decoding config of GPT-5.4 (reasoning model; temperature semantics differ) and the model snapshot string</td><td>§4.2</td><td>🟡 — "snapshots in supplementary materials" is claimed; supplement not verified to exist (Pass 19)</td></tr>
+<tr><td>Judge prompt, verdict schema, and whether position-swap/order controls were used</td><td>§4.3</td><td>🟡 — the entire C2b/C3 measurement instrument is undescribed in the main paper</td></tr>
+<tr><td>V1 rule-based router's rules (V2's baseline)</td><td>§4.1(v), Table 4</td><td>🟡 — V2's +0.118 is measured against an undefined baseline</td></tr>
+<tr><td>"32 modules" vs README's 30; "3+ hops" stratum construction on DO-178C (how were gold hop distances computed?)</td><td>§4.2</td><td>🟢 — hop-labeling procedure deserves one sentence; it defines the strata everything is conditioned on</td></tr>
+</table>
+<p><b>Internal consistency:</b> method §4.3 promises McNemar and Spearman ρ; no table reports either (Table 3 has κ, AC1, self-κ only). Either report them (they exist in <code>results/stats-v3/judge_agreement.csv</code>: McNemar overall p≈0.0005 — it <i>supports</i> the systematic-leniency story, so reporting it is free value) or delete the promise. <span class="tag t-leg">LEGITIMATE</span> 🟡</p>
+<p><b>Math:</b> no formal claims to audit; κ/AC1 usage is standard and the κ-paradox reading (AC1 recovering agreement at skewed prevalence) is correctly applied. One check: Table 3's v2 overall κ=0.30 with per-stratum values 0.28/0.22/0.04 is the known stratum-vs-pooled κ behavior — fine, but a reviewer may ask; a footnote-length clause ("pooled κ exceeds strata κ under prevalence shift") defuses it. 🟢</p>
+
+<!-- ============================ PASS 8 ============================ -->
+<h2 id="p8" class="pass-brk">Pass 8 — Experimental Design &amp; Protocol Rigor</h2>
+<div class="finding f-crit"><b>🔴 Same-model triangle: GPT-5.4 authored/anonymized the corpus, generates all answers, and is a faithfulness judge.</b> <span class="tag t-leg">LEGITIMATE</span> <span class="loc">§99(a,b,c)</span>
+<p>Whichever provenance story survives B3, GPT-5.4 shaped the corpus text, produced the answers, and judged them. Self-preference is cited (§7) but not mitigated in the design: the second judge is same-vendor (GPT-4.1), and the MuSiQue leg is GPT-5.4-only. A reviewer combines this with C3's own fragility finding.</p>
+<div class="fix"><b>Fix:</b> for any future version, add one non-OpenAI judge on the 300-tuple subset (~$3–10; Claude or Gemini) — even as an appendix row it collapses this attack surface. In text now: acknowledge same-vendor judging as an explicit limitation (currently implicit).</div></div>
+<div class="finding f-imp"><b>🟡 Adaptive-V2's stratum→pipeline mapping is fit on the full matrix, then evaluated on the same queries.</b> <span class="tag t-leg">LEGITIMATE</span> <span class="loc">§4.4 "per-stratum routing target is the empirical mean-F1 winner from the locked main matrix"; Table 4</span>
+<p>Hop <i>prediction</i> is honestly out-of-fold, but the 3-entry mapping (stratum→winner) was chosen using all 296 queries' outcomes, including each test fold's. With 3 decisions the leakage is small, but "V2 closes 56% of the gap" is measured under a mapping that saw the test data.</p>
+<div class="fix"><b>Fix:</b> re-derive the mapping within each training fold (a 20-line change to <code>scripts/router/evaluate_adaptive.py</code>) — the mapping is almost certainly stable across folds, so the number survives and gains a "fold-nested" adjective; or disclose in one sentence.</div></div>
+<div class="finding f-imp"><b>🟡 MuSiQue protocol asymmetries stack against clean cross-corpus comparison.</b> <span class="tag t-leg">LEGITIMATE</span> <span class="loc">§5</span>
+<p>1 seed (vs 3), Azure embedder only, 3 of 5 pipelines, single judge, and a graph built from gold supporting-paragraph chains (<i>REFERENCES</i> edges between consecutive gold paragraphs). The last is the sharp one: the MuSiQue graph encodes gold-adjacency — graph-walk retrieval there has oracle-flavored structure that the DO-178C graph does not. GraphRAG winning MuSiQue 2/3+-hop may partially reflect that construction. The paper does not discuss it.</p>
+<div class="fix"><b>Fix:</b> one Threats sentence naming the gold-derived-edges caveat; ideally also report graph-walk hit-rate on gold vs non-gold edges (computable from existing traces).</div></div>
+<div class="finding f-min"><b>🟢 Otherwise clean:</b> shared generator/prompt/vector store across pipelines, uniform no-reranker policy, pinned judged tuples, locked CSVs, deterministic MuSiQue subgraph seed. No train/test contamination surface exists for the main F1 claims (no learned components except V2, handled above). Qualitative cherry-picking: none — the paper shows no qualitative examples at all (see Pass 15).</div>
+
+<!-- ============================ PASS 9 ============================ -->
+<h2 id="p9" class="pass-brk">Pass 9 — Baseline &amp; Comparison Sufficiency</h2>
+<div class="scrollx"><table class="tight">
+<tr><th>Baseline</th><th>Year/venue</th><th>Right comparison?</th><th>Included?</th><th>Same protocol?</th><th>Fair tuning?</th><th>Numbers from</th></tr>
+<tr><td>Vanilla dense RAG</td><td>—</td><td>Yes (anchor)</td><td>✓</td><td>✓</td><td>✓ shared stack</td><td>rerun</td></tr>
+<tr><td>Agentic (LangGraph ReAct+critic)</td><td>—</td><td>Yes</td><td>✓ (not on MuSiQue)</td><td>✓</td><td>✓</td><td>rerun</td></tr>
+<tr><td>Graph-walk "GraphRAG"</td><td>—</td><td>⚠ carries family-level claim (B4)</td><td>✓</td><td>✓</td><td>✓</td><td>rerun</td></tr>
+<tr><td>Edge et al. GraphRAG (community summarization)</td><td>2024, arXiv</td><td>The one the name promises</td><td>✗</td><td>—</td><td>—</td><td><b>public code — fair to demand</b></td></tr>
+<tr><td>HippoRAG-2</td><td>2025</td><td>Strong graph-flavored contender</td><td>✗ (cited)</td><td>—</td><td>—</td><td>public code — fair to demand</td></tr>
+<tr><td>LightRAG</td><td>2024</td><td>Plausible ask</td><td>✗ (cited)</td><td>—</td><td>—</td><td>public code</td></tr>
+<tr><td>Adaptive-RAG (T5 router)</td><td>NAACL 2024</td><td>V1/V2 are in-house analogues</td><td>proxy</td><td>—</td><td>—</td><td>reimplementation-class — prepared response, not experiment</td></tr>
+</table></div>
+<p><b>Triage:</b> (a) <i>Public-code demands</i> — running Edge et al. GraphRAG or HippoRAG-2 on the corpus is a fair reviewer request and the single most likely "add experiments" review line. The defense that fits a 4-page short: the paper's claims are about the <i>typed-edge expansion mechanism</i>, not about any specific system — which only works after the B4 rename. (b) <i>Reimplementation-class</i> — Adaptive-RAG's trained router: prepared response ("V2 is the at-scale analogue; N=296 cannot train a T5 router"). (c) <i>Concurrent work</i> — GraphRAG-Bench et al. are acknowledged in §2; sufficient.</p>
+
+<!-- ============================ PASS 10 ============================ -->
+<h2 id="p10" class="pass-brk">Pass 10 — Ablation Completeness</h2>
+<table class="tight">
+<tr><th>Design choice</th><th>Ablated?</th><th>Isolating?</th><th>Review-risk rank</th></tr>
+<tr><td>Embedder (local↔Azure)</td><td>✓ (it's an axis)</td><td>✓ clean swap, collections rebuilt</td><td>—</td></tr>
+<tr><td>Corpus (DO-178C↔MuSiQue)</td><td>✓ (axis)</td><td>⚠ confounded: embedder fixed to Azure, seeds 3→1, judges 2→1, pipelines 5→3 change simultaneously with corpus</td><td><b>#1</b> — "your corpus axis is not a controlled swap." Partial fix: state confounds explicitly in §5; full fix needs the missing runs.</td></tr>
+<tr><td>Judge (GPT-5.4↔GPT-4.1)</td><td>✓ (axis)</td><td>✓ on DO-178C; ✗ on MuSiQue</td><td>#2 (=B2)</td></tr>
+<tr><td>Graph-walk depth (≤2 hops), seed count</td><td>✗</td><td>—</td><td>#3 — over-citation might vanish at depth 1; that would <i>refine</i> C2a, and a reviewer will ask. Cheap: 296 × 1 config rerun.</td></tr>
+<tr><td>Agent iteration cap (3)</td><td>✗</td><td>—</td><td>#5 — low risk, cap is conventional</td></tr>
+<tr><td>Router features (11 text + 3 PCs)</td><td>✓ implicitly (inert-feature analysis, §6.4)</td><td>✓ — genuinely good and honest</td><td>—</td></tr>
+<tr><td>top-<i>k</i></td><td>✗ (value not even stated)</td><td>—</td><td>#4 — becomes risk #1 if a reviewer notices citP of vanilla ≈ mechanical function of k</td></tr>
+</table>
+
+<!-- ============================ PASS 11 ============================ -->
+<h2 id="p11" class="pass-brk">Pass 11 — Results Interpretation &amp; Overclaiming</h2>
+<ul>
+<li><b>C2a (over-citation):</b> the causal story ("traversal expands; synthesizer dutifully cites") is plausible and the mechanism metrics support breadth — but "the synthesizer cites every ID it touches" is asserted, not measured (cited ÷ retrieved ratio would measure it; computable from existing traces). 🟡</li>
+<li><b>C2b mechanistic reading:</b> narrated as mechanism without failure coding — flagged in Pass 4. The word "adversarial" (×3 across §6.2/§7) is doing unearned work: nothing was measured to be adversarial. 🟡</li>
+<li><b>C1:</b> "identical under either embedder" is honest and checkable against Table 1 ✓. But "GraphRAG wins 2-hop on MuSiQue" silently compares a 3-pipeline field (agentic and adaptive absent) against DO-178C's 5-pipeline field. If agentic were run on MuSiQue, it might win — and the corpus-conditional-winners claim would change shape. State "among the three-pipeline trio" wherever a MuSiQue winner is named. 🟡 <span class="tag t-leg">LEGITIMATE</span></li>
+<li><b>C4:</b> "hop distance is largely an embedding-decodable property of the query text in regulated-domain corpora" — the 296 queries were <i>generated per-stratum by an LLM pipeline</i> (eval_generator); 0.86 macro-F1 may decode the generator's per-stratum phrasing template, not hop-ness. The paper's own inert-feature analysis makes this MORE likely (hand keywords carry nothing; style lives in the embedding). Tighten to "…of the query text in our generated query set" or add a paraphrase-robustness check. 🟡 <span class="tag t-leg">LEGITIMATE</span></li>
+<li><b>Good practice worth keeping:</b> the {agentic-graph, agentic} tie is reported as a tie (Cliff's δ gate) instead of claiming a single winner — reviewers reward this; protect it.</li>
+</ul>
+
+<!-- ============================ PASS 12 ============================ -->
+<h2 id="p12" class="pass-brk">Pass 12 — Statistical Validity &amp; Variance Reporting</h2>
+<div class="finding f-crit"><b>🔴 The C2b faithfulness cells carry no uncertainty and are individually within noise.</b> <span class="tag t-leg">LEGITIMATE</span> <span class="loc">Table 2 bottom block; §6.2</span>
+<p>DO-178C judged cells are ~19–22 items each (300 tuples ÷ 5 pipelines ÷ 3 strata). 74% vs 40% at n≈20 per cell: Fisher exact p ≈ 0.06 — <b>the headline collapse is not significant cell-to-cell</b>, and no interval or test is reported anywhere in the faithfulness table. MuSiQue cells (~67) fare little better (42% vs 58%, p ≈ 0.09). The paper that ships BCa + Holm + Cliff's δ for F1 ships raw percentages for faithfulness — reviewers will read the asymmetry as convenient. This is the easiest legitimate reject-paragraph available after B1/B2.</p>
+<div class="fix"><b>Fix (rebuttal-window feasible, existing data only):</b> add Wilson 95% intervals to every faithfulness cell; test the <i>monotonic trend</i> (Cochran–Armitage across strata) rather than pairwise cells — the trend is the actual claim and pools the n. If the trend test passes, C2b is rescued with stronger statistics than it currently claims.</div></div>
+<p>🟢 <b>F1 statistics are above the venue bar:</b> 3 seeds, BCa B=1000 paired at query level, Holm over the 30-contrast family, Cliff's δ gate, percentile-fallback check disclosed (§7). Per-seed variance is not shown but CIs subsume it. Keep; this is a strength to amplify (Pass 22).</p>
+
+<!-- ============================ PASS 13 ============================ -->
+<h2 id="p13" class="pass-brk">Pass 13 — Efficiency, Compute &amp; Cost</h2>
+<p>The paper makes <b>no efficiency claims</b>, so nothing is unmeasured-but-asserted — clean. However: the five pipelines differ by ~4–5× in latency and ~6× in tokens (measured in this project's own v0 study), and "adaptive routing" is partly motivated by such costs. One table row (mean tokens + latency per pipeline; hardware/API named) would (a) pre-empt "why does anyone care which wins if costs are equal?" and (b) strengthen the router's motivation. CVPR's compute-reporting initiative has no CIKM analogue; reporting API token counts here is pure credibility upside with no attack surface. 🟢 Recommend adding at camera-ready.</p>
+
+<!-- ============================ PASS 14 ============================ -->
+<h2 id="p14" class="pass-brk">Pass 14 — Generalization &amp; Robustness</h2>
+<p><b>Narrowest honest scope statement the results support:</b> "For one typed-edge synthetic regulated corpus and one Wikipedia multi-hop benchmark, under two embedders, two same-vendor judges, and one graph-walk implementation, over-citation of the walk retriever persisted across all settings while its faithfulness consequence and per-stratum winners varied by corpus."</p>
+<p><b>What the abstract currently implies:</b> architecture-family universality ("architecturally universal", "minimum bar for trustworthy RAG architecture claims"). Gap drivers, in order: single graph implementation (B4) &gt; two embedders → "embedder-robust" (n=2, and 384d→1536d is also a dimensionality/quality confound, not a pure embedder identity swap) &gt; generated query distribution (C4 circularity) &gt; same-vendor judges. The irony a smart reviewer will enjoy: <i>a paper whose thesis is "single-setting claims don't transfer" generalizes its own claims from 2-point axes.</i> Pre-empt with one self-aware sentence in §7 — it converts the attack into a demonstrated understanding of the paper's own logic. 🟡</p>
+
+<!-- ============================ PASS 15 ============================ -->
+<h2 id="p15" class="pass-brk">Pass 15 — Figures, Tables &amp; Visual Communication</h2>
+<table class="tight">
+<tr><th>Item</th><th>Verdict</th><th>Notes</th></tr>
+<tr><td>Fig. TikZ architecture (§4)</td><td><b>SHRINK or CUT</b></td><td>Lowest value per column-inch: five labeled boxes restating §4.1's prose. Halving it funds the B5 page fix and Pass 12's CI row. If kept: it must earn its space by carrying the parameters prose omits (top-k, walk depth, iter cap) as annotations.</td></tr>
+<tr><td>Fig. 1 per-stratum F1 bars</td><td>KEEP</td><td>Does real work (CIs + significance stars). Caption says "v2 main matrix" — rename v2/v3 → local/Azure everywhere (see Pass 18). Verify grayscale legibility of 5-series bars; pattern fills if not.</td></tr>
+<tr><td>Fig. 2 faithfulness heatmap</td><td>KEEP, re-caption</td><td>Left/right panels + κ-paradox aside = 90-word caption doing three jobs. Also: figure shows local-embedder data only while the C2b text pivots on the cross-embedder contrast — consider a 3-row mini-panel (local/Azure/MuSiQue GraphRAG rows only), which would <i>show</i> C2b instead of tabling it.</td></tr>
+<tr><td>Table 1 (dominance)</td><td>KEEP</td><td>The paper's best object: 9 columns, honest bolding, tie disclosed in text. Add "(V1)" to the adaptive row label — as printed, readers can't tell which adaptive it is.</td></tr>
+<tr><td>Table 2 (pathology)</td><td>KEEP, add CIs</td><td>The C2a/C2b split table is the paper's thesis in miniature. Missing: n per cell and intervals (Pass 12). "14.9 / 14.9" identical mean-IDs across embedders — verify not a copy-paste; if real, footnote it ("identical to 1 d.p.") because reviewers spot-check suspicious coincidences.</td></tr>
+<tr><td>Table 3 (judges)</td><td>KEEP</td><td>Add McNemar + Spearman rows already promised by §4.3 (they exist in the CSVs and support the story).</td></tr>
+<tr><td>Table 4 (router)</td><td>KEEP</td><td>Self-contained; fine.</td></tr>
+<tr><td>Qualitative examples</td><td>ADD if space ever allows</td><td>Zero examples of an over-cited answer exist in the paper. One 4-line example (question, gold IDs, GraphRAG's 15 cited IDs with the 2 gold ones highlighted) would make C2a visceral. Candidate for the camera-ready/journal version.</td></tr>
+</table>
+
+<!-- ============================ PASS 16 ============================ -->
+<h2 id="p16" class="pass-brk">Pass 16 — Structure &amp; Page-Budget Economy</h2>
+<div class="svgcard">
+<div class="cap"><b>Page budget, current vs recommended</b> (column-units; 8 columns = 4 pages). Deficit is funded by the architecture figure and Related Work.</div>
+<svg viewBox="0 0 640 300" role="img" aria-label="Grouped bar chart of current versus recommended space per section">
+  <g font-family="Inter" font-size="11">
+  <line x1="90" y1="260" x2="620" y2="260" stroke="#c3c2b7" stroke-width="1.5"/>
+  <!-- rows: label, current, recommended (max 2.6 -> scale x60) -->
+  <!-- Intro -->
+  <text x="82" y="42" text-anchor="end" fill="#52514e">Intro</text>
+  <rect x="90" y="30" width="60" height="9" rx="3" fill="#2a78d6"/>
+  <rect x="90" y="41" width="60" height="9" rx="3" fill="#eb6834"/>
+  <!-- Related -->
+  <text x="82" y="76" text-anchor="end" fill="#52514e">Related</text>
+  <rect x="90" y="64" width="54" height="9" rx="3" fill="#2a78d6"/>
+  <rect x="90" y="75" width="42" height="9" rx="3" fill="#eb6834"/>
+  <!-- Method -->
+  <text x="82" y="110" text-anchor="end" fill="#52514e">Method+fig</text>
+  <rect x="90" y="98" width="96" height="9" rx="3" fill="#2a78d6"/>
+  <rect x="90" y="109" width="78" height="9" rx="3" fill="#eb6834"/>
+  <!-- Experiments -->
+  <text x="82" y="144" text-anchor="end" fill="#52514e">Experiments</text>
+  <rect x="90" y="132" width="48" height="9" rx="3" fill="#2a78d6"/>
+  <rect x="90" y="143" width="48" height="9" rx="3" fill="#eb6834"/>
+  <!-- Results -->
+  <text x="82" y="178" text-anchor="end" fill="#52514e">Results</text>
+  <rect x="90" y="166" width="144" height="9" rx="3" fill="#2a78d6"/>
+  <rect x="90" y="177" width="156" height="9" rx="3" fill="#eb6834"/>
+  <!-- Discussion -->
+  <text x="82" y="212" text-anchor="end" fill="#52514e">Discussion</text>
+  <rect x="90" y="200" width="54" height="9" rx="3" fill="#2a78d6"/>
+  <rect x="90" y="211" width="66" height="9" rx="3" fill="#eb6834"/>
+  <!-- Conclusion -->
+  <text x="82" y="246" text-anchor="end" fill="#52514e">Conclusion+spill</text>
+  <rect x="90" y="234" width="30" height="9" rx="3" fill="#2a78d6"/>
+  <rect x="90" y="245" width="18" height="9" rx="3" fill="#eb6834"/>
+  <rect x="500" y="30" width="12" height="9" rx="3" fill="#2a78d6"/><text x="518" y="38" fill="#52514e">current</text>
+  <rect x="500" y="46" width="12" height="9" rx="3" fill="#eb6834"/><text x="518" y="54" fill="#52514e">recommended</text>
+  <text x="90" y="282" fill="#898781">0</text><text x="210" y="282" fill="#898781">2 cols</text><text x="330" y="282" fill="#898781">4 cols</text>
+  </g>
+</svg>
+</div>
+<ul>
+<li><b>Cut list (lines recovered):</b> TikZ figure −8 to −12 lines (shrink to 0.75 column-width); §2 para 1's first two sentences duplicate §1's opening (−3); §6.2's "converges with prior cross-domain observations" + three cites repeats §2 verbatim in function (−2); Conclusion's C4 clause (−2, C4 is "supporting" — it doesn't need conclusion space).</li>
+<li><b>Spend on:</b> faithfulness CIs + trend test row (Pass 12), the graph-implementation disclaimer (B4), the confound sentence for the corpus axis (Pass 10), and getting off page 5 (B5).</li>
+<li><b>Supplement dependency check:</b> the main paper leans on a supplement for judge prompts, model snapshots, seeds — and no supplement is verifiably assembled in the repo (Pass 19). For a 4-page short, the judge instrument description cannot live only in a supplement that may not exist.</li>
+</ul>
+
+<!-- ============================ PASS 17 ============================ -->
+<h2 id="p17" class="pass-brk">Pass 17 — Reviewer-Friction Heatmap</h2>
+<div class="scrollx"><table class="heat tight">
+<tr><th>Section</th><th>Clarity /10</th><th>Evidence /10</th><th>Irritation risk /10</th><th>Abandonment / drop point</th></tr>
+<tr><td>Abstract</td><td style="background:var(--seq150)">7</td><td style="background:var(--seq200)">6</td><td style="background:var(--seq200)">5</td><td>C-label ordering (C2a before C1) + number torrent</td></tr>
+<tr><td>§1 Intro</td><td style="background:var(--seq100)">8</td><td style="background:var(--seq150)">7</td><td style="background:var(--seq150)">3</td><td>—</td></tr>
+<tr><td>§2 Related</td><td style="background:var(--seq150)">7</td><td style="background:var(--seq200)">6</td><td style="background:var(--seq200)">4</td><td>"C2a only" scope sentence (contradiction seed)</td></tr>
+<tr><td>§4 Method</td><td style="background:var(--seq200)">6</td><td style="background:var(--seq200)">5</td><td style="background:var(--seq300)">6</td><td>Missing top-k / walk params; "GraphRAG" reveal</td></tr>
+<tr><td>§5 Setup</td><td style="background:var(--seq200)">6</td><td style="background:var(--seq150)">7</td><td style="background:var(--seq300)">6</td><td>v2/v3 codenames; MuSiQue asymmetries listed without acknowledgment</td></tr>
+<tr><td>§6.1 C1</td><td style="background:var(--seq100)">8</td><td style="background:var(--seq100)">8</td><td style="background:var(--seq150)">3</td><td>—</td></tr>
+<tr><td>§6.2 C2</td><td style="background:var(--seq150)">7</td><td style="background:var(--seq300)">5</td><td style="background:var(--seq400);color:#fff">7</td><td>Uncertainty-free percentages; "adversarial distractors" assertion</td></tr>
+<tr><td>§6.3 C3</td><td style="background:var(--seq200)">6</td><td style="background:var(--seq500);color:#fff">3</td><td style="background:var(--seq600);color:#fff">9</td><td><b>THE drop point:</b> "same … pipeline output" — the sentence a skeptical reviewer falsifies, after which everything is read adversarially</td></tr>
+<tr><td>§6.4 C4</td><td style="background:var(--seq150)">7</td><td style="background:var(--seq200)">6</td><td style="background:var(--seq300)">5</td><td>"largely an embedding-decodable property" overreach</td></tr>
+<tr><td>§7 Discussion</td><td style="background:var(--seq150)">7</td><td style="background:var(--seq200)">6</td><td style="background:var(--seq400);color:#fff">7</td><td>"journal extension" sentence colliding with the abstract</td></tr>
+<tr><td>§8 Conclusion</td><td style="background:var(--seq100)">8</td><td style="background:var(--seq200)">6</td><td style="background:var(--seq200)">4</td><td>"minimum defensible bar" normative flourish</td></tr>
+</table></div>
+
+<!-- ============================ PASS 18 ============================ -->
+<h2 id="p18" class="pass-brk">Pass 18 — Language, Notation &amp; Copy Edit</h2>
+<table class="tight">
+<tr><th>Location</th><th>Issue</th><th>Correction</th></tr>
+<tr><td>Throughout (Tab. 1–4, §5, §6, Fig. 1–2 captions)</td><td>🟡 "v2 main / v3 main" — internal run-codenames as reader-facing terminology; defined once parenthetically in §5</td><td>Rename globally: "local" / "Azure" (or D-loc/D-az). Biggest single clarity win available for zero content change.</td></tr>
+<tr><td>§6.2 "localises", §8 "characterising" vs §7 "characterize"</td><td>🟢 en-GB/en-US drift</td><td>Pick en-US (ACM default); s/localises/localizes/, s/characterising/characterizing/</td></tr>
+<tr><td>Abstract/intro C-ordering</td><td>🟢 C2a, C2b, C1, C3, C4 — looks like a numbering error</td><td>Either renumber in presentation order or add "(numbered by theme, presented by strength)" — better: reorder to C1..C4</td></tr>
+<tr><td>Abstract "local e5-small → Azure text-embedding-3-small"; §1 "Azure 3-small"</td><td>⚪ inconsistent model naming</td><td>Full name at first use, then "3-small"</td></tr>
+<tr><td>§5 "Macbeth 2011"</td><td>🟢 plain-text citation</td><td>\cite or drop (Pass 1)</td></tr>
+<tr><td>Table 1 "adaptive"</td><td>🟡 ambiguous V1/V2</td><td>"adaptive (V1)"</td></tr>
+<tr><td>Keywords: "kappa paradox"</td><td>⚪ topic reduced to a caption aside in the final text</td><td>Keep or swap for "judge robustness" — cosmetic</td></tr>
+<tr><td>LLM-boilerplate scan</td><td class="pass">CLEAN</td><td>No "delve/tapestry/testament/paradigm"; no symmetric triad padding. Prose reads authored. Good.</td></tr>
+</table>
+
+<!-- ============================ PASS 19 ============================ -->
+<h2 id="p19" class="pass-brk">Pass 19 — Reproducibility &amp; Artifact Readiness</h2>
+<table class="tight">
+<tr><th>Checklist item</th><th>Status</th></tr>
+<tr><td>Hyperparameters (top-k, walk caps, decoding)</td><td class="fail">Missing in paper (Pass 7)</td></tr>
+<tr><td>Seeds, splits, sampling</td><td class="pass">Stated (3 seeds; judged subset seed 42; MuSiQue seed 20260511) — good</td></tr>
+<tr><td>Judge prompts + verdict schema</td><td class="risk">"Supplementary material" — <b>no supplement exists in the repo as an assembled artifact</b>; if none was uploaded with the submission, §5's promise is dangling. Verify what was actually submitted.</td></tr>
+<tr><td>Code/data release statement</td><td class="fail">Absent. No release commitment anywhere in the paper — yet the dataset is <i>already public</i> and a Makefile-reproducible stats pipeline exists. The paper under-claims its own reproducibility. Add (camera-ready): "corpus, queries, per-run CSVs, and analysis pipeline released at [URL]" — this is a free rubric point the paper leaves on the table.</td></tr>
+<tr><td>Hardware/API reporting</td><td class="risk">Azure deployments named generically; snapshot strings deferred to the unverified supplement</td></tr>
+<tr><td>One-command regeneration</td><td class="pass">True in repo (<code>make stats</code>-class targets) — say so in the paper</td></tr>
+</table>
+
+<!-- ============================ PASS 20 ============================ -->
+<h2 id="p20" class="pass-brk">Pass 20 — Ethics, Provenance &amp; Impact</h2>
+<ul>
+<li><b>🔴 Provenance:</b> the B3 contradiction is the dominant ethics item — it is not a style issue; pick the true story and align all artifacts. If the corpus was genuinely derived from proprietary artifacts, the CC-BY-4.0 public release needs a documented legal basis (and the export-control sentence needs counsel-grade wording, not a LaTeX flourish). If it was synthesized, the paper's current text misstates provenance in a mandatory disclosure section.</li>
+<li><b>🟡 Same-vendor judge stack</b> (Pass 8) — state as an explicit limitation, not just a citation to self-preference bias.</li>
+<li><b>Human subjects / IRB:</b> N/A — clean.</li>
+<li><b>Licenses/attribution:</b> MuSiQue CC-BY-4.0 — attribute in §5 (currently only cited); LangGraph / ChromaDB / Neo4j used but uncited in text — ACM reviewers are asked to check asset attribution; the bib entries already exist, wire them into §4.1's first sentence. Chroma has no bib entry at all — add one. 🟢</li>
+<li><b>Societal impact:</b> a certification-adjacent paper showing RAG faithfulness verdicts are unstable has a genuinely useful negative-impact angle (over-trust of LLM audit tooling in safety domains). Two sentences in §7 would be weighed positively; currently absent. Worth the space.</li>
+<li><b>Limitations that should be stated and currently aren't:</b> (1) same-vendor judges; (2) single graph-retrieval implementation carrying a family-level claim; (3) generated query distribution (template circularity for C4). The existing Threats paragraph is honest about corpus and N — extend it with these three, one clause each.</li>
+</ul>
+
+<!-- ============================ PASS 21 ============================ -->
+<h2 id="p21" class="pass-brk">Pass 21 — Simulated Review Panel <span style="font-size:14px;color:var(--muted)">(also Appendix B)</span></h2>
+
+<div class="review">
+<h4>R1 — Domain expert (RAG evaluation / IR) · <span class="rating">Weak Reject</span> · confidence 4/5</h4>
+<p><b>Summary.</b> The paper evaluates five RAG pipelines over a typed-edge requirements corpus and a MuSiQue subset, varying embedder and judge, and claims (i) universal over-citation for GraphRAG with corpus-conditional faithfulness consequences, (ii) corpus-conditional per-stratum winners, and (iii) embedder-fragility of single-judge faithfulness.</p>
+<p><b>Strengths.</b> Ambitious factorial design for a short paper; strong statistical protocol for citation F1 (BCa, Holm, Cliff's δ, ties reported as ties); the mechanism/consequence factorization of the GraphRAG debate is a genuinely useful framing; pinned-tuple cross-embedder judging is a clever design.</p>
+<p><b>Weaknesses.</b> (1) §6.3 claims the judge flips verdicts on "the same question and pipeline output"; under an embedder swap the retrieved context and generated answer necessarily differ, so self-κ conflates output drift with judge instability — the central C3 claim is not established by the design. (2) The MuSiQue faithfulness leg of C2b uses a single judge (GPT-5.4) that the paper itself shows to be unstable; §7 concedes C2b cross-corpus replication is future work while the abstract asserts it. (3) The evaluated "GraphRAG" is a custom 2-hop typed-edge walk, not Edge et al.'s system; family-level claims ("architecturally universal") from one implementation are not supported. (4) Faithfulness percentages come from ~20-item cells with no intervals or tests. (5) Retrieval top-k and walk parameters are unreported.</p>
+<p><b>Justification.</b> The measurement infrastructure is real and the factorization is novel, but the two headline claims (C2b cross-corpus, C3) exceed what the design establishes, and the naming issue undermines the universality claim. I would raise to weak accept if C3 were reframed as embedder-conditioning of the full pipeline state with the judge-differential argument, and C2b's MuSiQue leg were dual-judged or downgraded.</p>
+</div>
+
+<div class="review">
+<h4>R2 — Adjacent-area reviewer (NLP/QA, not IR-eval) · <span class="rating">Weak Accept</span> · confidence 3/5</h4>
+<p><b>Summary.</b> A dense empirical short showing that which RAG architecture wins depends on hop stratum and corpus, that GraphRAG over-cites everywhere, and that LLM-judge verdicts change when the embedder changes.</p>
+<p><b>Strengths.</b> Clear tables; honest reporting of ties; the "same judge flips 41% of verdicts" result is striking and highly citable; the statistics exceed what shorts usually offer.</p>
+<p><b>Weaknesses.</b> The "v2 main / v3 main" table headers are opaque — I had to re-read §5 to learn these mean embedders. It is unclear which adaptive variant appears in Table 1. Why are agentic pipelines missing from MuSiQue? The 4,440 number in the abstract seems inconsistent with the caption of Table 1.</p>
+<p><b>What this reviewer misses:</b> the C3 conflation (takes the flip-rate at face value — which is precisely why the current framing is dangerous: it survives casual review and dies under expert review, splitting the panel), and the GraphRAG naming subtlety.</p>
+<p><b>Justification.</b> Useful, quotable findings; presentation friction and the run-count inconsistency keep it from a clear accept.</p>
+</div>
+
+<div class="review">
+<h4>R3 — Harsh junior reviewer · <span class="rating">Reject</span> · confidence 4/5 · <i>errors annotated</i></h4>
+<p><b>Summary.</b> The paper compares RAG variants on a synthetic corpus with LLM judges.</p>
+<p><b>Weaknesses (as they would write them).</b> (a) "The corpus is synthetic and LLM-generated; nothing here is validated on real data." (b) "No comparison against HippoRAG-2, LightRAG, or actual Microsoft GraphRAG — the baselines are homemade." (c) "κ of 0.17 between judges means the faithfulness data is noise; all faithfulness claims should be removed." (d) "Only 296 queries." (e) "No novelty: RAG-vs-GraphRAG comparisons already exist."</p>
+<p><b>Annotation.</b> (a) <span class="tag t-unf">LIKELY-BUT-UNFAIR</span> — scope is stated, synthetic/regulated evaluation is precedented (LiSSA-line); but the provenance confusion (B3) hands this reviewer live ammunition — fix it or this unfair point becomes fair. (b) Half-fair: demanding HippoRAG-2 of a 4-page short is policy-entrepreneurism an AC discounts, but the <i>naming</i> complaint inside it is legitimate (B4). (c) Unfair as stated — κ-paradox and AC1 are handled in the paper; but the absence of faithfulness CIs (Pass 12) lets the point land anyway. (d) Blank assertion; N=296×seeds with paired stats is adequate and defended. (e) Novelty fallacy; the factorization delta is real (Pass 5).</p>
+</div>
+
+<div class="review">
+<h4>AC meta-review · <span class="rating">Borderline → Reject</span></h4>
+<p>R1 and R2 agree the infrastructure and framing are valuable; R1's two technical objections (C3 conflation, C2b judge asymmetry) are verified against the paper's own text and are not rebuttable by argument alone under a no-new-experiments rebuttal policy; R3's review is 60% discountable but the panel does not need it. <b>The deciding sentence:</b> "The paper's flagship fragility statistic attributes to the judge what its own design lets the pipeline cause, and its cross-corpus faithfulness claim rests on the judge configuration the same paper discredits — both are wording-and-one-evening fixable, but not within this review cycle."</p>
+</div>
+
+<div class="svgcard">
+<div class="cap"><b>Predicted score distribution.</b> CIKM shorts near the 25–30% acceptance line need a champion; R1 — the would-be champion — is the one the C3 sentence alienates.</div>
+<svg viewBox="0 0 640 240" role="img" aria-label="Bar chart of predicted reviewer ratings">
+  <g font-family="Inter" font-size="11">
+  <line x1="70" y1="200" x2="620" y2="200" stroke="#c3c2b7" stroke-width="1.5"/>
+  <!-- scale SA=5..R=1 mapped to height*36 -->
+  <text x="40" y="60" fill="#898781" font-size="10">SA</text><line x1="70" y1="56" x2="620" y2="56" stroke="#e1e0d9"/>
+  <text x="40" y="96" fill="#898781" font-size="10">WA</text><line x1="70" y1="92" x2="620" y2="92" stroke="#e1e0d9"/>
+  <text x="40" y="132" fill="#898781" font-size="10">BL</text><line x1="70" y1="128" x2="620" y2="128" stroke="#e1e0d9"/>
+  <text x="40" y="168" fill="#898781" font-size="10">WR</text><line x1="70" y1="164" x2="620" y2="164" stroke="#e1e0d9"/>
+  <text x="40" y="200" fill="#898781" font-size="10">R</text>
+  <rect x="110" y="164" width="70" height="36" rx="4" fill="#2a78d6"/>
+  <text x="145" y="218" text-anchor="middle" fill="#52514e">R1 expert</text>
+  <text x="145" y="158" text-anchor="middle" font-weight="600" fill="#0b0b0b">WR</text>
+  <rect x="240" y="92" width="70" height="108" rx="4" fill="#2a78d6"/>
+  <text x="275" y="218" text-anchor="middle" fill="#52514e">R2 adjacent</text>
+  <text x="275" y="86" text-anchor="middle" font-weight="600" fill="#0b0b0b">WA</text>
+  <rect x="370" y="200" width="70" height="0" fill="#2a78d6"/>
+  <rect x="370" y="196" width="70" height="4" rx="2" fill="#2a78d6"/>
+  <text x="405" y="218" text-anchor="middle" fill="#52514e">R3 junior</text>
+  <text x="405" y="190" text-anchor="middle" font-weight="600" fill="#0b0b0b">R</text>
+  <rect x="500" y="128" width="70" height="72" rx="4" fill="#eb6834"/>
+  <text x="535" y="218" text-anchor="middle" fill="#52514e">AC</text>
+  <text x="535" y="122" text-anchor="middle" font-weight="600" fill="#0b0b0b">BL→R</text>
+  </g>
+</svg>
+</div>
+<p><b>Accept probability:</b> ~25–30% as submitted (needs an R1 champion; the current C3 wording converts R1 from champion to prosecutor). No Findings-track analogue exists at CIKM; the natural fallbacks are the planned UBMK 2026 submission or a strengthened resubmission (SIGIR short / ECIR / WSDM) after Wave 1 — at which point this becomes a ~50–60% paper, because the underlying data can support every claim once the claims are worded to match the data.</p>
+
+<!-- ============================ PASS 22 ============================ -->
+<h2 id="p22" class="pass-brk">Pass 22 — Synthesis, Rebuttal Playbook &amp; Revision Roadmap</h2>
+
+<h3>Overall grade: C+ <span style="font-weight:400;font-size:14px">(as submitted, against the empirical-analysis rubric — claim–evidence alignment is the axis it bleeds on; B/B+ is one focused week away because every blocker is wording- or evening-experiment-scale)</span></h3>
+
+<h3>The single biggest problem</h3>
+<p style="font-size:16px"><b>The paper's flagship statistic (C3) attributes to the judge what its own design allows the pipeline to cause, and its cross-corpus faithfulness claim (C2b) rests on the single fragile judge that C3 itself discredits.</b></p>
+
+<h3>Top 5 strengths to amplify and protect</h3>
+<ol>
+<li>The mechanism-vs-consequence factorization of the GraphRAG debate (C2a/C2b) — this is the citable idea; put it in the first sentence of the abstract.</li>
+<li>The F1 statistical protocol (BCa + Holm + Cliff's δ + tie-honesty) — state it earlier and louder; it buys trust for everything else.</li>
+<li>Pinned-tuple cross-embedder judging — a reusable experimental design; name it ("paired-state judging") so reviewers can cite it.</li>
+<li>The inert-feature router analysis (§6.4) — honest, self-critical, and the right way to report C4.</li>
+<li>The dominance table (Table 1) — nine columns of falsifiable numbers; the paper's credibility anchor.</li>
+</ol>
+
+<h3>Critical fixes (ranked by expected score impact)</h3>
+<table class="tight">
+<tr><th>#</th><th>Fix</th><th>Location</th><th>Est.</th></tr>
+<tr><td>1</td><td>Reframe C3: "embedder-conditional verdicts under full-pipeline state change"; lead with the 41% vs 26% judge differential; delete "same … pipeline output"</td><td>Abstract, §6.3, Tab. 3 caption</td><td>2 h</td></tr>
+<tr><td>2</td><td>Dual-judge the 600 MuSiQue rows with GPT-4.1 (or downgrade C2b's MuSiQue leg to "suggestive") and reconcile the three scope sentences (§2 / abstract / §7)</td><td>§5, §6.2, §7</td><td>1 evening + $5</td></tr>
+<tr><td>3</td><td>Resolve corpus provenance to one true story across paper, disclosure, README, HF/Kaggle cards; delete or legally harden the export-control sentence</td><td>§99, §7, external artifacts</td><td>0.5 d</td></tr>
+<tr><td>4</td><td>Rename/disclaim the graph pipeline (graph-walk, "GraphRAG-family"); soften "architecturally universal" to the mechanism-level claim</td><td>§1, §4.1, §6.2, title-adjacent prose</td><td>1 h</td></tr>
+<tr><td>5</td><td>Add Wilson CIs + Cochran–Armitage trend test to all faithfulness cells (existing data)</td><td>Tab. 2, §6.2</td><td>3 h</td></tr>
+<tr><td>6</td><td>Fix run count (2×4,440); trim 3 lines to end main text on p.4</td><td>Abstract, §1, layout</td><td>20 min</td></tr>
+<tr><td>7</td><td>Same-input judge test–retest control (re-judge identical v2 answers twice)</td><td>new Tab. 3 row</td><td>2 h + $3</td></tr>
+<tr><td>8</td><td>State top-k, walk seed/expansion caps, decoding config in §4</td><td>§4.1</td><td>30 min</td></tr>
+<tr><td>9</td><td>Fold-nest the V2 stratum→pipeline mapping or disclose the leak</td><td>§4.4, scripts</td><td>2 h</td></tr>
+<tr><td>10</td><td>Add McNemar + Spearman rows promised by §4.3 (already computed in CSVs)</td><td>Tab. 3</td><td>30 min</td></tr>
+<tr><td>11</td><td>Report cited÷retrieved ratio to convert "cites every ID it touches" from assertion to measurement</td><td>§6.2, Tab. 2</td><td>2 h</td></tr>
+<tr><td>12</td><td>Hand-code 30 worst GraphRAG answers → 4-row failure-mode mini-table; retire "adversarial distractors" as assertion</td><td>§6.2/§7</td><td>3 h</td></tr>
+</table>
+
+<h3>Important improvements</h3>
+<ol>
+<li>Global rename v2/v3 → local/Azure (tables, figs, prose).</li>
+<li>"among the three-pipeline trio" qualifier on every MuSiQue winner claim.</li>
+<li>Corpus-axis confound sentence (seeds/judges/pipelines change with corpus).</li>
+<li>Gold-derived MuSiQue edges caveat (+ optional hit-rate analysis).</li>
+<li>Non-OpenAI third judge on the 300-tuple subset (kills the same-vendor attack).</li>
+<li>Add limitations: same-vendor judges; single graph implementation; generated-query circularity for C4.</li>
+<li>Adaptive row label "(V1)"; add V2 row to Table 1 or pointer to Table 4.</li>
+<li>Release statement + anonymized artifact URL (free rubric point).</li>
+<li>Tokens/latency row per pipeline (motivates routing; zero attack surface).</li>
+<li>Fix "hop-blind" characterization of Adaptive-RAG; sharpen §2's delta sentences to name what priors cannot answer.</li>
+<li>Verify the 5 ⚠ references; fix "Macbeth 2011"; add Chroma bib entry; wire software cites into §4.1.</li>
+<li>Grayscale check on Fig. 1; consider C2b mini-panel in Fig. 2.</li>
+</ol>
+<h3>Polish items</h3>
+<ol>
+<li>en-US throughout (localizes, characterizing).</li>
+<li>Reorder contribution labels to C1–C4 presentation order.</li>
+<li>Uniform embedder naming at first use.</li>
+<li>Keyword list refresh ("judge robustness").</li>
+<li>Shrink TikZ figure; annotate it with the parameters if kept.</li>
+</ol>
+
+<h3>Rebuttal playbook (top 6 predicted concerns)</h3>
+<table class="tight">
+<tr><th>Concern</th><th>Answerable from…</th><th>Line</th></tr>
+<tr><td>1. C3 conflates output change with judge instability</td><td>Existing results, partially — the 41% vs 26% differential on identical item sets is judge-specific; test–retest control is a rebuttal-window experiment (2 h)</td><td>Full paragraph</td></tr>
+<tr><td>2. MuSiQue single-judge undermines C2b</td><td>Small experiment (GPT-4.1 on 600 rows, one evening) — <i>if venue rebuttal permits</i>; else concede scope</td><td>Full paragraph</td></tr>
+<tr><td>3. "Not real GraphRAG"</td><td>Concession + reframe (mechanism-level claim); no experiment fits any window</td><td>3–4 sentences</td></tr>
+<tr><td>4. Faithfulness cells lack uncertainty</td><td>Existing data — Wilson CIs + trend test computable same-day</td><td>3 sentences + numbers</td></tr>
+<tr><td>5. Synthetic corpus</td><td>Existing text — scope statement + LiSSA-line precedent + MuSiQue replication of C2a</td><td>2 sentences</td></tr>
+<tr><td>6. Missing HippoRAG-2/LightRAG baselines</td><td>Not answerable in window — policy response: contribution is evaluation methodology, not SOTA retrieval; reviewers are asked not to demand out-of-scope systems</td><td>2 sentences</td></tr>
+</table>
+<div class="svgcard">
+<div class="cap"><b>One-page rebuttal budget (~800 words).</b> Two planned concessions — MuSiQue winner scope ("three-pipeline trio") and C4 generality (generated-query distribution) — are cheap and buy credibility for the two contested defenses.</div>
+<svg viewBox="0 0 640 150" role="img" aria-label="Stacked bar of rebuttal word allocation">
+  <g font-family="Inter" font-size="11">
+  <!-- 800 words → 560px; segments: C3 230, C2b 200, stats 120, naming 110, corpus 60, concessions 80 -->
+  <rect x="40"  y="40" width="159" height="34" rx="4" fill="#2a78d6"/>
+  <rect x="201" y="40" width="138" height="34" rx="4" fill="#eb6834"/>
+  <rect x="341" y="40" width="82"  height="34" rx="4" fill="#1baf7a"/>
+  <rect x="425" y="40" width="75"  height="34" rx="4" fill="#eda100"/>
+  <rect x="502" y="40" width="40"  height="34" rx="4" fill="#9ec5f4"/>
+  <rect x="544" y="40" width="54"  height="34" rx="4" fill="#c3c2b7"/>
+  <text x="119" y="61" text-anchor="middle" fill="#fff" font-weight="600">C3 230w</text>
+  <text x="270" y="61" text-anchor="middle" fill="#fff" font-weight="600">C2b 200w</text>
+  <text x="382" y="61" text-anchor="middle" fill="#fff" font-weight="600">CIs 120w</text>
+  <text x="462" y="61" text-anchor="middle" fill="#0b0b0b" font-weight="600">naming 110w</text>
+  <text x="522" y="35" text-anchor="middle" fill="#52514e">corpus 60w</text>
+  <text x="576" y="96" text-anchor="middle" fill="#52514e">concessions 80w</text>
+  <text x="40" y="112" fill="#898781">Baselines complaint: one policy line. Everything else: conceded or absorbed into the above.</text>
+  </g>
+</svg>
+</div>
+
+<h3>Pre-emption list (kill in the paper, don't argue later)</h3>
+<ul>
+<li>§4.1(iii): "a typed-edge local-walk retriever in the GraphRAG family, not Edge et al.'s community-summarization system."</li>
+<li>§5: "the corpus axis changes seeds, judged protocol, and pipeline set alongside the corpus; we therefore restrict cross-corpus claims to C2a's mechanism metrics."</li>
+<li>§5: "MuSiQue graph edges derive from gold supporting chains; graph-walk retrieval there benefits from gold-adjacent structure."</li>
+<li>§6.4: "…decodable from our generated query distribution; transfer to human-authored queries is untested."</li>
+<li>§7: "both judges share a vendor; cross-vendor replication is future work."</li>
+<li>§7 (self-aware sentence): "our own robustness thesis applies to this paper: each axis here has two points, and wider sweeps may yet condition these claims further."</li>
+</ul>
+
+<h3>Revision roadmap</h3>
+<table class="tight">
+<tr><th>Wave</th><th>Content</th><th>Days</th></tr>
+<tr><td><b>1 — results-changing</b></td><td>Critical fixes #2, #5, #7, #9, #11 (+#12 if energy): MuSiQue dual-judge, faithfulness CIs + trend tests, test–retest control, fold-nested mapping, cited÷retrieved ratio</td><td>2–3</td></tr>
+<tr><td><b>2 — claims &amp; framing</b></td><td>#1, #3, #4, #6, #8, #10; scope-sentence reconciliation; v2/v3 rename; limitations additions; pre-emption list insertions</td><td>2</td></tr>
+<tr><td><b>3 — prose &amp; polish</b></td><td>Copy edits, reference verification, figure regeneration, page fit, anonymization re-audit</td><td>1</td></tr>
+</table>
+<p><b>Readiness verdict:</b> the CIKM decision is already out of your hands (notification ~7 Aug). For every downstream use — camera-ready if accepted, arXiv v2, UBMK or a stronger-venue resubmission if not — the verdict is <b>hold until Wave 1 + Wave 2 are done (~5 working days)</b>. Submitting anywhere again without fixing B1–B3 risks the one reviewer who checks — and B3 in particular must be fixed before any non-anonymous posting, independent of any venue.</p>
+<p><b>What genuinely works.</b> The experimental machine under this paper — 9,480 logged runs, pinned-tuple judging, locked CSVs, a Makefile-reproducible stats pipeline, and honest tie-reporting — is better than most full papers in this space. The core insight (mechanism universal, consequence conditional; judge verdicts conditioned on retrieval state) is real, novel, and supported by data the authors already possess. Nothing in the five blockers requires new science; they require the claims to be worded as carefully as the experiments were run. That is a paper worth pushing through to acceptance.</p>
+
+<!-- ============================ APPENDIX A ============================ -->
+<h2 id="appA" class="pass-brk">Appendix A — Complete Claim–Evidence Matrix</h2>
+<p>Verdicts: <span class="chip v-sup">Supported</span> <span class="chip v-part">Partially supported</span> <span class="chip v-unsup">Unsupported</span> <span class="chip v-contra">Contradicted by own text/artifacts</span></p>
+<div class="scrollx"><table class="tight">
+<tr><th>#</th><th>Claim (exact/condensed)</th><th>Where</th><th>Evidence offered</th><th>Verdict</th><th>Note</th></tr>
+<tr><td>1</td><td>"Over-citation is architecturally universal: 11–15 IDs, citP 0.12–0.23, recall 0.68–0.87 across all three settings"</td><td>Abstract; §6.2</td><td>Tab. 2 top</td><td class="v-part">Partial</td><td>Numbers verified ✓; "architecturally" overreaches one implementation (B4). "Universal across our settings" is supported.</td></tr>
+<tr><td>2</td><td>"DO-178C: faithfulness collapses 74%→40% across hops"</td><td>Abstract</td><td>Tab. 2 bottom, local row</td><td class="v-part">Partial</td><td>Local embedder only; Azure row 52/55/40 is flat — own table qualifies the claim. No CIs; cell n≈20; Fisher p≈0.06.</td></tr>
+<tr><td>3</td><td>"MuSiQue: same pipeline rises 42%→58%"</td><td>Abstract; §6.2</td><td>Tab. 2 bottom</td><td class="v-part">Partial</td><td>Single fragile judge (B2); trend untested (p≈0.09 endpoints).</td></tr>
+<tr><td>4</td><td>"Winners corpus-conditional but embedder-robust"</td><td>Abstract; §6.1</td><td>Tab. 1</td><td class="v-part">Partial</td><td>DO-178C half solid (both embedders, Holm-gated). MuSiQue half: 3-pipeline field, 1 seed, 1 embedder.</td></tr>
+<tr><td>5</td><td>"vanilla wins 2-hop DO-178C; GraphRAG wins 2-hop MuSiQue; identical under either embedder"</td><td>Abstract</td><td>Tab. 1</td><td class="v-sup">Supported</td><td>Wording note: "identical under either embedder" scopes only to DO-178C — make explicit.</td></tr>
+<tr><td>6</td><td>"Same-judge self-κ across embedders is 0.137; verdict change on 41% of items"</td><td>Abstract; §6.3; Tab. 3</td><td>300 pinned tuples</td><td class="v-part">Partial</td><td>Numbers verified ✓ (123/300; 78/300). The <i>statistic</i> is real; the <i>interpretation</i> is claim 7.</td></tr>
+<tr><td>7</td><td>"the same judge reading the same question and pipeline output changes verdict…"</td><td>§6.3</td><td>—</td><td class="v-contra">Contradicted</td><td>283/300 tuples have different cited outputs between embedder runs (recomputed from repo CSVs). B1.</td></tr>
+<tr><td>8</td><td>"first quantification of single-judge fragility to upstream retrieval state in a controlled paired design"</td><td>§6.3</td><td>—</td><td class="v-unsup">Unsupported</td><td>"Controlled" fails (claim 7); priority claim needs a judge-robustness lit check <span class="tag t-unv">⚠</span>.</td></tr>
+<tr><td>9</td><td>"4,440 main-matrix runs"</td><td>Abstract; §1</td><td>Tab. 1 caption</td><td class="v-contra">Contradicted</td><td>Caption: 4,440 per embedder → 8,880. B5.</td></tr>
+<tr><td>10</td><td>"1,200 paired judgments; 600 cross-corpus runs"</td><td>Abstract; §1</td><td>§5</td><td class="v-sup">Supported</td><td>600 paired/embedder ×2 ✓; 3×200 ✓.</td></tr>
+<tr><td>11</td><td>"MuSiQue for cross-corpus replication of C2a only"</td><td>§2</td><td>—</td><td class="v-contra">Contradicted</td><td>Abstract/§6.1 use MuSiQue for C1 winners and C2b faithfulness. B2.</td></tr>
+<tr><td>12</td><td>"We report … McNemar exact-binomial p, and Spearman ρ"</td><td>§4.3</td><td>—</td><td class="v-unsup">Unsupported</td><td>Neither in any table; both exist in results CSVs and are favorable.</td></tr>
+<tr><td>13</td><td>"Dominance pattern identical under both embedders (DO-178C)"</td><td>§6.1</td><td>Tab. 1</td><td class="v-sup">Supported</td><td>Winner set matches per stratum ✓ (spot-checked vs stats-v3 CSVs).</td></tr>
+<tr><td>14</td><td>"{agentic-graph, agentic} tie; δ&lt;0.147 every stratum"</td><td>§6.1</td><td>significance_matrix.csv</td><td class="v-sup">Supported</td><td>Honest tie-reporting — a strength.</td></tr>
+<tr><td>15</td><td>"Not a corpus-specific artifact" (C2a)</td><td>§6.2</td><td>Tab. 2 top</td><td class="v-sup">Supported</td><td>Within the two-corpus scope.</td></tr>
+<tr><td>16</td><td>"Over-cited IDs are adversarial distractors whose claims contradict the question"</td><td>§6.2; §7</td><td>none</td><td class="v-unsup">Unsupported</td><td>Mechanism language, no failure coding. Fix #12.</td></tr>
+<tr><td>17</td><td>"Inter-judge κ halves under embedder swap (0.30→0.17)"</td><td>§6.3</td><td>Tab. 3</td><td class="v-sup">Supported</td><td>Matches judge_agreement.csv (0.165) ✓.</td></tr>
+<tr><td>18</td><td>"GPT-4.1 materially more stable (κ=0.48)"</td><td>§6.3</td><td>Tab. 3</td><td class="v-sup">Supported</td><td>78/300 flips ✓ — the salvageable core of C3.</td></tr>
+<tr><td>19</td><td>"V2 closes 56% of V1→Oracle gap; Holm-significant 3/3 strata"</td><td>§6.4; Tab. 4</td><td>v2_acceptance-v3.txt</td><td class="v-sup">Supported</td><td>Verified ✓ (0.443/0.325/0.535; 56.2%); mapping leakage caveat (Pass 8).</td></tr>
+<tr><td>20</td><td>"Hop distance largely embedding-decodable in regulated-domain corpora"</td><td>§6.4</td><td>Tab. 4 + inert features</td><td class="v-part">Partial</td><td>Holds for the generated query set; "regulated-domain corpora" overgeneralizes (Pass 11).</td></tr>
+<tr><td>21</td><td>"Cross-corpus replication of C1 and C2b left for journal extension"</td><td>§7</td><td>—</td><td class="v-contra">Contradicted</td><td>By the abstract's C1/C2b cross-corpus assertions. Reconcile (B2).</td></tr>
+<tr><td>22</td><td>"Triple-robustness is the minimum defensible bar"</td><td>Abstract; §7; §8</td><td>position</td><td class="v-sup">Supported</td><td>Normative claim, properly argued from the findings; keep.</td></tr>
+</table></div>
+
+<!-- ============================ SCORECARD ============================ -->
+<h2 id="scorecard" class="pass-brk">Final Scorecard</h2>
+<div class="svgcard">
+<div class="cap"><b>Ten-axis scorecard (1–10).</b> The profile is diagnostic: rigor machinery outscores claim discipline by three points — the reverse of the usual failing short paper, and the reason this one is rescuable.</div>
+<svg viewBox="0 0 640 330" role="img" aria-label="Horizontal bar chart of ten review dimensions">
+  <g font-family="Inter" font-size="11">
+  <line x1="230" y1="10" x2="230" y2="300" stroke="#c3c2b7" stroke-width="1.5"/>
+  <!-- scale: 10 => 380px -->
+  <text x="222" y="26" text-anchor="end" fill="#52514e">Contribution significance</text><rect x="230" y="16" width="266" height="12" rx="4" fill="#2a78d6"/><text x="502" y="26" fill="#0b0b0b" font-weight="600">7</text>
+  <text x="222" y="55" text-anchor="end" fill="#52514e">Technical soundness</text><rect x="230" y="45" width="190" height="12" rx="4" fill="#2a78d6"/><text x="426" y="55" fill="#0b0b0b" font-weight="600">5</text>
+  <text x="222" y="84" text-anchor="end" fill="#52514e">Claim–evidence alignment</text><rect x="230" y="74" width="152" height="12" rx="4" fill="#d03b3b"/><text x="388" y="84" fill="#0b0b0b" font-weight="600">4</text>
+  <text x="222" y="113" text-anchor="end" fill="#52514e">Experimental rigor</text><rect x="230" y="103" width="228" height="12" rx="4" fill="#2a78d6"/><text x="464" y="113" fill="#0b0b0b" font-weight="600">6</text>
+  <text x="222" y="142" text-anchor="end" fill="#52514e">Comparison fairness</text><rect x="230" y="132" width="228" height="12" rx="4" fill="#2a78d6"/><text x="464" y="142" fill="#0b0b0b" font-weight="600">6</text>
+  <text x="222" y="171" text-anchor="end" fill="#52514e">Reproducibility</text><rect x="230" y="161" width="190" height="12" rx="4" fill="#2a78d6"/><text x="426" y="171" fill="#0b0b0b" font-weight="600">5</text>
+  <text x="222" y="200" text-anchor="end" fill="#52514e">Clarity &amp; structure</text><rect x="230" y="190" width="228" height="12" rx="4" fill="#2a78d6"/><text x="464" y="200" fill="#0b0b0b" font-weight="600">6</text>
+  <text x="222" y="229" text-anchor="end" fill="#52514e">Figure quality</text><rect x="230" y="219" width="228" height="12" rx="4" fill="#2a78d6"/><text x="464" y="229" fill="#0b0b0b" font-weight="600">6</text>
+  <text x="222" y="258" text-anchor="end" fill="#52514e">Ethics &amp; compliance</text><rect x="230" y="248" width="152" height="12" rx="4" fill="#d03b3b"/><text x="388" y="258" fill="#0b0b0b" font-weight="600">4</text>
+  <text x="222" y="287" text-anchor="end" fill="#52514e">Rebuttal defensibility</text><rect x="230" y="277" width="228" height="12" rx="4" fill="#2a78d6"/><text x="464" y="287" fill="#0b0b0b" font-weight="600">6</text>
+  <line x1="420" y1="10" x2="420" y2="300" stroke="#e1e0d9" stroke-dasharray="4 4"/>
+  <text x="420" y="315" text-anchor="middle" fill="#898781" font-size="10">5</text>
+  <line x1="610" y1="10" x2="610" y2="300" stroke="#e1e0d9" stroke-dasharray="4 4"/>
+  <text x="610" y="315" text-anchor="middle" fill="#898781" font-size="10">10</text>
+  </g>
+</svg>
+</div>
+<p style="color:var(--ink2);font-size:13px;border-top:1px solid var(--grid);padding-top:14px;margin-top:30px">Prepared 2026-07-31 against repository state at <code>rag-vs-agentic</code> (paper source <code>paper/cikm/</code>, results <code>results/</code>, scripts <code>scripts/</code>). All recomputed figures in this review derive from <code>results/main-v2-judged.csv</code>, <code>results/main-v3-judged-pinned.csv</code>, <code>results/stats-v3/*.csv</code>, and <code>results/router/v2_acceptance-v3.txt</code>. Every reference flagged <span class="tag t-unv">⚠ UNVERIFIED</span> must be checked by the authors before reuse — do not copy citations from this review into the paper without verification.</p>
+
+</div>
+</body>
+</html>

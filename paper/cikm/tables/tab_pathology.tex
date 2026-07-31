@@ -1,0 +1,22 @@
+\begin{table}[t]
+  \centering
+  \caption{GraphRAG triple-robustness: (top, C2a) over-citation mechanism is universal across embedder and corpus swaps; (bottom, C2b) faithfulness consequence is corpus-conditional --- declines on DO-178C (Cochran--Armitage $p{<}0.05$ in 3 of 4 judge$\times$embedder combinations) but does not collapse on MuSiQue under either judge. Cells: 15--23 items (DO-178C), 66--67 (MuSiQue); Wilson 95\% CIs in artifacts.}
+  \label{tab:pathology}
+  \small
+  \begin{tabular}{l ccc}
+    \toprule
+    \textbf{C2a: over-citation mechanism} & v2 main & v3 main & MuSiQue \\
+    \midrule
+    Mean IDs cited & 14.9 & 14.9 & 11.2 \\
+    Citation precision & 0.120 & 0.129 & 0.227 \\
+    Retrieval recall & 0.681 & 0.724 & 0.873 \\
+    Citation $F_1$ overall & 0.202 & 0.217 & 0.358 \\
+    \midrule
+    \textbf{C2b: faithfulness consequence} & 1-hop & 2-hop & 3+-hop \\
+    \midrule
+    v2 main (GPT-5.4 / GPT-4.1) & 0.74 / 0.78 & 0.64 / 0.82 & 0.40 / 0.33 \\
+    v3 main pinned (GPT-5.4 / GPT-4.1) & 0.52 / 0.96 & 0.55 / 0.86 & 0.40 / 0.20 \\
+    MuSiQue (GPT-5.4 / GPT-4.1) & 0.42 / 0.94 & 0.54 / 0.88 & 0.58 / 0.80 \\
+    \bottomrule
+  \end{tabular}
+\end{table}

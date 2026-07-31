@@ -362,9 +362,13 @@ def main() -> int:
                              "20 RPD in May 2026). Then κ is GPT-5.4 × GPT-4.1.")
     parser.add_argument("--with-gemini", action="store_true",
                         help="Force Gemini judge ON (needs paid tier or fresh free quota)")
+    parser.add_argument("--no-gpt41", action="store_true",
+                        help="Skip GPT-4.1 judge — single-judge GPT-5.4 mode "
+                             "(used for MuSiQue confirmation experiment).")
     args = parser.parse_args()
     # Default: skip Gemini unless explicitly requested
     use_gemini = args.with_gemini and not args.no_gemini
+    use_gpt41 = not args.no_gpt41
 
     if args.out is None:
         args.out = args.results_csv.with_name(args.results_csv.stem + "-judged.csv")
@@ -432,7 +436,8 @@ def main() -> int:
             question = r.get("query", "")
             answer = r.get("answer", "")
             gpt5 = score_with_gpt5(question, contexts, answer)
-            gpt41 = score_with_gpt41(question, contexts, answer)
+            gpt41 = (score_with_gpt41(question, contexts, answer)
+                     if use_gpt41 else {"skipped": True})
             gem = (score_with_gemini(question, contexts, answer, model=args.gemini_model)
                    if use_gemini else {"skipped": True})
             gpt5_ok = "faithful" in gpt5
@@ -440,17 +445,20 @@ def main() -> int:
             gem_ok = "faithful" in gem
             if not gpt5_ok:
                 n_gpt5_err += 1
-            if not gpt41_ok:
+            if use_gpt41 and not gpt41_ok:
                 n_gpt41_err += 1
             if use_gemini and not gem_ok:
                 n_gem_err += 1
-            pool_ok = gpt5_ok and gpt41_ok and (gem_ok or not use_gemini)
+            pool_ok = gpt5_ok and (gpt41_ok or not use_gpt41) and (gem_ok or not use_gemini)
             if pool_ok:
                 labels_gpt5.append(gpt5["faithful"])
-                labels_gpt41.append(gpt41["faithful"])
+                if use_gpt41:
+                    labels_gpt41.append(gpt41["faithful"])
                 if use_gemini:
                     labels_gem.append(gem["faithful"])
-            if use_gemini:
+            if not use_gpt41:
+                agree = pool_ok  # single-judge: trivially "agrees with itself"
+            elif use_gemini:
                 agree = pool_ok and gpt5["faithful"] == gpt41["faithful"] == gem["faithful"]
             else:
                 agree = pool_ok and gpt5["faithful"] == gpt41["faithful"]
