@@ -144,7 +144,7 @@ def tab_pathology():
     a(r"  \small")
     a(r"  \begin{tabular}{l ccc}")
     a(r"    \toprule")
-    a(r"    \textbf{C2a: context vs.\ citation} & v2 main & v3 main & MuSiQue \\")
+    a(r"    \textit{C2a: context vs.\ citation} & v2 main & v3 main & MuSiQue \\")
     a(r"    \midrule")
     a(f"    Mean context IDs & {v2['mean_context']:.1f} & {v3['mean_context']:.1f} & {mq['mean_context']:.1f} \\\\")
     a(f"    Context precision & {v2['ctxP']:.3f} & {v3['ctxP']:.3f} & {mq['ctxP']:.3f} \\\\")
@@ -153,7 +153,7 @@ def tab_pathology():
     a(f"    Retrieval recall & {v2['retR']:.3f} & {v3['retR']:.3f} & {mq['retR']:.3f} \\\\")
     a(f"    Citation $F_1$ overall & {v2['f1']:.3f} & {v3['f1']:.3f} & {mq['f1']:.3f} \\\\")
     a(r"    \midrule")
-    a(r"    \textbf{C2b: faithfulness} & 1-hop & 2-hop & 3+-hop \\")
+    a(r"    \textit{C2b: faithfulness} & 1-hop & 2-hop & 3+-hop \\")
     a(r"    \midrule")
     for label, d in [("v2 main", v2), ("v3 main pinned", v3), ("MuSiQue", mq)]:
         cells = []
@@ -204,7 +204,7 @@ def tab_judges():
     a(r"  \small")
     a(r"  \begin{tabular}{l rrrr}")
     a(r"    \toprule")
-    a(r"    \textbf{Inter-judge $\kappa$} & 1-hop & 2-hop & 3+-hop & overall \\")
+    a(r"    \textit{Inter-judge $\kappa$} & 1-hop & 2-hop & 3+-hop & overall \\")
     a(r"    \midrule")
     for label, df in [("v2 main", v2), ("v3 main (pinned)", v3)]:
         row = [label]
@@ -226,7 +226,7 @@ def tab_judges():
             row.append(f"{v:.2f}" if v is not None else "---")
         a("    " + " & ".join(row) + r" \\")
     a(r"    \midrule")
-    a(r"    \multicolumn{5}{l}{\textbf{Same-judge self-$\kappa$ across embedders (paired 300 tuples)}} \\")
+    a(r"    \multicolumn{5}{l}{\textit{Same-judge self-$\kappa$ across embedders (paired 300 tuples)}} \\")
     a(r"    \midrule")
     a(f"    GPT-5.4 (v2 main vs v3 main) & \\multicolumn{{4}}{{r}}{{$\\kappa = {self_kappa_g5:.3f}$, raw agreement 0.59}} \\\\")
     a(f"    GPT-4.1 (v2 main vs v3 main) & \\multicolumn{{4}}{{r}}{{$\\kappa = {self_kappa_g41:.3f}$, raw agreement 0.74}} \\\\")

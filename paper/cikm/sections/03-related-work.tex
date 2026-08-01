@@ -29,13 +29,14 @@ compliance~\cite{graphragcompliance2024} evaluate single regulated domains
 without hop stratification or dual-judge protocols.
 
 \noindent\textbf{Citation evaluation, judge bias, and the $\kappa$ paradox.}
-ALCE~\cite{alce2023} introduced citation $P/R/F_1$ for grounded generation;
-Wallat~et~al.~\cite{wallat2024} show that ALCE-style correctness is not
-faithfulness, motivating LLM judges. RAGChecker~\cite{ragchecker2024}
+ALCE~\cite{alce2023} defined citation $P/R/F_1$ over generated
+answers; Wallat~et~al.~\cite{wallat2024} show that ALCE-style
+correctness is not faithfulness, motivating LLM judges. RAGChecker~\cite{ragchecker2024}
 provides a single-judge framework. Self-preference
 bias~\cite{selfpref_bias2024} motivates judge ensembles, and the
-Feinstein--Cicchetti $\kappa$ paradox~\cite{feinstein1990} with Gwet's
-AC1~\cite{gwet2008} establishes the prevalence correction we apply. Our C3 adds a
+$\kappa$ paradox of Feinstein and Cicchetti~\cite{feinstein1990},
+with Gwet's AC1~\cite{gwet2008}, establishes the prevalence
+correction we apply. Our C3 adds a
 statistic this literature does not track: the judge's agreement with
 itself under retrieval-state and date changes.
 
