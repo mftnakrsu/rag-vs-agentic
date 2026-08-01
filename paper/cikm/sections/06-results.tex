@@ -125,7 +125,15 @@ response jointly) against a known noise floor. A judge-specific
 component remains: GPT-4.1 flips only 26\% ($\kappa{=}0.48$). A final
 control: re-judging the identical 300 inputs eleven weeks later agrees
 with the earlier verdicts at only $\kappa{=}0.14$ ($+15$\,pp leniency
-shift). The replication batches (C2b) show what that drift does at
+shift). Sampling noise cannot explain this: under a stationary judge,
+cross-date agreement should sit at the same-day test--retest level
+(0.88); the observed 0.56 rejects stationarity (binomial
+$p{<}10^{-44}$). The same control for GPT-4.1 is starker: re-judging
+the identical tuples eleven weeks apart gives $\kappa{=}{-}0.05/{-}0.00$
+(v2/v3) -- chance-level agreement with its own earlier verdicts, a
+$+41$\,pp leniency shift. The judge that is more stable under
+embedder swap is the less stable across time; stability on one axis
+does not transfer to the other. The replication batches (C2b) show what that drift does at
 scale: eleven weeks on, GPT-4.1 marks 93--95\% of fresh same-distribution
 tuples faithful, inter-judge $\kappa$ falls to $0.05/0.01$
 (local/Azure), and the trend GPT-4.1 itself had established in the
