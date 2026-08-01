@@ -46,3 +46,6 @@ paper/cikm/*.fdb_latexmk
 paper/cikm/sections/*.aux
 paper/cikm/figures/architecture.pdf
 .venv-judge/
+
+# page-render debug dumps
+paper/cikm/pg*.png
