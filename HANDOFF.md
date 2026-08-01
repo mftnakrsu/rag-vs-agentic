@@ -24,7 +24,8 @@ The original matrix logged `cited_ids` inconsistently: **vanilla and graphrag re
 | MuSiQue distractor edges | `results/musique-distractor*.{jsonl,csv}`, `scripts/musique/distractor_control.py` | GraphRAG −0.02/−0.05/−0.09 F1, still beats vanilla in every stratum (p≤0.014). Win not a gold-edge artifact. |
 | Judge replication batches (seed 43, judged 11 weeks after seed-42 originals) | `results/main-v{2,3}-judged-repl.csv`, `scripts/stats/replication_trends.py`, `results/stats-v3/replication_trends.csv` | GPT-5.4 hop-decline replicates (p=0.002 local / p<1e-4 Azure); GPT-4.1 drifted lenient (93-95% faithful), its own May trend gone. Report batches separately — never pool across judging dates. |
 | Generator swap (GPT-4.1 synthesizes 332 v3 rows on frozen retrievals) | `results/genswap-*`, `scripts/judge/generator_swap.py` | Same architecture ordering, slightly higher F1. Dual-judging output: `results/genswap-judged.csv` — confirm it reached 332 rows. |
-| Same-judge controls (May) | `results/retest-v2-gpt5.csv` | test-retest κ=0.76; embedder-swap κ=0.14 (41% flips); 11-week frozen-input κ=0.14. |
+| Same-judge controls (May) | `results/retest-v2-gpt5.csv` | test-retest κ=0.76; embedder-swap κ=0.14 (41% flips); 11-week frozen-input κ=0.14. Stationarity rejected: cross-date agr 0.56 vs same-day floor 0.88, binomial p<1e-44. |
+| GPT-4.1 same-tuple drift (Aug) | `results/gpt41-drift-{v2,v3}.csv`, `scripts/judge/gpt41_drift.py` | κ=−0.05/−0.00 vs own May verdicts on identical inputs; +41pp leniency. More embedder-stable judge is less time-stable. |
 
 ## 4. Environment
 
