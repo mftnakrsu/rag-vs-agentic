@@ -22,7 +22,7 @@
 \subsection{C1: Winners are Corpus-Conditional, Embedder-Robust}
 \label{sec:c1}
 Table~\ref{tab:dominance} reports per-stratum $F_1$ across three settings.
-On DO-178C the pattern is the same under both embedders: vanilla and
+On DO-178C the pattern repeats under both embedders: vanilla and
 GraphRAG are statistically tied on 1-hop and 2-hop (Wilcoxon
 $p{=}0.12/0.65$ local, negligible $\delta$), the agentic loop costs
 0.19--0.30 $F_1$ on those strata, and on 3+-hop the ordering inverts --
@@ -84,13 +84,14 @@ in every setting; by answer citations it is the best or tied-best.
 \noindent\textbf{(C2b) The faithfulness consequence is corpus-conditional.}
 The bottom block shows the split. On DO-178C, GraphRAG
 faithfulness declines with hop distance: Cochran--Armitage trend
-$p{=}0.040/0.008$ (GPT-5.4/GPT-4.1, local embedder) and $p{<}10^{-4}$
-(GPT-4.1, Azure); only GPT-5.4-under-Azure is flat ($p{=}0.51$). An
+$p{=}0.040$ (GPT-5.4) and $p{=}0.008$ (GPT-4.1) under the local
+embedder, $p{<}10^{-4}$ under Azure (GPT-4.1); only GPT-5.4-under-Azure
+is flat ($p{=}0.51$). An
 independent 300-tuple replication batch per embedder, drawn eleven
 weeks later, reproduces the decline under GPT-5.4 in both embedders
 ($0.71{\to}0.20$, $p{=}0.002$ local; $0.79{\to}0.00$, $p{<}10^{-4}$
-Azure) while GPT-4.1 -- by then judging 93--95\% of everything
-faithful -- shows no trend ($p{=}0.89/0.30$). The decline thus
+Azure) while GPT-4.1 -- by then judging 93--95\% of
+everything faithful -- shows no trend ($p{=}0.89$ and $0.30$). The decline thus
 replicates across batches, but \emph{which judge carries it swaps
 with the judging date} (cf.\ C3). On MuSiQue neither judge collapses:
 GPT-5.4 \emph{rises} (n.s., $p{=}0.068$) while GPT-4.1 declines mildly
