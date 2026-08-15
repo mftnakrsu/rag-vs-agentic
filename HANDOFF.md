@@ -38,6 +38,25 @@ Not yet done — needs money, see cost plan: cross-vendor judge, 3rd embedder, s
 re-run of graph pipelines (blocked on dead Aura), GraphRAG mitigation arm, 2nd GraphRAG impl.
 
 `results/gemini-third-v2.csv` is a **19-row pilot only** — not reportable, do not cite it.
+`multi_judge.py` already implements a Gemini judge path (`GOOGLE_API_KEY`), so the cross-vendor
+control is wiring, not new code.
+
+### Graph provenance gap (found 2026-08-15) — affects any graph re-run
+
+The Aura instance was preloaded by the hackathon ETL and carried **more edges than the released
+corpus annotates**. Re-running `graph_loader.py` on `data/synthetic/requirements.jsonl` yields
+768 edges (references 623, verifies 104, derives_from 22, refines 17, **satisfies 2**), whereas
+the chains behind our 296 queries use SATISFIES 114 times. Measured coverage of the released
+corpus against the query chains: **91.0% of edges, 82.8% of chains** fully reconstructible. All
+gold IDs do resolve (0 missing), so evaluation targets are exact either way.
+
+Consequence: a fresh Aura + re-ETL gives a **sparser graph than the published graph-arm numbers
+were produced on**. Graph-pipeline results will not reproduce exactly. Any paid re-run touching
+graphrag / agentic-graph must either accept this or first recover the original edge set.
+Disclosed in the paper's Reproducibility paragraph with the 91.0/82.8 figures.
+
+`.env` `DATA_PATH` points at another machine (`/Users/suleakarsu/...`); pass
+`--data-path data/synthetic/requirements.jsonl` to `graph_loader.py` or fix the var.
 
 Venue thinking: scope complaints cannot be answered inside a 4-page short track. Target a full
 or resource paper (SIGIR 2027 full, ~Jan 2027) or a journal (TOIS / IP&M). ECIR 2027 (Oct 2026)
