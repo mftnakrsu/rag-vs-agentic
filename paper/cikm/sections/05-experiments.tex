@@ -36,7 +36,13 @@ pool the seeds and we report the across-seed spread separately
 (\S\ref{sec:c1}) as a check that no reported ordering rests on a
 single run.
 
-\textbf{Reproducibility.} The full pipeline regenerates from a
+\textbf{Reproducibility.} The graph store was populated before this
+study and carries edges beyond those annotated in the released corpus:
+re-loading the release with our ETL recovers 91.0\% of the edges and
+82.8\% of the chains behind our queries. Graph-pipeline results are
+therefore reproducible up to that coverage; the query manifest is
+released with its full chains, so every gold evidence set is exact
+regardless. The rest of the pipeline regenerates from a
 single make target on locked CSVs. Azure model snapshots:
 \texttt{gpt-5.4-}\allowbreak\texttt{2026-03-05} (generator + judge),
 \texttt{gpt-4.1-2025-04-14} (judge); reasoning-mode decoding with an
