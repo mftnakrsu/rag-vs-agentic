@@ -15,13 +15,13 @@ Microsoft GraphRAG~\cite{graphrag2024} and follow-ups~\cite{lightrag2024,
 hipporag2_2025,graphr1_2025} construct entity-relation graphs at indexing
 time. Han et~al.~\cite{ragvsgraphrag2025} and GraphRAG-Bench~\cite{graphragbench2026}
 report that GraphRAG does not dominate vector RAG across all query
-types. Our C2a shows one reason such verdicts disagree: whether
+types. Our C2 shows one reason such verdicts disagree: whether
 citation quality is scored over the retrieved set or over the answer's
-citations decides which side wins, and C2b separates the
+citations decides which side wins, and C3 separates the
 context-flooding mechanism from its faithfulness consequence across
 corpora. MuSiQue~\cite{musique2022} and
 MultiHop-RAG~\cite{multihoprag2024} are adjacent multi-hop benchmarks; we
-use MuSiQue for cross-corpus replication of C2a and C2b.
+use MuSiQue for cross-corpus replication of C2 and C3.
 
 \noindent\textbf{RAG for requirements traceability.}
 LiSSA~\cite{lissa2025}, TVR~\cite{niu_tvr2025}, and Graph-RAG for
@@ -36,7 +36,7 @@ provides a single-judge framework. Self-preference
 bias~\cite{selfpref_bias2024} motivates judge ensembles, and the
 $\kappa$ paradox of Feinstein and Cicchetti~\cite{feinstein1990},
 with Gwet's AC1~\cite{gwet2008}, establishes the prevalence
-correction we apply. Our C3 adds a
+correction we apply. Our C4 adds a
 statistic this literature does not track: the judge's agreement with
 itself under retrieval-state and date changes.
 

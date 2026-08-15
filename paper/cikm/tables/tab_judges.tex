@@ -1,12 +1,23 @@
 \begin{table}[t]
   \centering
-  \caption{Judge fragility on the same 300 paired tuples. Top: inter-judge agreement halves under embedder swap (v2 local $\to$ v3 Azure). Bottom: same-judge controls --- test--retest (noise floor), embedder swap (41\% flip; GPT-4.1 more stable on that axis), and eleven-week re-judges of frozen inputs (temporal drift; GPT-4.1 at chance with itself).}
+  \caption{Judge stability on the same 300 paired tuples. Same-judge controls are split by whether the judged input changed: on frozen inputs the answer and context strings are identical and only the judging date differs, so the fall from 0.76 to 0.14 isolates judge drift from any retrieval effect. Inter-judge agreement halves under embedder swap (v2 local $\to$ v3 Azure).}
   \label{tab:judges}
   \small
   \setlength{\tabcolsep}{4pt}
   \resizebox{\columnwidth}{!}{%
   \begin{tabular}{l rrrr}
     \toprule
+    \multicolumn{5}{l}{\textit{Same judge, frozen input (answer + context identical)}} \\
+    \midrule
+    GPT-5.4, re-judged same day & \multicolumn{4}{r}{$\kappa = 0.764$, raw agr.\ 0.88} \\
+    GPT-5.4, re-judged 11 wk later & \multicolumn{4}{r}{$\kappa = 0.138$, raw agr.\ 0.56} \\
+    GPT-4.1, re-judged 11 wk later & \multicolumn{4}{r}{$\kappa = -0.05\,/\,-0.00$ (v2/v3), raw agr.\ 0.48\,/\,0.51} \\
+    \midrule
+    \multicolumn{5}{l}{\textit{Same judge, input changed by embedder swap}} \\
+    \midrule
+    GPT-5.4 (v2 vs v3) & \multicolumn{4}{r}{$\kappa = 0.137$, raw agr.\ 0.59} \\
+    GPT-4.1 (v2 vs v3) & \multicolumn{4}{r}{$\kappa = 0.480$, raw agr.\ 0.74} \\
+    \midrule
     \textit{Inter-judge $\kappa$} & 1-hop & 2-hop & 3+-hop & overall \\
     \midrule
     v2 main & 0.28 & 0.22 & 0.04 & 0.30 \\
@@ -17,14 +28,6 @@
     \midrule
     v2 main & 0.37 & 0.21 & 0.57 & 0.31 \\
     v3 main (pinned) & 0.22 & 0.07 & 0.35 & 0.17 \\
-    \midrule
-    \multicolumn{5}{l}{\textit{Same-judge controls (paired 300 tuples)}} \\
-    \midrule
-    GPT-5.4 test--retest (same day) & \multicolumn{4}{r}{$\kappa = 0.764$, raw agr.\ 0.88} \\
-    GPT-5.4 across embedders (v2 vs v3) & \multicolumn{4}{r}{$\kappa = 0.137$, raw agr.\ 0.59} \\
-    GPT-4.1 across embedders (v2 vs v3) & \multicolumn{4}{r}{$\kappa = 0.480$, raw agr.\ 0.74} \\
-    GPT-5.4 same input, 11 wk apart & \multicolumn{4}{r}{$\kappa = 0.138$, raw agr.\ 0.56} \\
-    GPT-4.1 same input, 11 wk apart & \multicolumn{4}{r}{$\kappa = -0.05\,/\,-0.00$ (v2/v3), raw agr.\ 0.48\,/\,0.51} \\
     \bottomrule
   \end{tabular}%
   }
