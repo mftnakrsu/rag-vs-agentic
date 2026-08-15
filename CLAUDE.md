@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project shape
 
-This is a **research codebase**, not a product. Goal is a measurable side-by-side comparison of four RAG pipelines over the AeroSys synthetic aerospace requirements corpus (1132 DO-178C-style requirements across 32 modules: ADS, FCC, NAV, GPS, EPS, ICE, …). Output is paper artifacts (CSV/JSONL + plots), not production hardening. Submission deadline: 30 Jun / 1 Jul 2026.
+This is a **research codebase**, not a product. Goal is a measurable side-by-side comparison of four RAG pipelines over the AeroSys synthetic aerospace requirements corpus (1132 DO-178C-style requirements across 30 modules: ADS, FCC, NAV, GPS, EPS, ICE, …). Output is paper artifacts (CSV/JSONL + plots), not production hardening. Submission deadline: 30 Jun / 1 Jul 2026.
 
 **Phases:** Phase 0 bootstrap → 1a Aura ETL → 1b graphrag → 1c agentic-graph (current head) → 2 hop-stratified eval (300 q × RAGAS × bootstrap CIs) → 3 cross-eval (RAG-Critic, MuSiQue, reasoning-effort) → 4 plots → 5–6 paper. Add new code under the phase it belongs to and update HANDOFF.md's status table.
 
