@@ -1,15 +1,21 @@
 \section{Introduction}
 \label{sec:intro}
 
-DO-178C-style aerospace requirements are authored as typed link graphs:
-each requirement \textit{derives\_from} parents, \textit{satisfies}
-system-level intent, and \textit{traces\_to} verification artifacts.
-Certification authorities increasingly require auditable chains spanning
-two or more hops~\cite{do178c,arp4754a,easa2025npa,faa2024airoadmap}.
+Certifying avionics software under DO-178C requires demonstrating
+\emph{traceability}: each requirement must be linked to the parent it
+derives from, the system-level intent it satisfies, and the
+verification artifact that tests it, and certification authorities
+increasingly require these chains to be auditable across two or more
+hops~\cite{do178c,arp4754a,easa2025npa,faa2024airoadmap}. Requirements
+management tools record those links explicitly, so a requirements
+corpus is naturally read as a typed link graph, which makes retrieval
+over it a graph problem as much as a text problem.
+
 RAG architectures for this task have produced contradictory verdicts:
-Microsoft GraphRAG~\cite{graphrag2024} exploits structure but
-under-performs vector RAG on detailed queries~\cite{ragvsgraphrag2025,
-graphragbench2026}; Adaptive-RAG~\cite{adaptiverag2024} routes by
+Microsoft GraphRAG~\cite{graphrag2024} exploits structure but loses to
+vector RAG on detailed
+queries~\cite{ragvsgraphrag2025,graphragbench2026};
+Adaptive-RAG~\cite{adaptiverag2024} routes by
 complexity yet is hop-blind; LiSSA~\cite{lissa2025} and
 TVR~\cite{niu_tvr2025} omit typed-graph reasoning. Prior evaluations
 report which architecture wins in a given setting, but not why the
@@ -20,29 +26,34 @@ five-pipeline architecture matrix fixed (vanilla, agentic, agentic+graph,
 GraphRAG, learned adaptive), we vary three orthogonal axes: the retrieval
 embedder (e5-small 384d $\to$ Azure 3-small 1536d), the corpus (DO-178C
 $\to$ Wikipedia paragraph chains via MuSiQue), and the faithfulness
-judge (paired GPT-5.4 $+$ GPT-4.1 on both corpora). The design produces $2{\times}4{,}440$ main-matrix runs (one
-full matrix per embedder), 600 cross-corpus runs plus a 200-run
-distractor-edge control, and over 5{,}000 faithfulness judgments.
+judge (paired GPT-5.4 $+$ GPT-4.1 on both corpora). The design produces
+$2{\times}4{,}440$ main-matrix runs (one full matrix per embedder, three
+seeds each), 600 cross-corpus runs plus a 200-run distractor-edge
+control, and over 5{,}000 faithfulness judgments.
 
-We make four contributions.
-\textbf{(C2a)} GraphRAG's walk and its synthesizer pull in opposite
+Our headline result is not that one architecture wins, but that a
+methodological choice most evaluations leave implicit -- whether
+citation quality is scored over the retrieved context or over the
+answer's own citations -- decides the winner. We make five
+contributions.
+\textbf{(C1)} Answer-level citation winners are
+\emph{corpus- and stratum-conditional but embedder- and seed-robust}
+(Table~\ref{tab:dominance}): vanilla and GraphRAG tie on 1--2-hop
+DO-178C queries, graph-aided pipelines lead on 3+-hop, and GraphRAG
+wins every MuSiQue stratum.
+\textbf{(C2)} GraphRAG's walk and its synthesizer pull in opposite
 directions: the walk fills the context at precision 0.12--0.23, the
 answer cites 3--5 IDs at precision 0.48--0.65
 (Table~\ref{tab:pathology}). Scoring the retrieved set as the
 attribution set -- a choice some comparisons make implicitly -- ranks
 GraphRAG last; scoring the answer's citations ranks it first or
 tied-first.
-\textbf{(C2b)} The faithfulness consequence of context flooding is
+\textbf{(C3)} The faithfulness consequence of context flooding is
 \emph{corpus-conditional}: DO-178C declines across hops
 (74\%$\to$40\% local); MuSiQue shows no collapse under either judge.
-\textbf{(C1)} Answer-level winners are
-\emph{corpus- and stratum-conditional but embedder-robust}
-(Table~\ref{tab:dominance}): vanilla and GraphRAG tie on 1--2-hop
-DO-178C queries, graph-aided pipelines lead on 3+-hop, and GraphRAG
-wins every MuSiQue stratum.
-\textbf{(C3)} \emph{Single-judge faithfulness is unstable}: GPT-5.4
-self-$\kappa$ across embedders is $0.137$ against a $0.76$
-test--retest floor (Table~\ref{tab:judges}).
-\textbf{(C4, supporting)} a logistic-regression router on dense embeddings
+\textbf{(C4)} \emph{Single-judge faithfulness is unstable} along two
+separable axes: on frozen answer--context pairs, GPT-5.4 self-$\kappa$
+is $0.76$ same-day but $0.14$ eleven weeks later, and changing only the
+embedder upstream drops it to $0.137$ (Table~\ref{tab:judges}).
+\textbf{(C5, supporting)} a logistic-regression router on dense embeddings
 alone reaches macro-$F_1$ $0.86$ on hop classification.
-

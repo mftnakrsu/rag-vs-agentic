@@ -1,11 +1,11 @@
 \begin{table}[t]
   \centering
-  \caption{GraphRAG context flooding vs.\ citation behavior (C2a) and faithfulness by stratum (C2b), across embedder and corpus swaps. The graph walk fills the context window with low-precision material, but the synthesizer cites only a third of it at much higher precision. C2b cells are GPT-5.4\,/\,GPT-4.1 faithful rates.}
+  \caption{GraphRAG context flooding vs.\ citation behavior (C2) and faithfulness by stratum (C3), across embedder and corpus swaps. The graph walk fills the context window with low-precision material, but the synthesizer cites only a third of it at much higher precision. C3 cells are GPT-5.4\,/\,GPT-4.1 faithful rates.}
   \label{tab:pathology}
   \small
   \begin{tabular}{l ccc}
     \toprule
-    \textit{C2a: context vs.\ citation} & v2 main & v3 main & MuSiQue \\
+    \textit{C2: context vs.\ citation} & v2 main & v3 main & MuSiQue \\
     \midrule
     Mean context IDs & 14.9 & 14.9 & 11.2 \\
     Context precision & 0.120 & 0.129 & 0.227 \\
@@ -14,7 +14,7 @@
     Retrieval recall & 0.681 & 0.724 & 0.873 \\
     Citation $F_1$ overall & 0.551 & 0.571 & 0.646 \\
     \midrule
-    \textit{C2b: faithfulness} & 1-hop & 2-hop & 3+-hop \\
+    \textit{C3: faithfulness} & 1-hop & 2-hop & 3+-hop \\
     \midrule
     v2 main & 0.74\,/\,0.78 & 0.64\,/\,0.82 & 0.40\,/\,0.33 \\
     v3 main pinned & 0.52\,/\,0.96 & 0.55\,/\,0.86 & 0.40\,/\,0.20 \\
