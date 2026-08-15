@@ -7,7 +7,7 @@ under both embedders (\emph{v2}, \emph{v3}). MuSiQue: 3 pipelines (vanilla,
 GraphRAG, agentic+graph) $\times$ 200 queries $\times$ 1 seed $= 600$ runs,
 Azure embedder only, plus a 200-run GraphRAG distractor-edge control
 (\S\ref{sec:c1}) on the same queries and vector seeds. Agentic and
-adaptive are not re-run on MuSiQue (C2a needs only the three-pipeline
+adaptive are not re-run on MuSiQue (C2 needs only the three-pipeline
 trio).
 
 \textbf{Faithfulness judging.} On DO-178C, the multi-judge protocol
@@ -31,6 +31,10 @@ contrasts~\cite{bergkirkpatrick2012,koehn2004}, and Cliff's $\delta$
 (negligible ${<}0.147$). A pipeline pair
 is reported as significantly different only when the BCa interval excludes
 zero, Holm $p{<}0.05$, and $|\delta|\!\geq\!0.147$ jointly hold.
+Generation is stochastic, so every query is run at three seeds; tests
+pool the seeds and we report the across-seed spread separately
+(\S\ref{sec:c1}) as a check that no reported ordering rests on a
+single run.
 
 \textbf{Reproducibility.} The full pipeline regenerates from a
 single make target on locked CSVs. Azure model snapshots:

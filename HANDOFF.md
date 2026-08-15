@@ -1,12 +1,47 @@
-# HANDOFF — Triple-Robustness RAG Paper (arXiv build; CIKM 2026 decision pending)
+# HANDOFF — Triple-Robustness RAG Paper (arXiv build; CIKM 2026 rejected)
 
-**Last updated:** 2026-08-01
+**Last updated:** 2026-08-15
 
 ---
 
 ## 1. Project in one paragraph
 
 Five RAG pipelines (vanilla, agentic, agentic+graph, graphrag, adaptive) compared on a synthetic 1,132-requirement DO-178C-style corpus (296 hop-stratified queries, 2×4,440 runs across two embedders) and a 200-query MuSiQue subset, with a dual-judge faithfulness protocol (GPT-5.4 + GPT-4.1). Paper: `paper/cikm/` — currently the **arXiv (nonacm) build**, 6 pages, title "A Triple-Robustness Analysis of Retrieval-Augmented Generation for Multi-Hop Requirements Traceability". CIKM 2026 short-paper decision expected ~Aug 7; if accepted, restore the anonymous CIKM format AND the GenAI disclosure (`sections/99-genai-disclosure.tex`, on disk but not \input) from git history — both mandatory there.
+
+## 1b. CIKM 2026 short track — rejected (submission 3320)
+
+Scores -1 / -1 / +1; metareview sided with the rejects. 764 submissions, 236 accepted (30.9%).
+Single converging complaint: **experimental scope too thin for an empirical-study paper**
+(2 embedders, 2 judges, 2 corpora, 1 GraphRAG implementation, "no multiple runs").
+
+Two reviewer claims were factually wrong about the paper, and both were our presentation's fault:
+
+- R1 asked for a control re-running the judge on *identical* answer-context pairs. That control
+  already existed (test-retest κ=0.76; 11-week frozen-input κ=0.14/−0.05) but was buried in four
+  unlabelled rows at the bottom of a resized table. Fixed 2026-08-15: Table 3 is now grouped
+  "frozen input" vs "input changed by embedder swap", and §5.4 leads with the frozen-input block.
+- R3 said the work "lacks multiple runs". The matrix has always been 3 seeds
+  (296 q × 5 pipelines × 3 repeats = 4,440). It was simply never reported. Fixed 2026-08-15:
+  across-seed spread now in §5.1 + §4 statistical protocol.
+
+Free fixes landed 2026-08-15 (branch `fix/cikm-rejection-free`), no API spend:
+abstract rewritten as prose (label checklist removed); intro opens on the traceability problem
+instead of "typed link graphs"; contributions renumbered **C1–C5 in presentation order**
+(old C2a→C2, C2b→C3, old C1→C1, old C3→C4, old C4→C5) — old labels are gone, do not reuse them;
+new §3.3 "Queries and Gold Evidence" documents chain sampling, gold construction and its
+limitation; corpus stats corrected (**30 modules, not 32** — the old number was wrong in the
+paper AND in CLAUDE.md); 5 preprint citations upgraded to published versions (Search-R1→COLM
+2025, LightRAG→Findings EMNLP 2025, RAGAS→EACL 2024 demo, ARES→NAACL 2024, MultiHop-RAG→COLM
+2024); "Untested mitigations" added to Threats. Build: 6 pages, 0 overfull, 0 undefined refs.
+
+Not yet done — needs money, see cost plan: cross-vendor judge, 3rd embedder, seed-variance
+re-run of graph pipelines (blocked on dead Aura), GraphRAG mitigation arm, 2nd GraphRAG impl.
+
+`results/gemini-third-v2.csv` is a **19-row pilot only** — not reportable, do not cite it.
+
+Venue thinking: scope complaints cannot be answered inside a 4-page short track. Target a full
+or resource paper (SIGIR 2027 full, ~Jan 2027) or a journal (TOIS / IP&M). ECIR 2027 (Oct 2026)
+is too tight for the expensive items.
 
 ## 2. Major correction (2026-07-31) — read before touching results
 

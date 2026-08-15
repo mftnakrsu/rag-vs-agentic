@@ -19,7 +19,7 @@
   \label{fig:perstratum}
 \end{figure}
 
-\subsection{C1: Winners are Corpus-Conditional, Embedder-Robust}
+\subsection{C1: Winners are Corpus-Conditional, Embedder- and Seed-Robust}
 \label{sec:c1}
 Table~\ref{tab:dominance} reports per-stratum $F_1$ across three settings.
 On DO-178C the pattern repeats under both embedders: vanilla and
@@ -39,8 +39,13 @@ consecutive-distractor edges added (context precision falls
 $0.23{\to}0.14$; the walk cap is always reached). GraphRAG loses only
 $0.02/0.05/0.09$ $F_1$ per stratum and still beats vanilla everywhere
 ($+0.08/+0.16/+0.10$, $p{\leq}0.014$): the MuSiQue win is not an
-artifact of gold-only edges. Which architecture wins is thus corpus-
-and stratum-conditional, but stable under embedder swap.
+artifact of gold-only edges. Seed variance is small against these
+effects: across the three seeds, per-pipeline mean $F_1$ moves by at
+most $0.031$ (max SD $0.016$), and every ordering we report as
+significant holds independently in all three seeds; the only rank
+swaps are between vanilla and GraphRAG on 1--2-hop, the pair we report
+as tied. Which architecture wins is thus corpus- and
+stratum-conditional, but stable under embedder swap and reseeding.
 
 \input{tables/tab_pathology}
 
@@ -50,7 +55,7 @@ and stratum-conditional, but stable under embedder swap.
   \caption{Multi-judge faithfulness on the v2 main matrix.
     \textit{Left}: faithfulness fraction (5 pipelines $\times$ 3 hop
     strata $\times$ 2 judges); the GraphRAG row shows the monotonic
-    decline driving C2b on DO-178C. \textit{Right}: per-stratum Gwet
+    decline driving C3 on DO-178C. \textit{Right}: per-stratum Gwet
     AC1, showing the $\kappa$ paradox at 3+-hop (AC1${=}0.57$,
     $\kappa{<}0.10$; cf.\ Table~\ref{tab:judges}). v3 and MuSiQue:
     Table~\ref{tab:pathology}.}
@@ -64,10 +69,9 @@ and stratum-conditional, but stable under embedder swap.
   \label{fig:faithheatmap}
 \end{figure}
 
-\subsection{C2: Context Flooding, Citation Selectivity, and Faithfulness}
+\subsection{C2: The Walk Floods the Context, the Synthesizer Filters It}
 \label{sec:c2}
-\noindent\textbf{(C2a) The walk floods the context; the synthesizer
-filters it} (Table~\ref{tab:pathology}, top). Across embedder \emph{and}
+\noindent (Table~\ref{tab:pathology}, top.) Across embedder \emph{and}
 corpus swaps, GraphRAG's walk fills 11--15 context slots at context
 precision 0.12--0.23 -- five in six retrieved chunks are off-gold. The
 synthesizer then cites only 3.4--5.0 IDs per answer, at citation
@@ -81,9 +85,11 @@ comparisons do -- measure the flooding and miss the filtering, and
 invert the ranking: by context precision GraphRAG is the worst pipeline
 in every setting; by answer citations it is the best or tied-best.
 
-\noindent\textbf{(C2b) The faithfulness consequence is corpus-conditional.}
-The bottom block shows the split. On DO-178C, GraphRAG
-faithfulness declines with hop distance: Cochran--Armitage trend
+\subsection{C3: The Faithfulness Consequence is Corpus-Conditional}
+\label{sec:c3}
+The bottom block of Table~\ref{tab:pathology} splits the outcome. On
+DO-178C, GraphRAG faithfulness declines as hop distance grows, with a
+Cochran--Armitage trend at
 $p{=}0.040$ (GPT-5.4) and $p{=}0.008$ (GPT-4.1) under the local
 embedder, $p{<}10^{-4}$ under Azure (GPT-4.1); only GPT-5.4-under-Azure
 is flat ($p{=}0.51$). An
@@ -93,7 +99,7 @@ weeks later, reproduces the decline under GPT-5.4 in both embedders
 Azure) while GPT-4.1 -- by then judging 93--95\% of
 everything faithful -- shows no trend ($p{=}0.89$ and $0.30$). The decline thus
 replicates across batches, but \emph{which judge carries it swaps
-with the judging date} (cf.\ C3). On MuSiQue neither judge collapses:
+with the judging date} (cf.\ C4). On MuSiQue neither judge collapses:
 GPT-5.4 \emph{rises} (n.s., $p{=}0.068$) while GPT-4.1 declines mildly
 from a 94\% base to 80\% ($p{=}0.017$), and both 3+-hop endpoints sit
 far above the DO-178C endpoints (58\%/80\% vs.\ 40\%/33\%). The same
@@ -103,45 +109,47 @@ different corpora; we hypothesize the mechanism in
 
 \input{tables/tab_judges}
 
-\subsection{C3: Single-Judge Faithfulness is Retrieval-State-Fragile}
-\label{sec:c3}
+\subsection{C4: Judges Are Unstable on Frozen Inputs and on Changed Ones}
+\label{sec:c4}
 \looseness=-1
-Table~\ref{tab:judges} reports inter-judge agreement on the paired
-300-tuple subset and three same-judge controls. Inter-judge $\kappa$
-between GPT-5.4 and GPT-4.1 halves under embedder swap on identical
-tuples (0.30 $\to$ 0.17 overall); McNemar rejects symmetric disagreement
-(exact $p{<}0.001$; GPT-4.1 systematically more lenient). On MuSiQue
-the same pair agrees at chance level ($\kappa{=}0.02$, raw agreement
-0.48, Gwet's AC1 0.08 -- genuine disagreement, not a prevalence
-artifact; GPT-4.1 judges 88\% faithful vs.\ GPT-5.4's 47\%): C2b's
-cross-corpus statements are per judge, each independently showing no
-collapse. The same-judge controls carry the central result: same-input
-same-day test--retest gives $\kappa{=}0.76$ (12\% of verdicts flip on
-resampling alone), while re-judging the same tuples after an embedder
-swap gives $\kappa{=}0.14$ (41\% flip). The swap changes retrieved contexts
-and answers on 94\% of tuples: the gap thus measures verdict
-sensitivity to \emph{upstream retrieval state} (output drift and judge
-response jointly) against a known noise floor. A judge-specific
-component remains: GPT-4.1 flips only 26\% ($\kappa{=}0.48$). A final
-control: re-judging the identical 300 inputs eleven weeks later agrees
-with the earlier verdicts at only $\kappa{=}0.14$ ($+15$\,pp leniency
-shift). Sampling noise cannot explain this: under a stationary judge,
-cross-date agreement should sit at the same-day test--retest level
-(0.88); the observed 0.56 rejects stationarity (binomial
-$p{<}10^{-44}$). The same control for GPT-4.1 is starker: re-judging
-the identical tuples eleven weeks apart gives $\kappa{=}{-}0.05/{-}0.00$
-(v2/v3) -- chance-level agreement with its own earlier verdicts, a
-$+41$\,pp leniency shift. The judge that is more stable under
-embedder swap is the less stable across time; stability on one axis
-does not transfer to the other. The replication batches (C2b) show what that drift does at
-scale: eleven weeks on, GPT-4.1 marks 93--95\% of fresh same-distribution
-tuples faithful, inter-judge $\kappa$ falls to $0.05/0.01$
-(local/Azure), and the trend GPT-4.1 itself had established in the
-original batches disappears.
+Table~\ref{tab:judges} separates judge instability into a component
+measured on \emph{frozen} inputs, where no retrieval is re-run, and one
+measured under a changed retrieval state.
+\noindent\textit{Frozen inputs.} Re-judging the identical 300
+(answer, context) pairs -- the stored strings, byte for byte -- gives
+GPT-5.4 $\kappa{=}0.76$ (raw agreement 0.88) on the same day, but only
+$\kappa{=}0.14$ (0.56) eleven weeks later, a $+15$\,pp leniency shift.
+Sampling noise cannot explain the gap: under a stationary judge,
+cross-date agreement should sit at the same-day level, and the observed
+0.56 rejects stationarity (binomial $p{<}10^{-44}$). GPT-4.1 on the
+same frozen tuples is starker: $\kappa{=}{-}0.05/{-}0.00$ (v2/v3),
+chance-level agreement with its own earlier verdicts, a $+41$\,pp
+leniency shift. With the inputs held fixed, this component is judge
+drift alone.
+\noindent\textit{Changed retrieval state.} Re-judging after an embedder
+swap -- which changes retrieved contexts and answers on 94\% of tuples
+-- gives GPT-5.4 $\kappa{=}0.137$ (41\% of verdicts flip) against the
+$0.76$ same-day floor; GPT-4.1 flips only 26\% ($\kappa{=}0.48$). This
+component mixes output drift with judge response, and the two judges
+rank oppositely on the two axes: the judge more stable under embedder
+swap is the less stable across time, so stability on one axis does not
+transfer to the other.
+\noindent\textit{Between judges.} Inter-judge $\kappa$ halves under
+embedder swap on identical tuples (0.30 $\to$ 0.17 overall); McNemar
+rejects symmetric disagreement (exact $p{<}0.001$; GPT-4.1
+systematically more lenient). On MuSiQue the pair agrees at chance
+level ($\kappa{=}0.02$, raw agreement 0.48, Gwet's AC1 0.08 -- genuine
+disagreement, not a prevalence artifact; GPT-4.1 judges 88\% faithful
+vs.\ GPT-5.4's 47\%), so C3's cross-corpus statements are made per
+judge, each independently showing no collapse. The replication batches
+(C3) show what drift does at scale: eleven weeks on, GPT-4.1 marks
+93--95\% of fresh same-distribution tuples faithful, inter-judge
+$\kappa$ falls to $0.05/0.01$ (local/Azure), and the trend GPT-4.1
+itself had established in the original batches disappears.
 
 \input{tables/tab_router}
 
-\paragraph{C4 (supporting): Dense embeddings alone classify hop.}
+\paragraph{C5 (supporting): Dense embeddings alone classify hop.}
 Table~\ref{tab:router} shows the V2 router replication. The 50-fold
 macro-$F_1$ improves $0.78\pm0.08\to 0.86\pm0.05$ under embedder swap,
 and Adaptive-V2 closes 59\%/55\% of the V1$\to$Oracle gap
