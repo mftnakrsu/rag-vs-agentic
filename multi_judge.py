@@ -193,17 +193,25 @@ def score_with_gpt41(question: str, contexts: str, answer: str) -> dict:
         return {"error": f"{type(e).__name__}: {e}"}
 
 
+GEMINI_JUDGE_MODEL = "gemini-3.7-flash"      # snapshot 3.7-flash-08-2026
+GEMINI_THINKING_BUDGET = -1                  # -1 = dynamic; thinking ON by design
+
+
 def score_with_gemini(question: str, contexts: str, answer: str,
-                      *, model: str = "gemini-flash-latest",
-                      max_retries: int = 3) -> dict:
+                      *, model: str = GEMINI_JUDGE_MODEL,
+                      max_retries: int = 6) -> dict:
     """Score (question, contexts, answer) with Gemini Flash.
 
-    Honors the module-level _GEMINI_MIN_INTERVAL_S throttle (15 RPM compliance).
-    On 429 (rate limit) or 5xx (transient server), retries with exponential
-    backoff up to max_retries (30s → 60s → 120s).
+    Pinned to GEMINI_JUDGE_MODEL with thinking explicitly enabled: the paper's
+    other reasoning judge is GPT-5.4, and a non-thinking third judge would
+    duplicate GPT-4.1's position rather than add one.
 
-    Returns {'faithful': bool, 'reason': str, 'tokens': int} on success,
-    or {'error': ...} on permanent failure.
+    Honors the module-level _GEMINI_MIN_INTERVAL_S throttle. On 429 (rate
+    limit) or 5xx (transient server), retries with exponential backoff up to
+    max_retries (30s → 60s → 120s).
+
+    Returns {'faithful': bool, 'reason': str, 'tokens': int, 'thought_tokens': int}
+    on success, or {'error': ...} on permanent failure.
     """
     api_key = os.environ.get("GOOGLE_API_KEY")
     if not api_key:
@@ -224,6 +232,7 @@ def score_with_gemini(question: str, contexts: str, answer: str,
                 },
                 "required": ["faithful", "reason"],
             },
+            "thinkingConfig": {"thinkingBudget": GEMINI_THINKING_BUDGET},
         },
     }
     last_err: str = ""
@@ -239,7 +248,11 @@ def score_with_gemini(question: str, contexts: str, answer: str,
                 if r.status_code == 429 or 500 <= r.status_code < 600:
                     last_err = f"HTTP {r.status_code}: {r.text[:120]}"
                     if attempt < max_retries:
-                        wait = 30.0 * (2 ** attempt)
+                        # 429 is a quota signal and needs a long cool-off; 5xx is
+                        # transient overload and clears in seconds. Jitter keeps
+                        # concurrent workers from retrying in lockstep.
+                        base = 30.0 if r.status_code == 429 else 4.0
+                        wait = base * (2 ** attempt) * (0.7 + 0.6 * random.random())
                         print(f"  Gemini {r.status_code}, retry {attempt + 1}/{max_retries} in {wait:.0f}s",
                               file=sys.stderr)
                         time.sleep(wait)
@@ -254,6 +267,7 @@ def score_with_gemini(question: str, contexts: str, answer: str,
                 "faithful": bool(m.get("faithful", False)),
                 "reason": str(m.get("reason", ""))[:200],
                 "tokens": int(usage.get("totalTokenCount", 0)),
+                "thought_tokens": int(usage.get("thoughtsTokenCount", 0)),
             }
         except (httpx.TimeoutException, httpx.ConnectError, httpx.RemoteProtocolError) as e:
             last_err = f"{type(e).__name__}: {e}"
