@@ -83,12 +83,17 @@ def walk_2hop_local(adj, seed_ids: list[str], walk_max: int) -> list[str]:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--variant", choices=["rerank", "cap"], required=True)
+    ap.add_argument("--variant", choices=["rerank", "cap", "none"], required=True,
+                    help="'none' = production settings; used to add seeds so the "
+                         "MuSiQue arm has the per-stratum n to detect its own effect")
+    ap.add_argument("--repeat", type=int, default=None,
+                    help="override the repeat index (adds a generation seed)")
     args = ap.parse_args()
     load_dotenv(ROOT / ".env")
     from llm_compat import GPT5Client
 
-    out_path = ROOT / "results" / f"musique-mitigation-{args.variant}.jsonl"
+    suffix = args.variant if args.repeat is None else f"{args.variant}-r{args.repeat}"
+    out_path = ROOT / "results" / f"musique-mitigation-{suffix}.jsonl"
     text_by_id, title_by_id = {}, {}
     for l in CHUNKS.open():
         c = json.loads(l)
@@ -153,7 +158,7 @@ def main() -> int:
             **{k: r[k] for k in ("query", "query_type", "embedder", "reranker")},
             "pipeline": "graphrag",
             "variant": args.variant,
-            "repeat": r["repeat"],
+            "repeat": args.repeat if args.repeat is not None else r["repeat"],
             "latency_ms": int((time.time() - t0) * 1000),
             "prompt_tokens": usage.get("prompt_tokens", 0),
             "completion_tokens": usage.get("completion_tokens", 0),
