@@ -52,6 +52,9 @@ def main() -> int:
     ap.add_argument("--queries", default="data/eval/queries-hop-stratified.jsonl",
                     help="manifest whose queries define the matrix; traces carry a "
                          "couple of stray smoke-test rows that the scored CSVs drop")
+    ap.add_argument("--corpus", default="data/synthetic/requirements.jsonl",
+                    help="chunk source the judge quotes contexts from")
+    ap.add_argument("--pipeline", default=None, help="judge only this pipeline")
     ap.add_argument("--limit", type=int, default=0, help="smoke-test row cap")
     ap.add_argument("--workers", type=int, default=8)
     args = ap.parse_args()
@@ -68,7 +71,7 @@ def main() -> int:
             print(f"unknown judge: {j}", file=sys.stderr)
             return 2
 
-    chunks = load_query_chunks(ROOT / "data/synthetic/requirements.jsonl")
+    chunks = load_query_chunks(ROOT / args.corpus)
     rows = [json.loads(l) for l in (ROOT / args.trace).open()]
 
     if args.queries:
@@ -78,6 +81,9 @@ def main() -> int:
         rows = [r for r in rows if r["query"] in manifest]
         if dropped:
             print(f"dropped {len(dropped)} row(s) not in {args.queries}")
+
+    if args.pipeline:
+        rows = [r for r in rows if r.get("pipeline") == args.pipeline]
 
     if args.restrict_to:
         keep = {key_of(r) for r in csv.DictReader((ROOT / args.restrict_to).open())}
