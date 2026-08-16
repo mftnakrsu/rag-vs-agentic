@@ -41,6 +41,41 @@ re-run of graph pipelines (blocked on dead Aura), GraphRAG mitigation arm, 2nd G
 `multi_judge.py` already implements a Gemini judge path (`GOOGLE_API_KEY`), so the cross-vendor
 control is wiring, not new code.
 
+### Post-rejection work in flight (started 2026-08-16)
+
+Approved package ≈ $97 (tiers A3/B1/C1/D1/E2). Spend so far **≈ $33**.
+
+| Phase | State | Artifacts |
+|---|---|---|
+| 0 prep | done | `scripts/judge/full_matrix_judge.py`; Gemini judge pinned in `multi_judge.py` |
+| 1 full-matrix judging, GPT-4.1 leg | **done**, $30.87 | `results/main-v{2,3}-judged-full-gpt41.csv`, 4,440 rows each, 0 errors |
+| 1 Gemini leg | **BLOCKED** — free-tier key | — |
+| 2 flooding mitigation | done, ~$4 | `results/musique-mitigation-{rerank,cap}.jsonl` + `-scored.csv` |
+| 3 third corpus (D1) | not started | |
+| 4 third embedder (C1) | **BLOCKED** — Aura + embedder choice | |
+| 5 second GraphRAG impl (E2) | **BLOCKED** — Aura | |
+
+**Gemini key is FREE TIER.** `GenerateRequestsPerDayPerProjectPerModel-FreeTier`, quotaValue **20/day**
+for gemini-3.7-flash. The `serviceTier: "standard"` field in responses describes the request, NOT the
+billing plan — do not read it as "billing enabled". Cross-vendor judging needs billing turned on for
+the Google Cloud project. Judge model chosen: **gemini-3.7-flash, thinking ON, snapshot
+`3.7-flash-08-2026`** ($0.75/$3.75 promo through 2026-12-31; measured 269 thought tokens/call ⇒
+$17.95 for 8,880 rows). 3.6-flash cannot disable thinking at all (HTTP 400); 3.5-flash is older AND
+3× dearer.
+
+Full-matrix results (GPT-4.1, judged Aug — **new date, do NOT pool with May**):
+overall faithful 0.933 (v2) / 0.917 (v3). GraphRAG hop-decline holds under both embedders
+(p=3.9e-02 / 1.4e-06); **vanilla, the only non-expanding pipeline, is flat under both**
+(p=0.16 / 0.99). On the identical 300 tuples GPT-4.1 vs its own May verdicts: κ=−0.046, +43pp
+leniency — independently reproducing the −0.045 from `gpt41-drift-v2.csv`.
+
+Mitigation control (answers reviewer 1's "no mitigation tested"): **neither variant works.**
+Rerank walked nodes to top-5 → ctx precision 0.227→0.232, citation F1 +0.010 (p=0.34, n.s.).
+Cap walk 30→10 / context 15→8 → ctx precision 0.194, F1 −0.126 (p=2.6e-11, harmful). Reading:
+the synthesizer already filters the walk (C2), so upstream filtering is redundant and budget cuts
+only destroy recall. Careful with metrics — MuSiQue has TWO context-precision definitions
+(`is_supporting` paragraph flag vs the chain `expected_ids`); they differ ~2× and must not be mixed.
+
 ### Graph provenance gap (found 2026-08-15) — affects any graph re-run
 
 The Aura instance was preloaded by the hackathon ETL and carried **more edges than the released
