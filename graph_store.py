@@ -11,9 +11,10 @@ caller calls `.close()` (or `with closing(...)`).
 from __future__ import annotations
 
 import os
-from typing import Sequence
+from typing import TYPE_CHECKING, Sequence
 
-from neo4j import Driver, GraphDatabase
+if TYPE_CHECKING:  # neo4j is only needed for the Aura backend
+    from neo4j import Driver
 
 # Whitelist of relationship types we traverse for retrieval.
 # Includes the traceability-critical types and excludes system-engineering
@@ -28,7 +29,16 @@ TRACEABILITY_LINK_TYPES: tuple[str, ...] = (
 )
 
 
-def get_driver() -> Driver:
+def get_driver():
+    """Neo4j driver, or a file-backed stand-in when GRAPH_BACKEND=local.
+
+    The local backend traverses the corpus' own link annotations, which is
+    what `graph_loader.py` would put in a fresh instance anyway. See
+    graph_store_local for the fidelity notes.
+    """
+    if os.environ.get("GRAPH_BACKEND", "").lower() == "local":
+        from graph_store_local import LocalGraph
+        return LocalGraph.from_corpus()
     uri = os.environ.get("NEO4J_URI")
     user = os.environ.get("NEO4J_USER")
     password = os.environ.get("NEO4J_PASSWORD")
@@ -36,6 +46,7 @@ def get_driver() -> Driver:
         raise RuntimeError(
             "NEO4J_URI / NEO4J_USER / NEO4J_PASSWORD must be set in .env"
         )
+    from neo4j import GraphDatabase
     return GraphDatabase.driver(uri, auth=(user, password))
 
 
@@ -72,6 +83,8 @@ def walk_2hop(
     """
     if not seed_ids:
         return []
+    if hasattr(driver, "walk_2hop"):
+        return driver.walk_2hop(seed_ids, rel_types, max_results)
     with driver.session() as session:
         rec = session.execute_read(
             lambda tx: list(tx.run(
@@ -123,6 +136,8 @@ def hop1_directed(
     Returns:
         [{"id": str, "dir": "out"|"in", "rel": "DERIVES_FROM"|...}, ...]
     """
+    if hasattr(driver, "hop1_directed"):
+        return driver.hop1_directed(req_id, rel_types)
     with driver.session() as session:
         rec = session.execute_read(
             lambda tx: tx.run(
