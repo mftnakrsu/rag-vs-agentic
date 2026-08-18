@@ -143,13 +143,77 @@ class AzureOpenAIEmbedder:
         return out
 
 
+class BGEM3Embedder(LocalE5SmallEmbedder):
+    """BAAI/bge-m3 dense embeddings (1024d), the third embedder axis.
+
+    Independent of both existing axes -- e5-small is Microsoft, 3-small is
+    OpenAI -- so a reviewer cannot read it as a variant of what is already
+    there. Weights come from the HF hub by name, not from a local path, so
+    unlike the e5 setup it needs nothing staged on disk.
+
+    bge-m3 takes the raw query with no "query: " prefix (that is an e5
+    convention) and uses the CLS vector rather than mean pooling.
+    """
+
+    DIM = 1024
+    MAX_TOKENS = 8192
+    MODEL_ID = "BAAI/bge-m3"
+
+    def __init__(self, model_path: str | None = None):
+        super().__init__(model_path=model_path or self.MODEL_ID)
+
+    def _load(self) -> None:
+        if self._model is not None:
+            return
+        from transformers import AutoModel, AutoTokenizer
+
+        self._tokenizer = AutoTokenizer.from_pretrained(self._model_path)
+        self._model = AutoModel.from_pretrained(self._model_path)
+        self._device = _pick_device()
+        self._model = self._model.to(self._device)
+        self._model.eval()
+
+    def _embed(self, texts: List[str]) -> List[List[float]]:
+        """CLS pooling, as bge-m3's dense head is trained on the CLS vector.
+
+        The inherited e5 implementation mean-pools, which would silently
+        produce a different (and worse) embedding space here.
+        """
+        if not texts:
+            return []
+        import torch
+        import torch.nn.functional as F
+
+        self._load()
+        inputs = self._tokenizer(
+            texts, padding=True, truncation=True,
+            max_length=self.MAX_TOKENS, return_tensors="pt",
+        )
+        inputs = {k: v.to(self._device) for k, v in inputs.items()}
+        with torch.no_grad():
+            out = self._model(**inputs).last_hidden_state
+            pooled = F.normalize(out[:, 0], p=2, dim=1)
+        return pooled.detach().cpu().float().numpy().tolist()
+
+    def embed_query(self, text: str) -> List[float]:
+        return self._embed([text])[0]
+
+    def embed_documents(self, texts: List[str], batch_size: int = 16) -> List[List[float]]:
+        out: List[List[float]] = []
+        for i in range(0, len(texts), batch_size):
+            out.extend(self._embed(texts[i:i + batch_size]))
+        return out
+
+
 def get_embedder(name: str):
-    """Factory: 'local' | 'azure' -> embedder instance."""
+    """Factory: 'local' | 'azure' | 'bge' -> embedder instance."""
     if name in ("local", "local_e5", "e5"):
         return LocalE5SmallEmbedder()
     if name in ("azure", "azure_openai"):
         return AzureOpenAIEmbedder()
-    raise ValueError(f"Unknown embedder: {name!r} (use 'local' or 'azure')")
+    if name in ("bge", "bge-m3", "bgem3"):
+        return BGEM3Embedder()
+    raise ValueError(f"Unknown embedder: {name!r} (use 'local', 'azure' or 'bge')")
 
 
 if __name__ == "__main__":

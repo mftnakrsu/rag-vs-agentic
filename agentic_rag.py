@@ -117,6 +117,8 @@ class AgentState(TypedDict, total=False):
 def _coll_for(embedder_name: str) -> tuple[str, int]:
     if embedder_name == "local":
         return (os.environ.get("CHROMA_COLLECTION_LOCAL", "docs-local-e5"), 384)
+    if embedder_name in ("bge", "bge-m3", "bgem3"):
+        return (os.environ.get("CHROMA_COLLECTION_BGE", "docs-bge-m3"), 1024)
     return (
         os.environ.get("CHROMA_COLLECTION_AZURE", "docs-azure"),
         int(os.environ.get("AZURE_OPENAI_EMBEDDING_DIMENSION", 1536)),
