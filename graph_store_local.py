@@ -82,6 +82,46 @@ class LocalGraph:
                    + [{"id": i, "hops": 2} for i in sorted(hop2)])
         return ordered[:max_results]
 
+    def walk_ppr(self, seed_ids: Sequence[str], rel_types: Sequence[str],
+                 max_results: int, *, alpha: float = 0.15, iters: int = 20) -> list[dict]:
+        """Personalized-PageRank retrieval, a second GraphRAG-family traversal.
+
+        walk_2hop takes everything within a fixed radius; PPR instead scores
+        the whole reachable component by random-walk-with-restart mass and
+        keeps the top nodes, so a well-connected 3-hop node can outrank a
+        peripheral 1-hop one. This is the HippoRAG-family strategy and gives
+        a traversal that differs in kind, not just in budget -- which is what
+        tests whether the flooding/filtering split is an artefact of our
+        particular walk.
+
+        alpha is the restart probability; scores are unnormalised mass.
+        """
+        if not seed_ids:
+            return []
+        rt = set(rel_types)
+        seeds = [s for s in seed_ids if s in self.out or s in self.inc]
+        if not seeds:
+            return []
+        restart = {s: 1.0 / len(seeds) for s in seeds}
+        score = dict(restart)
+        for _ in range(iters):
+            nxt: dict[str, float] = defaultdict(float)
+            for node, mass in score.items():
+                nbrs = self._undirected(node, rt)
+                if not nbrs:
+                    nxt[node] += (1 - alpha) * mass  # dangling: keep mass in place
+                    continue
+                share = (1 - alpha) * mass / len(nbrs)
+                for nb in nbrs:
+                    nxt[nb] += share
+            for s, m in restart.items():
+                nxt[s] += alpha * m
+            score = dict(nxt)
+        seedset = set(seeds)
+        ranked = sorted(((n, v) for n, v in score.items() if n not in seedset),
+                        key=lambda kv: (-kv[1], kv[0]))
+        return [{"id": n, "hops": 1, "score": v} for n, v in ranked[:max_results]]
+
     def hop1_directed(self, req_id: str, rel_types: Sequence[str]) -> list[dict]:
         rt = set(rel_types)
         outs = [{"id": t, "dir": "out", "rel": rel}
