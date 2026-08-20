@@ -1,6 +1,6 @@
 # HANDOFF — Triple-Robustness RAG Paper (arXiv build; CIKM 2026 rejected)
 
-**Last updated:** 2026-08-15
+**Last updated:** 2026-08-16
 
 ---
 
@@ -41,40 +41,57 @@ re-run of graph pipelines (blocked on dead Aura), GraphRAG mitigation arm, 2nd G
 `multi_judge.py` already implements a Gemini judge path (`GOOGLE_API_KEY`), so the cross-vendor
 control is wiring, not new code.
 
-### Post-rejection work in flight (started 2026-08-16)
+### Post-rejection work (2026-08-16) — generation COMPLETE, judging in flight
 
-Approved package ≈ $97 (tiers A3/B1/C1/D1/E2). Spend so far **≈ $33**.
+Approved package tiers A3/B1/C1/D1/E2. Spend so far **~$73 Azure + ~$30 Gemini**.
 
-| Phase | State | Artifacts |
+| Phase | State | Key artifacts |
 |---|---|---|
-| 0 prep | done | `scripts/judge/full_matrix_judge.py`; Gemini judge pinned in `multi_judge.py` |
-| 1 full-matrix judging, GPT-4.1 leg | **done**, $30.87 | `results/main-v{2,3}-judged-full-gpt41.csv`, 4,440 rows each, 0 errors |
-| 1 Gemini leg | **BLOCKED** — free-tier key | — |
-| 2 flooding mitigation | done, ~$4 | `results/musique-mitigation-{rerank,cap}.jsonl` + `-scored.csv` |
-| 3 third corpus (D1) | not started | |
-| 4 third embedder (C1) | **BLOCKED** — Aura + embedder choice | |
-| 5 second GraphRAG impl (E2) | **BLOCKED** — Aura | |
+| 0 prep | done | `scripts/judge/full_matrix_judge.py`, `scripts/judge/check_gemini_tier.py` |
+| 1 GPT-4.1 full matrix | done, $30.87 | `results/main-v{2,3}-judged-full-gpt41.csv`, 4,440 each, 0 errors |
+| 2 flooding mitigation | done, ~$4 | `results/musique-mitigation-{rerank,cap}*` — **both fail** |
+| C3 power test | done, ~$5 | `results/musique-none-r{1,2}*` — **C3 refuted under GPT-4.1** |
+| D1 third corpus (2Wiki) | done, $5.50 | `data/twowiki/`, `results/twowiki-*` |
+| Local graph shim + bge-m3 | done, $0 | `graph_store_local.py`, `scripts/index_bge.py` |
+| C1 third embedder | done, $22.36 | `results/main-v4*` (1,480 rows, 1 seed) |
+| E2 PPR traversal | done, $2.47 | `results/main-v3-ppr-*` |
+| Cross-vendor judging | **running** | `results/*-judged-gemini.csv`, `*-judged.csv` |
 
-**Gemini key is FREE TIER.** `GenerateRequestsPerDayPerProjectPerModel-FreeTier`, quotaValue **20/day**
-for gemini-3.7-flash. The `serviceTier: "standard"` field in responses describes the request, NOT the
-billing plan — do not read it as "billing enabled". Cross-vendor judging needs billing turned on for
-the Google Cloud project. Judge model chosen: **gemini-3.7-flash, thinking ON, snapshot
-`3.7-flash-08-2026`** ($0.75/$3.75 promo through 2026-12-31; measured 269 thought tokens/call ⇒
-$17.95 for 8,880 rows). 3.6-flash cannot disable thinking at all (HTTP 400); 3.5-flash is older AND
-3× dearer.
+**Aura is retired for good.** `GRAPH_BACKEND=local` uses `graph_store_local.py`, which traverses the
+corpus' own link annotations — identical to what `graph_loader.py` would load into a fresh instance,
+minus the 48 dangling links it silently drops (768 annotated → **720 real edges**). The neo4j import
+is lazy, so pipelines run without the package. This also fixes the reproducibility gap: the graph is
+now derivable from the released corpus.
 
-Full-matrix results (GPT-4.1, judged Aug — **new date, do NOT pool with May**):
-overall faithful 0.933 (v2) / 0.917 (v3). GraphRAG hop-decline holds under both embedders
-(p=3.9e-02 / 1.4e-06); **vanilla, the only non-expanding pipeline, is flat under both**
-(p=0.16 / 0.99). On the identical 300 tuples GPT-4.1 vs its own May verdicts: κ=−0.046, +43pp
-leniency — independently reproducing the −0.045 from `gpt41-drift-v2.csv`.
+**Gemini judge**: `gemini-3.7-flash`, snapshot `3.7-flash-08-2026`, thinking ON (`thinkingBudget:-1`).
+Measured 1,726 in / 269 out per judge call ⇒ $0.00230. Billing IS live on the new key (project
+710802299794); preflight `scripts/judge/check_gemini_tier.py` verifies this rather than assuming.
+`gemini-2.5-flash` and `2.5-flash-lite` are **404, retired** — do not quote them as cheap fallbacks.
+Google Cloud in TR is **postpay**; a deposit is not a spend ceiling, only a quota override is.
 
-Mitigation control (answers reviewer 1's "no mitigation tested"): **neither variant works.**
-Rerank walked nodes to top-5 → ctx precision 0.227→0.232, citation F1 +0.010 (p=0.34, n.s.).
-Cap walk 30→10 / context 15→8 → ctx precision 0.194, F1 −0.126 (p=2.6e-11, harmful). Reading:
-the synthesizer already filters the walk (C2), so upstream filtering is redundant and budget cuts
-only destroy recall. Careful with metrics — MuSiQue has TWO context-precision definitions
-(`is_supporting` paragraph flag vs the chain `expected_ids`); they differ ~2× and must not be mixed.
+### Findings that change the paper
+
+1. **C2 is now the strongest claim.** Flooding→filtering replicates across 3 corpora, 3 embedders,
+   and 2 traversals, and survives 2 attempted mitigations. 2Wiki is sharpest: ctx precision 0.230 →
+   citation precision 0.975 (4.2x).
+2. **C3 does not replicate.** At matched power (MuSiQue 3 seeds, n=600, ~200/cell) the decline is
+   significant there too: 0.935/0.861/0.828, Cochran-Armitage p=1.2e-03, 10.7pp drop p=9.1e-04 —
+   comparable to DO-178C v3's 11.9pp. The published "no collapse on Wikipedia" was 67 rows/stratum.
+   GPT-5.4 leg not retested (unpriced); rewrite C3 or retract.
+3. **Replacement claim is better:** the decline tracks *context expansion*, not corpus. Every
+   expanding pipeline declines; vanilla (no expansion) is flat under both embedders (p=0.16, 0.99).
+4. **Mitigation is a clean negative.** Rerank: F1 +0.010 (p=0.34). Budget cap: F1 −0.126
+   (p=2.6e-11) and *lower* context precision. Consistent with C2 — the synthesizer already filters.
+5. **PPR ≈ walk_2hop.** ctx prec 0.131 vs 0.129, enrichment 3.9x vs 3.8x. F1 +0.016 with Cliff's
+   delta +0.036 — the joint criterion rejects it. C2 is not an artefact of our walk.
+6. **GPT-4.1 drift replicated independently.** Full-matrix Aug vs May on identical 300 tuples:
+   κ=−0.046, +43pp leniency, matching the −0.045 from `gpt41-drift-v2.csv`.
+
+**Judging dates are not poolable.** Aug verdicts (full matrix, Gemini pass) must never be merged
+with the May batches. Every judged CSV carries a `judged_on` column.
+
+**MuSiQue has TWO context-precision definitions** — `is_supporting` paragraph flag vs chain
+`expected_ids`. They differ ~2x. Never mix them; the paper uses the chain-gold one.
 
 ### Graph provenance gap (found 2026-08-15) — affects any graph re-run
 
