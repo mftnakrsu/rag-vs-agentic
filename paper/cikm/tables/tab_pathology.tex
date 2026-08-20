@@ -1,24 +1,21 @@
 \begin{table}[t]
   \centering
-  \caption{GraphRAG context flooding vs.\ citation behavior (C2) and faithfulness by stratum (C3), across embedder and corpus swaps. The graph walk fills the context window with low-precision material, but the synthesizer cites only a third of it at much higher precision. C3 cells are GPT-5.4\,/\,GPT-4.1 faithful rates.}
+  \caption{GraphRAG floods the context and the synthesizer filters it (C2), across every setting we ran: three embedders, three corpora, and two traversals. The walk fills 11--15 slots at low precision; the answer cites 2.5--5.0 IDs at 3--4$\times$ that precision. The ranking inverts with the measurement point in all six.}
   \label{tab:pathology}
   \small
-  \begin{tabular}{l ccc}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{l rr rr r}
     \toprule
-    \textit{C2: context vs.\ citation} & v2 main & v3 main & MuSiQue \\
+    & \multicolumn{2}{c}{\textit{retrieved context}} & \multicolumn{2}{c}{\textit{answer citations}} & \\
+    \cmidrule(lr){2-3}\cmidrule(lr){4-5}
+    Setting & slots & prec. & IDs & prec. & gain \\
     \midrule
-    Mean context IDs & 14.9 & 14.9 & 11.2 \\
-    Context precision & 0.120 & 0.129 & 0.227 \\
-    Mean IDs cited in answer & 4.9 & 5.0 & 3.4 \\
-    Citation precision & 0.480 & 0.493 & 0.654 \\
-    Retrieval recall & 0.681 & 0.724 & 0.873 \\
-    Citation $F_1$ overall & 0.551 & 0.571 & 0.646 \\
-    \midrule
-    \textit{C3: faithfulness} & 1-hop & 2-hop & 3+-hop \\
-    \midrule
-    v2 main & 0.74\,/\,0.78 & 0.64\,/\,0.82 & 0.40\,/\,0.33 \\
-    v3 main pinned & 0.52\,/\,0.96 & 0.55\,/\,0.86 & 0.40\,/\,0.20 \\
-    MuSiQue & 0.42\,/\,0.94 & 0.54\,/\,0.88 & 0.58\,/\,0.80 \\
+    DO-178C, e5-small     & 14.9 & 0.120 & 4.9 & 0.480 & 4.0$\times$ \\
+    DO-178C, 3-small      & 14.9 & 0.129 & 5.0 & 0.493 & 3.8$\times$ \\
+    DO-178C, bge-m3       & 14.8 & 0.121 & 4.7 & 0.490 & 4.1$\times$ \\
+    DO-178C, PPR walk     & 14.9 & 0.131 & 4.9 & 0.509 & 3.9$\times$ \\
+    MuSiQue               & 11.2 & 0.227 & 3.4 & 0.654 & 2.9$\times$ \\
+    2WikiMultihopQA       & 11.4 & 0.230 & 2.5 & 0.975 & 4.2$\times$ \\
     \bottomrule
   \end{tabular}
 \end{table}
