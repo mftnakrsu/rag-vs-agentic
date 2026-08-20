@@ -1,13 +1,14 @@
 \section{Conclusion}
 \label{sec:conclusion}
-Across a triple-robustness (embedder $\times$ corpus $\times$ judge)
-analysis of five RAG architectures: \emph{graph expansion floods the
-context but the synthesizer cites selectively, and moving the
-measurement point from context to answer inverts the architecture
-ranking}; \emph{the faithfulness consequence of flooding is
-corpus-conditional}; \emph{stratum winners are embedder- and
-seed-robust but corpus-conditional}; and \emph{single-judge verdicts
-drift on frozen inputs and flip under retrieval-state change}.
-Triple-robustness -- and an
-explicit choice of citation-measurement point -- is the minimum bar
-for RAG architecture claims.
+Varying embedder, corpus, traversal and judge around a fixed
+five-pipeline matrix: \emph{graph expansion floods the context but the
+synthesizer cites selectively, and moving the measurement point from
+context to answer inverts the architecture ranking} -- in all six
+settings, under a changed traversal, and against two mitigations;
+\emph{the faithfulness decline follows context expansion rather than the
+corpus}, a correction to the corpus-conditional reading we previously
+reported; \emph{stratum winners are embedder- and seed-robust}; and
+\emph{judges drift on frozen inputs and disagree systematically across
+vendors while $\kappa$ hides it}. Robustness on these axes -- and an
+explicit choice of citation-measurement point -- is the minimum bar for
+RAG architecture claims.

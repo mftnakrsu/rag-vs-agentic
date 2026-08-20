@@ -1,0 +1,22 @@
+\begin{table}[t]
+  \centering
+  \caption{Per-stratum citation $F_1$ on DO-178C under three independent embedders (384d Microsoft, 1536d OpenAI, 1024d BAAI). The stratum-conditional ordering is stable: vanilla ties GraphRAG on 1--2-hop and is \emph{last} at 3+-hop in all three, where a graph-aided pipeline leads.}
+  \label{tab:embedders}
+  \small
+  \setlength{\tabcolsep}{4pt}
+  \resizebox{\columnwidth}{!}{%
+  \begin{tabular}{l rrr rrr rrr}
+    \toprule
+    & \multicolumn{3}{c}{e5-small (384d)} & \multicolumn{3}{c}{3-small (1536d)} & \multicolumn{3}{c}{bge-m3 (1024d)} \\
+    \cmidrule(lr){2-4}\cmidrule(lr){5-7}\cmidrule(lr){8-10}
+    System & 1h & 2h & 3+h & 1h & 2h & 3+h & 1h & 2h & 3+h \\
+    \midrule
+    vanilla       & \textbf{.757} & .712 & .089 & \textbf{.756} & .689 & .195 & \textbf{.769} & .691 & .114 \\
+    agentic       & .541 & .414 & .175 & .533 & .430 & .203 & .548 & .404 & .156 \\
+    agentic-graph & .566 & .415 & \textbf{.219} & .547 & .421 & .251 & .546 & .431 & .206 \\
+    graphrag      & .751 & \textbf{.720} & .172 & .745 & \textbf{.707} & .253 & .742 & \textbf{.728} & \textbf{.214} \\
+    adaptive      & .630 & .499 & .181 & .651 & .492 & \textbf{.254} & .672 & .478 & .202 \\
+    \bottomrule
+  \end{tabular}%
+  }
+\end{table}

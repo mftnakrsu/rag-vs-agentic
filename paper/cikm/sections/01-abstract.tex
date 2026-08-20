@@ -1,29 +1,31 @@
 \begin{abstract}
 Reported verdicts on GraphRAG versus vector RAG disagree, and the
 evidence is typically tied to a single corpus, embedder, and judge --
-and, we show, to where citation quality is measured. We present a
-triple-robustness analysis that holds a five-pipeline architecture
-matrix fixed and varies embedder (local e5-small vs.\ Azure
-text-embedding-3-small), corpus (DO-178C typed-edge requirements vs.\
-Wikipedia paragraph chains via MuSiQue), and judge (paired GPT-5.4
-$\times$ GPT-4.1 on both corpora), over $2{\times}4{,}440$ main-matrix
-runs at three seeds, 600 cross-corpus runs, and over 5{,}000
-faithfulness judgments. Our central finding concerns the measurement
-point rather than the architecture: GraphRAG's graph walk floods the
-context window at precision 0.12--0.23, while the synthesizer it feeds
-cites selectively at precision 0.48--0.65. Scoring the retrieved set as
-the attribution set therefore ranks GraphRAG last and scoring the
-answer's citations ranks it first or tied-first, which reconciles part
-of the disagreement in prior reports. Downstream of that flooding,
-faithfulness is corpus-conditional: it declines with hop distance on
-DO-178C (trend $p{<}0.05$ in three of four judge$\times$embedder
-combinations) but shows no collapse on Wikipedia chains under either
-judge. Answer-level citation winners are likewise corpus- and
-stratum-conditional, yet stable under embedder swap and across seeds.
-Faithfulness verdicts are not stable: re-judging frozen
-answer-context pairs eleven weeks apart gives self-agreement
-$\kappa{\leq}0.14$ for both judges, against a same-day test--retest
-floor of $0.76$. We argue that RAG architecture claims should be tested
-at this level of robustness -- including robustness to the
-citation-measurement point -- before they are trusted.
+and, we show, to where citation quality is measured. We vary all four:
+a five-pipeline architecture matrix held fixed while we swap the
+embedder (e5-small 384d, text-embedding-3-small 1536d, bge-m3 1024d),
+the corpus (DO-178C typed-edge requirements, and Wikipedia paragraph
+chains via MuSiQue and 2WikiMultihopQA), the graph traversal (bounded
+2-hop walk vs.\ personalized PageRank), and the judge (GPT-5.4, GPT-4.1
+and Gemini 3.7-flash), over 10{,}656 generation runs at three seeds and
+more than 24{,}000 faithfulness judgments. Our central finding concerns
+the measurement point rather than the architecture: GraphRAG's graph
+walk floods the context window at precision 0.12--0.23, while the
+synthesizer it feeds cites selectively at 0.48--0.98. Scoring the
+retrieved set as the attribution set therefore ranks GraphRAG last and
+scoring the answer's citations ranks it first or tied-first, in all six
+settings we tested; the split survives a change of traversal and defeats
+two obvious mitigations, since the synthesizer already performs the
+filtering. Answer-level winners are stratum-conditional but stable
+across embedders and seeds. Faithfulness declines with hop distance on
+\emph{both} corpus families once the comparison is adequately powered --
+a corpus-conditional reading we previously reported does not survive --
+while the one pipeline that expands no context never declines. Judges,
+by contrast, are not stable: re-judging frozen answer--context pairs
+eleven weeks later gives self-agreement $\kappa{\leq}0.14$, and two
+vendors judging identical rows on one day agree on 93\% of them at
+$\kappa{=}0.03$--$0.13$ yet AC1 $0.90$--$0.94$. We argue that RAG
+architecture claims should be tested at this level of robustness --
+including robustness to the citation-measurement point -- before they
+are trusted.
 \end{abstract}
