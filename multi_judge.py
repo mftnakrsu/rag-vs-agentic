@@ -245,6 +245,13 @@ def score_with_gemini(question: str, contexts: str, answer: str,
                     headers={"Content-Type": "application/json", "X-goog-api-key": api_key},
                     json=payload,
                 )
+                if r.status_code == 429 and (
+                        "PerDay" in r.text or "per_day" in r.text):
+                    # Daily per-model quota. The API itself reports a retry
+                    # delay in hours, so backing off inside this call is
+                    # pointless -- surface it and let the caller resume after
+                    # the quota window rolls over.
+                    return {"error": f"DAILY_QUOTA: {r.text[:200]}"}
                 if r.status_code == 429 and "spend" in r.text.lower():
                     # A spend-cap 429 is not transient: it clears only when a
                     # human raises the cap. Retrying it burns ~30 min per row
