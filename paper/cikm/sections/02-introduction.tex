@@ -21,15 +21,16 @@ TVR~\cite{niu_tvr2025} omit typed-graph reasoning. Prior evaluations
 report which architecture wins in a given setting, but not why the
 outcome changes when the setting changes.
 
-We address this with a \textbf{triple-robustness} analysis. Holding a
-five-pipeline architecture matrix fixed (vanilla, agentic, agentic+graph,
-GraphRAG, learned adaptive), we vary three orthogonal axes: the retrieval
-embedder (e5-small 384d $\to$ Azure 3-small 1536d), the corpus (DO-178C
-$\to$ Wikipedia paragraph chains via MuSiQue), and the faithfulness
-judge (paired GPT-5.4 $+$ GPT-4.1 on both corpora). The design produces
-$2{\times}4{,}440$ main-matrix runs (one full matrix per embedder, three
-seeds each), 600 cross-corpus runs plus a 200-run distractor-edge
-control, and over 5{,}000 faithfulness judgments.
+We address this with a \textbf{multi-axis robustness} analysis.
+Holding a five-pipeline architecture matrix fixed (vanilla, agentic,
+agentic+graph, GraphRAG, learned adaptive), we vary four orthogonal
+axes: the retrieval embedder (e5-small 384d, Azure 3-small 1536d,
+bge-m3 1024d -- three vendors, three dimensionalities), the corpus
+(DO-178C typed-edge requirements; Wikipedia paragraph chains via
+MuSiQue and 2WikiMultihopQA), the graph traversal (a bounded 2-hop walk
+and personalized PageRank over the same graph), and the faithfulness
+judge (GPT-5.4, GPT-4.1, Gemini 3.7-flash). The design produces 10{,}656
+generation runs and over 24{,}000 faithfulness judgments.
 
 Our headline result is not that one architecture wins, but that a
 methodological choice most evaluations leave implicit -- whether
@@ -37,23 +38,28 @@ citation quality is scored over the retrieved context or over the
 answer's own citations -- decides the winner. We make five
 contributions.
 \textbf{(C1)} Answer-level citation winners are
-\emph{corpus- and stratum-conditional but embedder- and seed-robust}
-(Table~\ref{tab:dominance}): vanilla and GraphRAG tie on 1--2-hop
-DO-178C queries, graph-aided pipelines lead on 3+-hop, and GraphRAG
-wins every MuSiQue stratum.
+\emph{stratum-conditional but embedder- and seed-robust}
+(Table~\ref{tab:embedders}): vanilla ties GraphRAG on 1--2-hop DO-178C
+queries and is last at 3+-hop under all three embedders, where a
+graph-aided pipeline leads.
 \textbf{(C2)} GraphRAG's walk and its synthesizer pull in opposite
 directions: the walk fills the context at precision 0.12--0.23, the
-answer cites 3--5 IDs at precision 0.48--0.65
+answer cites 2.5--5.0 IDs at 0.48--0.98
 (Table~\ref{tab:pathology}). Scoring the retrieved set as the
 attribution set -- a choice some comparisons make implicitly -- ranks
 GraphRAG last; scoring the answer's citations ranks it first or
-tied-first.
-\textbf{(C3)} The faithfulness consequence of context flooding is
-\emph{corpus-conditional}: DO-178C declines across hops
-(74\%$\to$40\% local); MuSiQue shows no collapse under either judge.
-\textbf{(C4)} \emph{Single-judge faithfulness is unstable} along two
-separable axes: on frozen answer--context pairs, GPT-5.4 self-$\kappa$
-is $0.76$ same-day but $0.14$ eleven weeks later, and changing only the
-embedder upstream drops it to $0.137$ (Table~\ref{tab:judges}).
+tied-first. This holds in all six settings, survives swapping the
+traversal, and defeats two mitigations.
+\textbf{(C3)} The faithfulness decline follows \emph{context
+expansion}, not the corpus: once the Wikipedia arm is powered
+comparably it declines too ($p{=}1.2{\times}10^{-3}$), withdrawing a
+corpus-conditional claim we previously reported, while the one pipeline
+that expands nothing never declines.
+\textbf{(C4)} \emph{Judges are unstable along separable axes}: on
+frozen answer--context pairs, self-agreement falls to
+$\kappa{\leq}0.14$ after eleven weeks, and two vendors judging
+identical rows on one day agree on 93\% of them at $\kappa{=}0.03$--$0.13$
+but AC1 $0.90$--$0.94$ (Table~\ref{tab:judges}). Strictness is
+vendor-specific; the hop-wise ordering is not.
 \textbf{(C5, supporting)} a logistic-regression router on dense embeddings
 alone reaches macro-$F_1$ $0.86$ on hop classification.

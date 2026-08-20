@@ -29,7 +29,14 @@ $p{=}0.12/0.65$ local, negligible $\delta$), the agentic loop costs
 vanilla drops to last and the graph-aided pipelines lead (local
 embedder: agentic-graph 0.219 vs.\ vanilla 0.089, Holm
 $p{<}10^{-6}$; under the Azure embedder the same ordering holds but no
-3+-hop pair passes the joint significance criterion). On MuSiQue
+3+-hop pair passes the joint significance criterion). A third embedder
+from a third vendor, BAAI \texttt{bge-m3} (1024d), reproduces it again
+(Table~\ref{tab:embedders}): vanilla is last at 3+-hop under all three
+(0.089 / 0.195 / 0.114) while a graph-aided pipeline leads under all
+three, and under bge-m3 both graph arms beat vanilla at 3+-hop
+($+0.100$ and $+0.091$, Holm $p{=}2.1{\times}10^{-4}$ and
+$1.4{\times}10^{-3}$) while the 1-hop and 2-hop contrasts stay
+non-significant with negligible $\delta$. On MuSiQue
 (three-pipeline field) GraphRAG wins every stratum outright
 ($F_1{=}0.841/0.632/0.463$; vs.\ vanilla, Wilcoxon
 $p{\leq}5{\times}10^{-4}$, $\delta{=}0.27$--$0.43$). Because the
@@ -47,6 +54,8 @@ swaps are between vanilla and GraphRAG on 1--2-hop, the pair we report
 as tied. Which architecture wins is thus corpus- and
 stratum-conditional, but stable under embedder swap and reseeding.
 
+\input{tables/tab_embedders}
+
 \input{tables/tab_pathology}
 
 \begin{figure}[t!]
@@ -57,8 +66,9 @@ stratum-conditional, but stable under embedder swap and reseeding.
     strata $\times$ 2 judges); the GraphRAG row shows the monotonic
     decline driving C3 on DO-178C. \textit{Right}: per-stratum Gwet
     AC1, showing the $\kappa$ paradox at 3+-hop (AC1${=}0.57$,
-    $\kappa{<}0.10$; cf.\ Table~\ref{tab:judges}). v3 and MuSiQue:
-    Table~\ref{tab:pathology}.}
+    $\kappa{<}0.10$; cf.\ Table~\ref{tab:judges}). Full-matrix
+    faithfulness at $n{\approx}300$ per cell is reported in
+    \S\ref{sec:c3}.}
   \Description{Heatmap of faithfulness percentages for five RAG
     pipelines (rows: vanilla, agentic, agentic-graph, graphrag,
     adaptive) across three hop strata times two judges (columns:
@@ -71,41 +81,73 @@ stratum-conditional, but stable under embedder swap and reseeding.
 
 \subsection{C2: The Walk Floods the Context, the Synthesizer Filters It}
 \label{sec:c2}
-\noindent (Table~\ref{tab:pathology}, top.) Across embedder \emph{and}
-corpus swaps, GraphRAG's walk fills 11--15 context slots at context
-precision 0.12--0.23 -- five in six retrieved chunks are off-gold. The
-synthesizer then cites only 3.4--5.0 IDs per answer, at citation
-precision 0.48--0.65: a 3--5$\times$ precision enrichment over its own
-context. GraphRAG's $F_1$ edge is therefore a \emph{recall} effect
-(citation recall 0.68--0.74 vs.\ vanilla's 0.46--0.65): the walk
-surfaces gold chunks dense retrieval misses, and the synthesizer
-declines to cite most of the noise that rides along. Evaluations that
-score the retrieved set as the attribution set -- as some GraphRAG
-comparisons do -- measure the flooding and miss the filtering, and
-invert the ranking: by context precision GraphRAG is the worst pipeline
-in every setting; by answer citations it is the best or tied-best.
+\noindent Table~\ref{tab:pathology} reports the same measurement in
+six settings: three embedders, three corpora, and two traversals.
+GraphRAG's walk fills 11--15 context slots at context precision
+0.12--0.23 -- four to five of every six retrieved chunks are off-gold.
+The synthesizer then cites only 2.5--5.0 IDs per answer, at citation
+precision 0.48--0.98: a 2.9--4.2$\times$ precision enrichment over its
+own context, in every setting. GraphRAG's $F_1$ edge is therefore a
+\emph{recall} effect: the walk surfaces gold chunks dense retrieval
+misses, and the synthesizer declines to cite most of the noise that
+rides along. Evaluations that score the retrieved set as the
+attribution set -- as some GraphRAG comparisons do -- measure the
+flooding and miss the filtering, and invert the ranking: by context
+precision GraphRAG is the worst pipeline in every setting; by answer
+citations it is the best or tied-best.
 
-\subsection{C3: The Faithfulness Consequence is Corpus-Conditional}
+Two controls show the split is not an artifact of our own design
+choices. First, \emph{traversal}: replacing the bounded 2-hop walk with
+personalized PageRank over the same graph -- unbounded in radius and
+ranked by random-walk mass rather than hop distance, with embedder,
+seeds and context cap held fixed -- changes almost nothing (context
+precision $0.131$ vs.\ $0.129$; enrichment $3.9\times$ vs.\
+$3.8\times$; citation $F_1$ $+0.016$ at Cliff's $\delta{=}0.036$, which
+our joint criterion rejects as negligible). Second, \emph{mitigation}:
+neither obvious fix helps. Reranking the walked neighbours by query
+similarity and keeping the top five leaves everything where it was
+(context precision $0.227{\to}0.232$, citation $F_1$ $+0.010$,
+$p{=}0.34$), while tightening the traversal budget actively hurts
+(walk $30{\to}10$, context $15{\to}8$: citation $F_1$ $-0.126$,
+$p{=}2.6{\times}10^{-11}$, and context precision \emph{falls} to
+$0.194$). This is what C2 predicts: the synthesizer already performs
+the filtering, so filtering again upstream is redundant, and cutting
+the budget only removes the recall the advantage rests on.
+
+\subsection{C3: The Decline Follows Context Expansion, Not the Corpus}
 \label{sec:c3}
-The bottom block of Table~\ref{tab:pathology} splits the outcome. On
-DO-178C, GraphRAG faithfulness declines as hop distance grows, with a
-Cochran--Armitage trend at
-$p{=}0.040$ (GPT-5.4) and $p{=}0.008$ (GPT-4.1) under the local
-embedder, $p{<}10^{-4}$ under Azure (GPT-4.1); only GPT-5.4-under-Azure
-is flat ($p{=}0.51$). An
-independent 300-tuple replication batch per embedder, drawn eleven
-weeks later, reproduces the decline under GPT-5.4 in both embedders
-($0.71{\to}0.20$, $p{=}0.002$ local; $0.79{\to}0.00$, $p{<}10^{-4}$
-Azure) while GPT-4.1 -- by then judging 93--95\% of
-everything faithful -- shows no trend ($p{=}0.89$ and $0.30$). The decline thus
-replicates across batches, but \emph{which judge carries it swaps
-with the judging date} (cf.\ C4). On MuSiQue neither judge collapses:
-GPT-5.4 \emph{rises} (n.s., $p{=}0.068$) while GPT-4.1 declines mildly
-from a 94\% base to 80\% ($p{=}0.017$), and both 3+-hop endpoints sit
-far above the DO-178C endpoints (58\%/80\% vs.\ 40\%/33\%). The same
-retrieval behavior thus has different faithfulness consequences on
-different corpora; we hypothesize the mechanism in
-\S\ref{sec:discussion}.
+An earlier version of this analysis reported the faithfulness decline as
+\emph{corpus-conditional}: present on DO-178C, absent on Wikipedia
+chains. Judging the full matrix rather than 300-row subsets, and
+bringing the MuSiQue arm up to comparable power, withdraws that claim.
+
+The MuSiQue arm had 67 rows per stratum, since 200 queries split three
+ways. Its observed 1-hop to 3+-hop drop was $9.2$\,pp -- larger than the
+$4.7$\,pp drop that reaches significance on DO-178C -- but detecting it
+at 80\% power needs about 210 rows per cell. Re-running that arm at
+three seeds ($n{=}600$, $\approx$200 per cell, judged in the same window
+by the same judge) makes the decline significant there too:
+$0.935/0.861/0.828$, Cochran--Armitage $p{=}1.2{\times}10^{-3}$, a
+$10.7$\,pp drop at $p{=}9.1{\times}10^{-4}$, comparable to the
+$11.9$\,pp we measure on DO-178C under the Azure embedder. The apparent
+corpus-conditionality was an artifact of an underpowered cell.
+
+What does separate pipelines is whether they expand the context at all.
+Judging all 4{,}440 rows per embedder (per-stratum $n\approx300$ rather
+than $\approx33$), \emph{vanilla -- the only pipeline that retrieves a
+fixed top-5 and expands nothing -- never declines}: $p{=}0.16$, $0.99$
+and $0.76$ under the three embedders. GraphRAG declines under e5-small
+($p{=}0.039$) and strongly under 3-small ($p{=}1.4{\times}10^{-6}$),
+though only marginally under bge-m3 ($p{=}0.065$); the agentic arms
+decline in four of six embedder--pipeline combinations. We therefore
+state the weaker claim the data supports: the non-expanding baseline is
+flat everywhere, expansion is a necessary condition for the decline, and
+we do not claim every expanding pipeline declines in every setting.
+
+These verdicts come from a single judging date and are not pooled with
+the earlier batches (\S\ref{sec:c4}); the GPT-5.4 leg, on which the
+original corpus-conditional claim also rested, has not been re-run at
+this power and remains the one open thread.
 
 \input{tables/tab_judges}
 
@@ -134,6 +176,23 @@ component mixes output drift with judge response, and the two judges
 rank oppositely on the two axes: the judge more stable under embedder
 swap is the less stable across time, so stability on one axis does not
 transfer to the other.
+\noindent\textit{Across vendors, same day.} Adding a third vendor
+(Gemini 3.7-flash, thinking enabled) as a judge on identical rows on a
+single date sharpens the picture. Gemini is uniformly the more lenient
+judge -- 0.98--0.99 faithful against GPT-4.1's 0.92--0.95 -- and
+McNemar rejects symmetric disagreement everywhere
+($p{<}10^{-9}$), so the gap is systematic, not noise. The two agree on
+91--94\% of rows, yet Cohen's $\kappa$ reads $0.03$--$0.13$ while
+Gwet's AC1 reads $0.90$--$0.94$ (Table~\ref{tab:judges}, bottom). This
+is the prevalence paradox of Feinstein and Cicchetti~\cite{feinstein1990}
+in a cross-vendor pair: at 93\% agreement, reporting $\kappa$ alone
+would license the claim that two judges agree no better than chance.
+Crucially, leniency and \emph{trend} come apart --- despite sitting near
+the ceiling, Gemini still reproduces the hop-wise decline
+($p{=}4.3{\times}10^{-3}$ and $p{<}10^{-16}$ on the two main matrices).
+A judge's strictness and the ordering it induces are separable
+properties, and only the first is vendor-specific.
+
 \noindent\textit{Between judges.} Inter-judge $\kappa$ halves under
 embedder swap on identical tuples (0.30 $\to$ 0.17 overall); McNemar
 rejects symmetric disagreement (exact $p{<}0.001$; GPT-4.1
