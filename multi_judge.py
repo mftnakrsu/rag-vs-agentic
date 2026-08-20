@@ -245,6 +245,11 @@ def score_with_gemini(question: str, contexts: str, answer: str,
                     headers={"Content-Type": "application/json", "X-goog-api-key": api_key},
                     json=payload,
                 )
+                if r.status_code == 429 and "spend" in r.text.lower():
+                    # A spend-cap 429 is not transient: it clears only when a
+                    # human raises the cap. Retrying it burns ~30 min per row
+                    # on backoff and still fails, so surface it immediately.
+                    return {"error": f"SPEND_CAP: {r.text[:160]}"}
                 if r.status_code == 429 or 500 <= r.status_code < 600:
                     last_err = f"HTTP {r.status_code}: {r.text[:120]}"
                     if attempt < max_retries:
