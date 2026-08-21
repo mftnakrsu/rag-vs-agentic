@@ -41,9 +41,9 @@ re-run of graph pipelines (blocked on dead Aura), GraphRAG mitigation arm, 2nd G
 `multi_judge.py` already implements a Gemini judge path (`GOOGLE_API_KEY`), so the cross-vendor
 control is wiring, not new code.
 
-### Post-rejection work (2026-08-16) — generation COMPLETE, judging in flight
+### Post-rejection work (2026-08-16 → 08-21) — generation and judging COMPLETE
 
-Approved package tiers A3/B1/C1/D1/E2. Spend so far **~$73 Azure + ~$30 Gemini**.
+Approved package tiers A3/B1/C1/D1/E2. Spend **~$80 Azure + ~$29 Gemini**.
 
 | Phase | State | Key artifacts |
 |---|---|---|
@@ -55,7 +55,8 @@ Approved package tiers A3/B1/C1/D1/E2. Spend so far **~$73 Azure + ~$30 Gemini**
 | Local graph shim + bge-m3 | done, $0 | `graph_store_local.py`, `scripts/index_bge.py` |
 | C1 third embedder | done, $22.36 | `results/main-v4*` (1,480 rows, 1 seed) |
 | E2 PPR traversal | done, $2.47 | `results/main-v3-ppr-*` |
-| Cross-vendor judging | **running** | `results/*-judged-gemini.csv`, `*-judged.csv` |
+| Cross-vendor judging | done, ~$13 | `results/*-judged-gemini.csv`, `*-judged.csv`, `twowiki-judged.csv` |
+| Paper rewrite (PR #50, #51) | done, $0 | C1–C4 rewritten; 7 pages, 0 overfull, 0 undefined refs |
 
 **Aura is retired for good.** `GRAPH_BACKEND=local` uses `graph_store_local.py`, which traverses the
 corpus' own link annotations — identical to what `graph_loader.py` would load into a fresh instance,
@@ -74,21 +75,34 @@ Google Cloud in TR is **postpay**; a deposit is not a spend ceiling, only a quot
 1. **C2 is now the strongest claim.** Flooding→filtering replicates across 3 corpora, 3 embedders,
    and 2 traversals, and survives 2 attempted mitigations. 2Wiki is sharpest: ctx precision 0.230 →
    citation precision 0.975 (4.2x).
-2. **C3 does not replicate.** At matched power (MuSiQue 3 seeds, n=600, ~200/cell) the decline is
-   significant there too: 0.935/0.861/0.828, Cochran-Armitage p=1.2e-03, 10.7pp drop p=9.1e-04 —
-   comparable to DO-178C v3's 11.9pp. The published "no collapse on Wikipedia" was 67 rows/stratum.
-   GPT-5.4 leg not retested (unpriced); rewrite C3 or retract.
-3. **Replacement claim is better:** the decline tracks *context expansion*, not corpus. Every
-   expanding pipeline declines; vanilla (no expansion) is flat under both embedders (p=0.16, 0.99).
+2. **C3 does not replicate — withdrawn and rewritten (PR #51).** At matched power the decline is
+   significant on both Wikipedia corpora under both vendors: MuSiQue 3 seeds n=600
+   (gpt41 p=1.1e-03, gemini p=1.2e-03), 2Wiki n=1,200 (gpt41 p=5.0e-02, gemini p=4.8e-06). The
+   published "no collapse on Wikipedia" was 67 rows/stratum. GPT-5.4 leg still not retested.
+3. **Replacement claim is a test, not a pattern.** Vanilla's 1→3+-hop drop is −1.5pp on DO-178C and
+   +1.1pp on 2Wiki; expanding pipelines drop 6.3pp and 6.7pp. Logistic hop×expansion interaction:
+   b=−0.599 p=1.0e-07 pooled DO-178C (n=10,360), b=−0.286 p=0.27 on 2Wiki (n=1,200, same sign).
+   Under Gemini the DO-178C matrix saturates near 1.00, vanilla itself picks up a slope (b=−0.729,
+   p=0.012) and the interaction is no longer separable — ranking survives, resolution does not.
 4. **Mitigation is a clean negative.** Rerank: F1 +0.010 (p=0.34). Budget cap: F1 −0.126
    (p=2.6e-11) and *lower* context precision. Consistent with C2 — the synthesizer already filters.
 5. **PPR ≈ walk_2hop.** ctx prec 0.131 vs 0.129, enrichment 3.9x vs 3.8x. F1 +0.016 with Cliff's
    delta +0.036 — the joint criterion rejects it. C2 is not an artefact of our walk.
 6. **GPT-4.1 drift replicated independently.** Full-matrix Aug vs May on identical 300 tuples:
    κ=−0.046, +43pp leniency, matching the −0.045 from `gpt41-drift-v2.csv`.
+7. **Judge leniency is a judge×corpus property, not a judge property.** Gemini is far more lenient
+   than GPT-4.1 on DO-178C (0.98–0.99 vs 0.93–0.95, McNemar p<1e-9), indistinguishable on the
+   capped MuSiQue arm (0.875 vs 0.880, p=1.00), and **stricter** on 2Wiki (0.888 vs 0.914,
+   p=6.2e-03). Do not calibrate a judge once and reuse the offset.
+8. **Prevalence paradox visible inside one judge pair.** Across the 8 cross-vendor settings raw
+   agreement moves 0.82→0.94 and AC1 0.77→0.94, but κ swings 0.03→0.44, ordered by distance from
+   the ceiling. Never report κ alone on high-prevalence faithfulness cells.
 
 **Judging dates are not poolable.** Aug verdicts (full matrix, Gemini pass) must never be merged
-with the May batches. Every judged CSV carries a `judged_on` column.
+with the May batches. Every judged CSV carries a `judged_on` column. The Gemini legs of
+musique-extra / rerank / cap / 2Wiki ran 08-21, one day after their GPT-4.1 legs, on frozen stored
+strings; `scripts/judge/merge_judges.py` pairs them by (query, pipeline, repeat) and keeps both
+dates. The paper discloses this in §Experimental Setup.
 
 **MuSiQue has TWO context-precision definitions** — `is_supporting` paragraph flag vs chain
 `expected_ids`. They differ ~2x. Never mix them; the paper uses the chain-gold one.
@@ -143,19 +157,23 @@ The original matrix logged `cited_ids` inconsistently: **vanilla and graphrag re
 ## 5. Paper build
 
 ```bash
-cd paper/cikm && make          # pdflatex+bibtex → main.pdf (6 pp, arXiv build)
+cd paper/cikm && make          # pdflatex+bibtex → main.pdf (7 pp, arXiv build)
 .venv-judge/bin/python scripts/tex/make_tables_triple.py   # regenerates tables
 #   WARNING: overwrites tab_judges.tex, which carries HAND-EDITED rows
-#   (MuSiQue row + same-judge controls block). Back it up first.
+#   (same-judge controls block + the 8-row cross-vendor block). Back it up first.
 ```
 
 ## 6. Open items
 
-1. Confirm `results/genswap-judged.csv` reached 332 rows; optionally add a faithfulness sentence to §Threats (citation comparison already in paper).
-2. PR from `fix/review-blockers` → rebase-merge to main (branch pushed).
-3. CIKM notification ~Aug 7: camera-ready needs anonymous format + disclosure restored.
-4. Fallbacks researched: ECIR 2027 short (Oct 2, 2026); SIGIR 2027 short (~late Jan 2027). WSDM 2027 has no short track.
-5. Optional: cross-vendor judge (needs paid Gemini or Anthropic key); fold-nested V2 target mapping.
+1. **Title is stale — user's call.** Still "A Triple-Robustness Analysis" while the study now varies
+   four axes (embedder, corpus, traversal, judge). The intro already says "multi-axis robustness".
+2. **Rotate `GOOGLE_API_KEY`** — the key was pasted into a chat transcript on 2026-08-20.
+3. Optional, unpriced: GPT-5.4 leg of the C3 test (the original corpus-conditional claim rested on
+   it, never re-run at full power); LightRAG as a named third-party GraphRAG system (~$5, needs a
+   separate venv — its pin downgrades `websockets` 17→16).
+4. Venue: ECIR 2027 short (Oct 2, 2026); SIGIR 2027 short (~late Jan 2027). WSDM 2027 has no short track.
+5. `scripts/tex/make_tables_triple.py` has not been taught the new tab_judges rows — regenerating
+   tables will drop them.
 
 ## 7. User preferences
 
