@@ -12,9 +12,9 @@ seeds and more than 30{,}000 faithfulness judgments. Our central finding concern
 the measurement point rather than the architecture: GraphRAG's graph
 walk floods the context window at precision 0.12--0.23, while the
 synthesizer it feeds cites selectively at 0.48--0.98. Scoring the
-retrieved set as the attribution set therefore ranks GraphRAG last and
-scoring the answer's citations ranks it first or tied-first, in all six
-settings we tested; the split survives a change of traversal and defeats
+retrieved set as the attribution set therefore ranks GraphRAG below the
+vanilla baseline, while scoring the answer's citations ranks it first of
+all pipelines -- in all six settings we tested; the split survives a change of traversal and defeats
 two obvious mitigations, since the synthesizer already performs the
 filtering. Answer-level winners are stratum-conditional but stable
 across embedders and seeds. Faithfulness declines with hop distance on all

@@ -42,9 +42,9 @@ reproduces the architecture ordering with slightly higher $F_1$, and
 its answers show the same hop-wise faithfulness decline under both
 judges, so neither citation nor faithfulness results are
 GPT-5.4-specific; the corpus-author leg of the circularity remains. Two Wikipedia corpora (MuSiQue, 2WikiMultihopQA) are the main
-external-validity check for the universality claim, and both are now
-judged in full by two vendors; cross-corpus replication of C1 is left
-for the journal extension. Our graph pipeline
+external-validity check for the universality claim; both are judged in
+full by two vendors and both replicate C1's stratum-conditional
+crossover, though only DO-178C carries the full five-pipeline field. Our graph pipeline
 is one typed-edge walk implementation, though swapping it for
 personalized PageRank leaves C2 intact; a full third-party GraphRAG
 system may still flood or filter differently.
@@ -58,8 +58,9 @@ filtering upstream is redundant while budget cuts remove the recall the
 advantage depends on. A learned evidence selector conditioned on the
 question, rather than the two unsupervised heuristics we tried, remains
 open.
-\textit{Statistical.} Per-stratum $n\!\in\![95,111]$ for citation
-metrics is at the lower edge of BCa stability under heavy skew; a
+\textit{Statistical.} Per-stratum $n$ for citation metrics is 97--100
+on DO-178C and 66--67 on the Wikipedia corpora (paired at the query
+level), the lower edge of BCa stability under heavy skew; a
 percentile fallback shows no qualitative reversal. Faithfulness cells
 now carry $n\approx300$ after full-matrix judging, which is what
 overturned the corpus-conditional reading in C3. The hop$\times$expansion
@@ -67,3 +68,14 @@ interaction is significant on DO-178C but only same-signed on 2Wiki,
 whose arm is a twentieth the size; we report it as directional there. \textit{Reranker / router engineering.} No cross-encoder
 reranker is included (orthogonal axis); C5 is a diagnostic instrument,
 not a production router.
+
+%% NOTE: de-anonymizing. Remove or replace with an anonymous mirror for
+%% any double-blind submission.
+\paragraph{Artifact availability.}
+The AeroSys corpus (1{,}132 requirements, 30 modules, with its link
+annotations), the 296-query manifest with full chains, the pipeline
+code and every scored and judged CSV behind the tables are released
+under CC-BY-4.0 at
+\url{https://huggingface.co/datasets/meftun/aerosys-requirements}
+and \url{https://github.com/mftnakrsu/rag-vs-agentic}. The Wikipedia subsets are
+rebuilt from public mirrors by the seeded scripts in that repository.

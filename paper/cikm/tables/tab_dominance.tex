@@ -1,18 +1,18 @@
 \begin{table*}[t]
   \centering
-  \caption{Per-stratum citation $F_1$ across three settings. v2 main = DO-178C synthetic with local e5-small embeddings (4{,}440 runs); v3 main = same corpus with Azure text-embedding-3-small (4{,}440 runs); MuSiQue = 200-query Wikipedia stratified subset with Azure embedder (600 runs, vanilla / agentic-graph / graphrag only). Bold marks the per-(setting, stratum) maximum.}
+  \caption{Per-stratum citation $F_1$ across four settings. v2 main = DO-178C synthetic with local e5-small embeddings (4{,}440 runs); v3 main = same corpus with Azure text-embedding-3-small (4{,}440 runs); MuSiQue = 200-query Wikipedia stratified subset with Azure embedder (600 runs, vanilla / agentic-graph / graphrag only); 2Wiki = 200-query 2WikiMultihopQA subset at three seeds (1{,}200 runs, vanilla / graphrag only). Bold marks the per-(setting, stratum) maximum. The stratum-conditional pattern is the same on all four: vanilla is competitive at 1-hop and loses as hop distance grows.}
   \label{tab:dominance}
   \small
-  \begin{tabular}{l ccc | ccc | ccc}
+  \begin{tabular}{l ccc | ccc | ccc | ccc}
     \toprule
-     & \multicolumn{3}{c|}{v2 main (local)} & \multicolumn{3}{c|}{v3 main (Azure)} & \multicolumn{3}{c}{MuSiQue (Azure)} \\
-    System & 1h & 2h & 3+h & 1h & 2h & 3+h & 1h & 2h & 3+h \\
+     & \multicolumn{3}{c|}{v2 main (local)} & \multicolumn{3}{c|}{v3 main (Azure)} & \multicolumn{3}{c|}{MuSiQue (Azure)} & \multicolumn{3}{c}{2Wiki (Azure)} \\
+    System & 1h & 2h & 3+h & 1h & 2h & 3+h & 1h & 2h & 3+h & 1h & 2h & 3+h \\
     \midrule
-    vanilla & \textbf{0.757} & 0.712 & 0.089 & \textbf{0.756} & 0.689 & 0.195 & 0.742 & 0.415 & 0.277 \\
-    agentic & 0.541 & 0.414 & 0.175 & 0.533 & 0.430 & 0.203 & --- & --- & --- \\
-    agentic-graph & 0.566 & 0.415 & \textbf{0.219} & 0.547 & 0.421 & 0.251 & 0.457 & 0.296 & 0.249 \\
-    graphrag & 0.751 & \textbf{0.720} & 0.172 & 0.745 & \textbf{0.707} & 0.253 & \textbf{0.841} & \textbf{0.632} & \textbf{0.463} \\
-    adaptive & 0.630 & 0.499 & 0.181 & 0.651 & 0.492 & \textbf{0.254} & --- & --- & --- \\
+    vanilla & \textbf{0.757} & 0.712 & 0.089 & \textbf{0.756} & 0.689 & 0.195 & 0.742 & 0.415 & 0.277 & \textbf{0.990} & 0.778 & 0.678 \\
+    agentic & 0.541 & 0.414 & 0.175 & 0.533 & 0.430 & 0.203 & --- & --- & --- & --- & --- & --- \\
+    agentic-graph & 0.566 & 0.415 & \textbf{0.219} & 0.547 & 0.421 & 0.251 & 0.457 & 0.296 & 0.249 & --- & --- & --- \\
+    graphrag & 0.751 & \textbf{0.720} & 0.172 & 0.745 & \textbf{0.707} & 0.253 & \textbf{0.841} & \textbf{0.632} & \textbf{0.463} & 0.969 & \textbf{0.946} & \textbf{0.938} \\
+    adaptive & 0.630 & 0.499 & 0.181 & 0.651 & 0.492 & \textbf{0.254} & --- & --- & --- & --- & --- & --- \\
     \bottomrule
   \end{tabular}
 \end{table*}

@@ -16,7 +16,7 @@
     a router/critic, retriever, tools (search and graph), and a
     synthesizer that iterates up to three times. Outputs combine into
     an answer with cited IDs. A shared vector store (Chroma) feeds
-    P1--P4 and a shared graph store (Neo4j Aura) feeds P3 and P4.}
+    P1--P4 and a shared file-backed typed-edge graph store feeds P3 and P4.}
   \label{fig:architecture}
 \end{figure}
 
@@ -25,7 +25,7 @@
 All pipelines share embedder, ChromaDB vector store, a file-backed
 typed-edge graph, Azure GPT-5.4 generator, and grounded synthesis prompt; they
 differ only in retrieval. \textbf{(i)~Vanilla}: dense top-10 retrieval,
-top-5 context, one synthesis call. \textbf{(ii)~Agentic}: LangGraph
+top-5 context, one synthesis call. \textbf{(ii)~Agentic}: LangGraph~\cite{langgraph_software}
 router-retriever-critic loop, \texttt{search\_documents} tool only, iter
 cap 3. \textbf{(iii)~GraphRAG}: vector seeds (8) + up-to-2-hop typed-graph
 walk (walk cap 30, context cap 15), single synthesis. This

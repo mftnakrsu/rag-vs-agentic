@@ -21,7 +21,7 @@
 
 \subsection{C1: Winners are Corpus-Conditional, Embedder- and Seed-Robust}
 \label{sec:c1}
-Table~\ref{tab:dominance} reports per-stratum $F_1$ across three settings.
+Table~\ref{tab:dominance} reports per-stratum $F_1$ across four settings.
 On DO-178C the pattern repeats under both embedders: vanilla and
 GraphRAG are statistically tied on 1-hop and 2-hop (Wilcoxon
 $p{=}0.12/0.65$ local, negligible $\delta$), the agentic loop costs
@@ -39,14 +39,21 @@ $1.4{\times}10^{-3}$) while the 1-hop and 2-hop contrasts stay
 non-significant with negligible $\delta$. On MuSiQue
 (three-pipeline field) GraphRAG wins every stratum outright
 ($F_1{=}0.841/0.632/0.463$; vs.\ vanilla, Wilcoxon
-$p{\leq}5{\times}10^{-4}$, $\delta{=}0.27$--$0.43$). Because the
+$p{\leq}5.1{\times}10^{-4}$, $\delta{=}0.27$--$0.43$). Because the
 MuSiQue graph's \textit{REFERENCES} edges connect only gold supporting
 paragraphs, we re-ran the GraphRAG arm on a control graph with
 consecutive-distractor edges added (context precision falls
 $0.23{\to}0.14$; the walk cap is always reached). GraphRAG loses only
 $0.02/0.05/0.09$ $F_1$ per stratum and still beats vanilla everywhere
 ($+0.08/+0.16/+0.10$, $p{\leq}0.014$): the MuSiQue win is not an
-artifact of gold-only edges. Seed variance is small against these
+artifact of gold-only edges. A second Wikipedia corpus repeats the
+stratum-conditional shape a third time: on 2WikiMultihopQA at three
+seeds, vanilla and GraphRAG are tied at 1-hop ($0.990$ vs.\ $0.969$,
+$p{=}0.15$, $\delta{=}{-}0.015$) and GraphRAG wins 2-hop and 3+-hop by
+widening margins ($+0.168$, $\delta{=}0.48$; $+0.260$, $\delta{=}0.87$;
+both $p{<}10^{-19}$) -- the same crossover as DO-178C and MuSiQue,
+now under a corpus whose graph we did not design.
+Seed variance is small against these
 effects: across the three seeds, per-pipeline mean $F_1$ moves by at
 most $0.031$ (max SD $0.016$), and every ordering we report as
 significant holds independently in all three seeds; the only rank
@@ -66,9 +73,12 @@ stratum-conditional, but stable under embedder swap and reseeding.
     strata $\times$ 2 judges); the GraphRAG row shows the monotonic
     decline driving C3 on DO-178C. \textit{Right}: per-stratum Gwet
     AC1, showing the $\kappa$ paradox at 3+-hop (AC1${=}0.57$,
-    $\kappa{<}0.10$; cf.\ Table~\ref{tab:judges}). Full-matrix
-    faithfulness at $n{\approx}300$ per cell is reported in
-    \S\ref{sec:c3}.}
+    $\kappa{<}0.10$; cf.\ Table~\ref{tab:judges}). These are the
+    original 300-row batches under GPT-5.4 and GPT-4.1; their absolute
+    levels are far below the later full-matrix pass
+    (\S\ref{sec:c3}) and are not comparable to it, which is the drift
+    C4 measures. Only the within-panel hop ordering should be read
+    across the two.}
   \Description{Heatmap of faithfulness percentages for five RAG
     pipelines (rows: vanilla, agentic, agentic-graph, graphrag,
     adaptive) across three hop strata times two judges (columns:
@@ -93,8 +103,13 @@ misses, and the synthesizer declines to cite most of the noise that
 rides along. Evaluations that score the retrieved set as the
 attribution set -- as some GraphRAG comparisons do -- measure the
 flooding and miss the filtering, and invert the ranking: by context
-precision GraphRAG is the worst pipeline in every setting; by answer
-citations it is the best or tied-best.
+precision GraphRAG sits below the vanilla baseline in every setting
+($0.12$--$0.23$ against $0.27$--$0.37$), while by answer-citation $F_1$
+it is the highest-scoring pipeline in every setting ($0.551$, $0.571$,
+$0.565$, $0.585$, $0.646$, $0.951$ in the row order of
+Table~\ref{tab:pathology}). The two measurements do not merely differ in
+magnitude; they disagree on the sign of the comparison that the
+architecture debate turns on.
 
 Two controls show the split is not an artifact of our own design
 choices. First, \emph{traversal}: replacing the bounded 2-hop walk with
@@ -198,7 +213,7 @@ transfer to the other.
 sharpens the picture, and shows that leniency is not a fixed property of
 a judge. On the four DO-178C settings Gemini is the more lenient of the
 pair by a wide margin -- 0.98--0.99 faithful against GPT-4.1's
-0.93--0.95, with McNemar rejecting symmetric disagreement everywhere
+0.92--0.95, with McNemar rejecting symmetric disagreement everywhere
 ($p{<}10^{-9}$). On 2WikiMultihopQA the direction \emph{reverses}
 ($0.888$ vs.\ $0.914$, $p{=}6.2{\times}10^{-3}$), and on the
 budget-capped MuSiQue arm the two are indistinguishable ($0.875$ vs.\
@@ -214,8 +229,8 @@ to $0.44$ -- ordering the settings almost exactly by how far
 faithfulness sits from the ceiling (Table~\ref{tab:judges}, bottom).
 At 93\% agreement on DO-178C, reporting $\kappa$ alone would license the
 claim that two judges agree no better than chance; the same pair on
-2Wiki, agreeing \emph{less} often, would appear four times more
-reliable.
+2Wiki, agreeing \emph{less} often (0.899), would appear fifteen times
+more reliable ($\kappa{=}0.435$ against $0.029$).
 
 Crucially, leniency and \emph{trend} come apart --- despite sitting near
 the ceiling on DO-178C, Gemini still reproduces the hop-wise decline
@@ -225,18 +240,21 @@ ordering it induces are separable properties: the second replicates
 across vendors, the first does not, though a saturated judge loses the
 power to resolve interactions (\S\ref{sec:c3}).
 
-\noindent\textit{Between judges.} Inter-judge $\kappa$ halves under
-embedder swap on identical tuples (0.30 $\to$ 0.17 overall); McNemar
-rejects symmetric disagreement (exact $p{<}0.001$; GPT-4.1
-systematically more lenient). On MuSiQue the pair agrees at chance
-level ($\kappa{=}0.02$, raw agreement 0.48, Gwet's AC1 0.08 -- genuine
-disagreement, not a prevalence artifact; GPT-4.1 judges 88\% faithful
-vs.\ GPT-5.4's 47\%), so C3's cross-corpus statements are made per
-judge, each independently showing no collapse. The replication batches
-(C3) show what drift does at scale: eleven weeks on, GPT-4.1 marks
+\noindent\textit{Between judges, and why we re-judged everything.}
+Inter-judge $\kappa$ halves under embedder swap on identical tuples
+(0.30 $\to$ 0.17 overall); McNemar rejects symmetric disagreement
+(exact $p{<}0.001$). On the 300-row MuSiQue batch the GPT-5.4/GPT-4.1
+pair agreed at chance level ($\kappa{=}0.02$, raw agreement 0.48, Gwet's
+AC1 0.08 -- genuine disagreement, not a prevalence artifact; GPT-4.1
+judged 88\% faithful against GPT-5.4's 47\%), and the replication
+batches show the same at scale: eleven weeks on, GPT-4.1 marks
 93--95\% of fresh same-distribution tuples faithful, inter-judge
-$\kappa$ falls to $0.05/0.01$ (local/Azure), and the trend GPT-4.1
-itself had established in the original batches disappears.
+$\kappa$ falls to $0.05/0.01$ (local/Azure), and the hop trend GPT-4.1
+itself had established in the original batches disappears. Verdicts of
+that instability cannot carry a cross-corpus claim, which is why the
+corpus-conditional reading built on those batches did not survive
+re-judging the full matrix inside a single window (\S\ref{sec:c3}). We
+report no faithfulness comparison that spans judging dates.
 
 \input{tables/tab_router}
 
