@@ -147,6 +147,34 @@ The original matrix logged `cited_ids` inconsistently: **vanilla and graphrag re
 | Same-judge controls (May) | `results/retest-v2-gpt5.csv` | test-retest κ=0.76; embedder-swap κ=0.14 (41% flips); 11-week frozen-input κ=0.14. Stationarity rejected: cross-date agr 0.56 vs same-day floor 0.88, binomial p<1e-44. |
 | GPT-4.1 same-tuple drift (Aug) | `results/gpt41-drift-{v2,v3}.csv`, `scripts/judge/gpt41_drift.py` | κ=−0.05/−0.00 vs own May verdicts on identical inputs; +41pp leniency. More embedder-stable judge is less time-stable. |
 
+## 3b. Repo layout (reorganised 2026-08-21, PR #54)
+
+Library code lives in the **`aerorag/`** package; the repository root holds only
+config and docs. Entry points run as modules from the root:
+
+```
+python -m aerorag.build_index
+python -m aerorag.compare --limit 3 --no-local-rerank
+python -m aerorag.vanilla_rag "..."      # also graph_rag, agentic_rag
+```
+
+`scripts/` is unchanged — its files compute the repo root from their own
+location, so nothing there needed path edits, only `from aerorag.x import`.
+
+Deleted in the same pass (all recoverable from git history): `stats.py` and
+`rerun_errors.py` (dead, zero importers), `ui_app.py` + `.streamlit/` (stale
+Streamlit demo, knew only 2 of 5 pipelines), `figures/` (byte-identical copy of
+`paper/cikm/figures/`) and `figures-v3/` (unreferenced), `docs/plan.md` and
+`docs/adversarial-review.html` (planning artefacts for the rejected version).
+Untracked and gone for good: the May Overleaf zips, `paper/arxiv-source.zip`,
+`paper/main-authors.pdf` (superseded by `paper/main.pdf`), and
+`results/genswap-judge-input.csv`. `data/agent.db` (1 GB) was cleared from disk;
+it is a regenerable checkpointer.
+
+**One real bug surfaced by the move**: `graph_store_local.DEFAULT_CORPUS` was
+`Path(__file__).parent / "data"`, which resolved to `aerorag/data/` after the
+move. Now `parents[1]`. Self-check still reports 720 edges.
+
 ## 4. Environment
 
 - `.venv` is BROKEN (Homebrew python@3.11 removed). Use **`.venv-judge`** (py3.14, uv-managed: openai, tqdm, dotenv, scipy, pandas, sklearn, statsmodels, matplotlib, tiktoken). Root `Makefile` points at it.

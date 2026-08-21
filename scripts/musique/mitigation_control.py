@@ -90,7 +90,7 @@ def main() -> int:
                     help="override the repeat index (adds a generation seed)")
     args = ap.parse_args()
     load_dotenv(ROOT / ".env")
-    from llm_compat import GPT5Client
+    from aerorag.llm_compat import GPT5Client
 
     suffix = args.variant if args.repeat is None else f"{args.variant}-r{args.repeat}"
     out_path = ROOT / "results" / f"musique-mitigation-{suffix}.jsonl"
@@ -106,7 +106,7 @@ def main() -> int:
 
     embedder = None
     if args.variant == "rerank":
-        from embedders import get_embedder
+        from aerorag.embedders import get_embedder
         embedder = get_embedder("azure")
 
     done = set()

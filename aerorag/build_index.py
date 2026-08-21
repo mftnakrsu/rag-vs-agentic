@@ -11,9 +11,9 @@ import time
 
 from dotenv import load_dotenv
 
-from data_loader import load_chunks
-from embedders import AzureOpenAIEmbedder, LocalE5SmallEmbedder
-from vector_store import get_client, get_or_create_collection, upsert_chunks
+from aerorag.data_loader import load_chunks
+from aerorag.embedders import AzureOpenAIEmbedder, LocalE5SmallEmbedder
+from aerorag.vector_store import get_client, get_or_create_collection, upsert_chunks
 
 
 def _index(chunks: list[dict], embedder, collection_name: str, dim: int, *, force: bool) -> None:

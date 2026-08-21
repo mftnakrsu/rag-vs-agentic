@@ -14,10 +14,10 @@ from typing import Optional
 
 from dotenv import load_dotenv
 
-from embedders import get_embedder
-from llm_compat import GPT5Client
-from reranker import get_reranker
-from vector_store import get_client, get_or_create_collection, query_top_k
+from aerorag.embedders import get_embedder
+from aerorag.llm_compat import GPT5Client
+from aerorag.reranker import get_reranker
+from aerorag.vector_store import get_client, get_or_create_collection, query_top_k
 
 
 GROUNDED_SYSTEM_PROMPT = """You are an aerospace requirements engineer answering questions about a DOORS-exported requirements set.

@@ -23,7 +23,7 @@ from dotenv import load_dotenv
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
-from multi_judge import (  # noqa: E402
+from aerorag.multi_judge import (  # noqa: E402
     _format_contexts,
     cohens_kappa,
     load_query_chunks,

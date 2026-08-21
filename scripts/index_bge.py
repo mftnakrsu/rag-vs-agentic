@@ -20,8 +20,8 @@ CORPUS = ROOT / "data" / "synthetic" / "requirements.jsonl"
 
 def main() -> int:
     load_dotenv(ROOT / ".env")
-    from embedders import get_embedder
-    from vector_store import get_client, get_or_create_collection, upsert_chunks
+    from aerorag.embedders import get_embedder
+    from aerorag.vector_store import get_client, get_or_create_collection, upsert_chunks
 
     rows = [json.loads(l) for l in CORPUS.open()]
     print(f"{len(rows)} requirements from {CORPUS.name}")
