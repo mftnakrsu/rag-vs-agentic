@@ -47,9 +47,9 @@ directions: the walk fills the context at precision 0.12--0.23, the
 answer cites 2.5--5.0 IDs at 0.48--0.98
 (Table~\ref{tab:pathology}). Scoring the retrieved set as the
 attribution set -- a choice some comparisons make implicitly -- ranks
-GraphRAG last; scoring the answer's citations ranks it first or
-tied-first. This holds in all six settings, survives swapping the
-traversal, and defeats two mitigations.
+GraphRAG below the vanilla baseline; scoring the answer's citations
+ranks it first of all pipelines. This holds in all six settings,
+survives swapping the traversal, and defeats two mitigations.
 \textbf{(C3)} The faithfulness decline follows \emph{context
 expansion}, not the corpus: powered comparably, both Wikipedia corpora
 decline too, withdrawing a corpus-conditional claim we previously
