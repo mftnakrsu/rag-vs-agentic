@@ -61,10 +61,10 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode
 
-from embedders import get_embedder
-from graph_store import TRACEABILITY_LINK_TYPES, get_driver, hop1_directed
-from llm_compat import GPT5Client
-from vector_store import (
+from aerorag.embedders import get_embedder
+from aerorag.graph_store import TRACEABILITY_LINK_TYPES, get_driver, hop1_directed
+from aerorag.llm_compat import GPT5Client
+from aerorag.vector_store import (
     fetch_by_id,
     get_client,
     get_or_create_collection,

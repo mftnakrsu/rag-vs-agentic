@@ -19,12 +19,12 @@ import time
 
 from dotenv import load_dotenv
 
-from agentic_rag import _ID_PATTERN
-from embedders import get_embedder
-from graph_store import TRACEABILITY_LINK_TYPES, get_driver, walk_2hop
-from llm_compat import GPT5Client
-from vanilla_rag import GROUNDED_SYSTEM_PROMPT, _coll_for, _format_context
-from vector_store import (
+from aerorag.agentic_rag import _ID_PATTERN
+from aerorag.embedders import get_embedder
+from aerorag.graph_store import TRACEABILITY_LINK_TYPES, get_driver, walk_2hop
+from aerorag.llm_compat import GPT5Client
+from aerorag.vanilla_rag import GROUNDED_SYSTEM_PROMPT, _coll_for, _format_context
+from aerorag.vector_store import (
     fetch_by_id,
     get_client,
     get_or_create_collection,

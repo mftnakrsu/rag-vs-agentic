@@ -37,7 +37,7 @@ def get_driver():
     graph_store_local for the fidelity notes.
     """
     if os.environ.get("GRAPH_BACKEND", "").lower() == "local":
-        from graph_store_local import LocalGraph
+        from aerorag.graph_store_local import LocalGraph
         return LocalGraph.from_corpus()
     uri = os.environ.get("NEO4J_URI")
     user = os.environ.get("NEO4J_USER")

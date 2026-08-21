@@ -73,9 +73,9 @@ def main() -> int:
     args = ap.parse_args()
     load_dotenv(ROOT / ".env")
 
-    from embedders import AzureOpenAIEmbedder
-    from llm_compat import GPT5Client
-    from vector_store import get_client, get_or_create_collection, query_top_k
+    from aerorag.embedders import AzureOpenAIEmbedder
+    from aerorag.llm_compat import GPT5Client
+    from aerorag.vector_store import get_client, get_or_create_collection, query_top_k
 
     text_by_id, title_by_id = {}, {}
     for l in (DATA / "chunks.jsonl").open():

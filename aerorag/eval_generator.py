@@ -46,8 +46,8 @@ from typing import Iterable
 
 from dotenv import load_dotenv
 
-from graph_store import TRACEABILITY_LINK_TYPES, get_driver
-from llm_compat import GPT5Client
+from aerorag.graph_store import TRACEABILITY_LINK_TYPES, get_driver
+from aerorag.llm_compat import GPT5Client
 
 
 # Sampling Cypher per stratum. We restrict to :Requirement <-> :Requirement

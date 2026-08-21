@@ -1,181 +1,130 @@
-# RAG vs Agentic RAG — Comparison Study
+# A Multi-Axis Robustness Analysis of RAG for Multi-Hop Requirements Traceability
 
 [![Dataset on Hugging Face](https://huggingface.co/datasets/huggingface/badges/resolve/main/dataset-on-hf-md.svg)](https://huggingface.co/datasets/meftun/aerosys-requirements)
 [![Kaggle](https://img.shields.io/badge/Kaggle-Open%20in%20Kaggle-20BEFF?logo=Kaggle&logoColor=white)](https://www.kaggle.com/datasets/mftnakrsu/aerosys-requirements)
 [![License: CC BY 4.0](https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey)](https://creativecommons.org/licenses/by/4.0/)
 
-Experimental side-by-side of vanilla RAG and agentic RAG (LangGraph) against the
-AeroSys synthetic aerospace requirements corpus (1132 requirements, DO-178C-style
-subsystem specs across 30 modules — ADS, FCC, NAV, GPS, …).
+Code and artifacts for a controlled comparison of five RAG pipelines across
+four robustness axes: the retrieval **embedder**, the **corpus**, the graph
+**traversal**, and the faithfulness **judge**.
 
-Goal: measurable deltas in **latency, tokens, cited-source overlap, and answer
-groundedness** between the two paradigms — not production hardening.
+13,456 generation runs at up to three seeds; 30,000+ faithfulness judgments.
+The paper sources are in [`paper/cikm/`](paper/cikm/); the current build is
+[`paper/main.pdf`](paper/main.pdf).
 
-## Paper
+## What the study found
 
-A short-paper draft for an anonymous CIKM 2026 submission lives in
-[`paper/cikm/`](paper/cikm/) (4-page ACM `sigconf`, double-blind review).
-It extends the v0 baseline below by adding two graph-aware pipelines
-(GraphRAG and agentic+graph over Neo4j Aura), a 300-query hop-stratified
-evaluation protocol, and a two-judge bias control.
+**The measurement point decides the winner.** The graph walk fills the context
+window at precision 0.12–0.23 while the synthesizer it feeds cites at 0.48–0.98
+— a 2.9–4.2× enrichment. Score the *retrieved set* as the attribution set and
+GraphRAG ranks below the vanilla baseline; score the *answer's citations* and it
+ranks first of all pipelines. This holds in all six settings, survives replacing
+the 2-hop walk with personalized PageRank, and defeats two mitigations
+(reranking the walked neighbours: +0.010 F1, p=0.34; cutting the traversal
+budget: −0.126 F1, p=2.6e-11).
 
-**Build:** `cd paper/cikm && make` (requires TeX Live + `acmart`), or
-upload `paper/cikm/` to Overleaf and Recompile. The architecture figure
-renders inline via TikZ — no separate sub-compile needed. See
-[`paper/cikm/README.md`](paper/cikm/README.md) for the anonymisation
-checklist, page-budget guardrails, and submission notes.
+**Answer-level winners are stratum-conditional but embedder- and seed-robust.**
+Vanilla ties GraphRAG at 1–2 hops and is last at 3+ hops under all three
+embedders; a graph-aided pipeline leads there. The same crossover appears on
+MuSiQue and 2WikiMultihopQA.
 
-> Title, full author info, and final figures will be added here after
-> the review period.
+**Faithfulness declines with hop distance, and the decline tracks context
+expansion rather than the corpus.** The one pipeline that expands nothing stays
+flat (−1.5 pp on DO-178C, +1.1 pp on 2Wiki); expanding pipelines drop 6.3 and
+6.7 pp. A hop×expansion interaction is significant at p=1.0e-07.
+An earlier version of this work reported the decline as *corpus-conditional*;
+that claim was withdrawn after judging the full matrix at comparable power.
 
-## Pipelines
+**LLM judges are unstable, and κ hides it.** Re-judging byte-identical
+answer–context pairs eleven weeks later gives self-agreement κ ≤ 0.14. Two
+vendors judging identical rows reverse which of them is stricter between
+corpora, and across eight settings their κ swings 0.03→0.44 while raw agreement
+moves only 0.82→0.94.
 
-| | Vanilla | Agentic (LangGraph) |
+## The corpus
+
+**AeroSys** — a synthetic DOORS-style aerospace requirements corpus: 1,132
+requirements across 30 modules (ADS, FCC, NAV, GPS, EPS, ICE, …), with typed
+traceability annotations (`derives_from`, `satisfies`, `references`, `verifies`,
+`refines`). Released under CC-BY-4.0 on
+[Hugging Face](https://huggingface.co/datasets/meftun/aerosys-requirements) and
+[Kaggle](https://www.kaggle.com/datasets/mftnakrsu/aerosys-requirements).
+
+Queries are sampled from the graph, not free-form: 296 hop-stratified questions
+(100/99/97 across 1/2/3+-hop) whose gold evidence is the sampled chain's node
+set. The manifest ships with full chains in `data/eval/`.
+
+The two Wikipedia corpora (MuSiQue, 2WikiMultihopQA) are rebuilt from public
+mirrors by the seeded scripts in `scripts/musique/` and `scripts/twowiki/`.
+
+## The five pipelines
+
+They share the embedder, the ChromaDB vector store, a file-backed typed-edge
+graph, the generator and the synthesis prompt; **they differ only in retrieval**.
+
+| # | Pipeline | Retrieval |
 |---|---|---|
-| Steps | embed → ChromaDB top-K → (rerank) → LLM | router → retriever-with-tools (ReAct) → critic → synthesizer |
-| LLM calls | 1 | 2–4 (retriever, critic, synthesizer) |
-| Decisions | none | router intent classify, critic verdict, max-iter ReAct |
+| 1 | `vanilla` | dense top-10 → top-5 context → one synthesis call |
+| 2 | `agentic` | LangGraph router–retriever–critic loop, `search_documents` only, iter ≤ 3 |
+| 3 | `graphrag` | 8 vector seeds + ≤2-hop typed walk (cap 30, context 15) → one call |
+| 4 | `agentic-graph` | (2) plus a typed `graph_lookup` tool |
+| 5 | `adaptive` | picks one of (1)–(4) per query; rule-based (V1) or learned (V2) |
 
-## Stack
+Pipeline 4 is not a separate file — it is `run_agentic_rag(..., use_graph=True)`.
 
-- **Python** 3.10+
-- **ChromaDB** 1.5.x (local `PersistentClient`)
-- **LangGraph** 1.1.x (1.2 still alpha — pinned to 1.1)
-- **LLM**: Azure GPT-5.4 (`gpt-5.4-meftun`), via raw `openai` SDK (bypasses
-  `ChatOpenAI` because it drops `reasoning_content` — issue #34328)
-- **Embedders** (parallel ablation):
-  1. Local `intfloat/multilingual-e5-small` (384d, mean-pool + L2 norm)
-  2. Azure OpenAI embedding (deployment-defined dim)
-- **Rerankers** (both compared): local `bge-reranker-v2-m3` + Azure-hosted
-- **No Neo4j** — graph layer skipped for this experiment.
+## Layout
 
-## Dataset
+```
+aerorag/          library: pipelines, retrieval infra, judging, harness
+scripts/          one-off experiment runners, grouped by arm
+  judge/            multi-vendor faithfulness judging
+  stats/            bootstrap CIs, significance tests, figures
+  musique/ twowiki/ Wikipedia corpus builds + runs
+  router/           V2 learned router
+  graphrag2/        personalized-PageRank traversal
+  tex/              table generation
+data/             corpus, query manifest, Wikipedia subsets (chroma/ is rebuilt)
+results/          scored and judged CSVs — the paper's artifacts
+paper/cikm/       LaTeX sources
+```
 
-The `data/synthetic/` corpus is also published as a standalone dataset for
-downstream RAG / retrieval research:
+## Running it
 
-| Platform | Slug |
-|---|---|
-| 🤗 Hugging Face | [`meftun/aerosys-requirements`](https://huggingface.co/datasets/meftun/aerosys-requirements) |
-| Kaggle | [`mftnakrsu/aerosys-requirements`](https://www.kaggle.com/datasets/mftnakrsu/aerosys-requirements) |
-
-Both releases ship the same 30 module DOORS-narrative `.md` files (~1,132
-requirement objects) under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
-The format is left raw on purpose — see either dataset card for the
-`||`-delimited block syntax, inline `##MODULE.ID` cross-refs, traceability
-annotations (`Derives From:`, `References:`, `Satisfies:`, …), and glossary
-tables that consumers parse with their own loader.
-
-## Quickstart
+Requires `.env` (see `.env.example`) with Azure OpenAI credentials. Graph
+retrieval needs no database — `GRAPH_BACKEND=local` reads the corpus' own link
+annotations.
 
 ```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env  # then fill in Azure creds
+# index the corpus (idempotent; --force to rebuild)
+.venv-judge/bin/python -m aerorag.build_index
 
-python build_index.py            # populates docs-local-e5 + docs-azure
-python vanilla_rag.py "What does ADS-014 specify about pitot blockage?"
-python compare.py                # 4-row ablation table over eval_queries.py
+# single-pipeline smoke test
+.venv-judge/bin/python -m aerorag.vanilla_rag "What does ADS-014 specify about pitot blockage?"
+.venv-judge/bin/python -m aerorag.graph_rag   "How does ADS feed AOA to FCC?"
+.venv-judge/bin/python -m aerorag.agentic_rag "How does ADS feed AOA to FCC?" --graph
+
+# the ablation matrix
+.venv-judge/bin/python -m aerorag.compare --limit 3 --embedders local --no-local-rerank
+
+# statistics and paper tables
+make stats router paper-tables
 ```
 
-## Files
+`--no-local-rerank` is required: the BGE reranker weights are not in the repo.
 
+There is no test suite. Verification is that the comparison matrix runs and the
+per-config aggregates match the numbers in `results/` — see `HANDOFF.md`.
+
+## Citing
+
+```bibtex
+@misc{akarsu2026aerosys,
+  title  = {AeroSys Requirements Corpus},
+  author = {Akarsu, Meftun},
+  year   = {2026},
+  url    = {https://huggingface.co/datasets/meftun/aerosys-requirements}
+}
 ```
-data_loader.py    — requirements.jsonl → list[dict] chunks
-llm_compat.py     — variant-aware Azure GPT-5 wrapper (raw openai SDK)
-embedders.py      — LocalE5SmallEmbedder + AzureOpenAIEmbedder (uniform iface)
-reranker.py       — LocalBGEReranker + AzureReranker (uniform iface)
-vector_store.py   — ChromaDB add + query helpers
-build_index.py    — dual-collection indexer
-vanilla_rag.py    — single-file pipeline
-agentic_rag.py    — LangGraph StateGraph (router/retriever/critic/synthesizer)
-eval_queries.py   — 5–10 hand-curated test queries
-compare.py        — runs the matrix, prints + writes CSV
-results/          — generated CSV/JSON
-```
 
-## Results
-
-Matrix run on 2026-05-09: 60 rows = 6 configs × 10 eval queries. One vanilla×azure×azure-rerank
-row failed on a Cohere 429 whose single retry also 429'd; other 59/60 succeeded.
-Wall time: 1100s.
-
-### Aggregate per config
-
-| Pipeline | Embedder | Reranker | ok/N | Avg ms | Avg tok | Avg cited IDs |
-|---|---|---|---:|---:|---:|---:|
-| vanilla | azure | — | 10/10 | **3,822** | 706 | 5.0 |
-| vanilla | local | — | 10/10 | 7,658 | 836 | 5.0 |
-| agentic | azure | — | 10/10 | 14,277 | 4,573 | 3.0 |
-| agentic | local | — | 10/10 | 20,181 | 5,343 | 2.8 |
-| vanilla | local | azure-cohere | 10/10 | 31,269 | 738 | 5.0 |
-| vanilla | azure | azure-cohere | 9/10 | 32,257 | 703 | 5.0 |
-
-### Headline deltas
-
-- **Vanilla vs Agentic, same embedder (no rerank):** agentic is 3.7–4.5× slower,
-  uses 6.4–6.5× more LLM tokens, but cites *fewer* IDs (2.8–3.0 vs 5.0). The
-  fewer-citations result is a **selectivity effect**, not a quality drop —
-  agentic synthesises a more focused answer that cites only the IDs it actually
-  used, whereas vanilla mechanically dumps all 5 retrieved IDs into its citation
-  list.
-
-- **Embedder ablation (vanilla, no rerank):** Azure `text-embedding-3-small`
-  (1536d) is **2× faster end-to-end** than local `multilingual-e5-small` (384d):
-  3.8s vs 7.7s. Most of the gap is per-process model-load overhead on local
-  (mean 0.5–5s for `_load()` per Python invocation); on a long-running server
-  the gap would shrink. Quality of retrieved IDs is comparable on this corpus.
-
-- **Reranker ablation:** the Azure-hosted Cohere reranker on this 1000 TPM
-  deployment adds **~25s of pacing wall** per call (15s minimum interval, plus
-  the LLM call itself). Rerank *does* re-order the top-K — citation lists shift
-  (e.g. on the AOA cross-module query, rerank surfaces ADS-C5 glossary higher;
-  on the standards query, it pulls in additional ___-003 standard requirements)
-  — but the answer's *content* is rarely changed because the model still has 5
-  reasonable candidates either way. **Conclusion: not worth the latency on this
-  corpus given 1000 TPM.**
-
-### Per-query notable behaviours
-
-- **Q1 (id_lookup ADS-014):** all pipelines correctly center on ADS-014 + the
-  paired test req ADS-026 + the HMI annunciation req HMI-090. Agentic router
-  classifies as `id_lookup`, skips semantic search, and answers in **2.2s** —
-  faster than vanilla (3.5–7.7s).
-
-- **Q2 (cross-module ADS↔FCC AOA):** vanilla|local cites the FCC glossary and
-  generic interface chunks (FCC-001, FCC-038, ADS-C5); **agentic surfaces the
-  *actual* interface contract** (ADS-012 publishes AOA, FCC-022 consumes it
-  with 0.9·α_stall + 3° margin; ADS-021 specifies 1553B vs ARINC 429 transport
-  per platform; ADS-022 message field; ADS-023 valid_flags). This is the
-  paradigmatic agentic-RAG win on this corpus.
-
-- **Q4 (latency budget):** vanilla finds CDL-011 + ADS-008 + ADS-005 (the
-  20ms requirement); **agentic also finds NAV-030** (downstream consumer) by
-  searching iteratively — extra context vanilla misses.
-
-- **Q7 (governing standards):** vanilla returns a generic list of *___-003*
-  cross-module standards refs (EPS-003, EMS-003, GCS-004, …); **agentic
-  zooms in on ADS-004 + DO-254** specifically. More focused, semantically
-  correct.
-
-- **Q3, Q8, Q9 (single specific-fact queries):** vanilla cites 4–5 IDs incl.
-  the right one; agentic cites only the single right ID (ADS-005, ADS-003,
-  ADS-007). Same correctness, fewer citations.
-
-### Research-question takeaway
-
-The agentic critic+ReAct loop **substitutes for a reranker on cross-module
-queries** (where its multi-search strategy assembles a richer evidence set)
-but offers **no measurable benefit on direct id_lookup or single-fact
-queries** while paying 4–5× latency and 6–7× tokens. Use vanilla+azure for
-production-grade ID lookup; use agentic for cross-module synthesis where the
-extra latency/tokens buy interpretability and focused citation.
-
-Reranker on this 1000 TPM Cohere deployment is **not worth its pacing
-penalty** for the small 10-query eval; might pay off on a corpus where the
-top-K from the embedder is genuinely lossy (this aerospace corpus is not).
-
-### Files
-- `results/results.csv` — 60 rows × 15 columns (no answer text)
-- `results/results.jsonl` — full rows incl. answer text
-
+The companion paper is under submission; this entry will be updated when it
+appears.

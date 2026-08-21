@@ -68,13 +68,13 @@ def main():
     text_df = pd.DataFrame([text_features(q) for q in queries["query"]])
 
     if EMBEDDER_NAME == "azure":
-        from embedders import AzureOpenAIEmbedder
+        from aerorag.embedders import AzureOpenAIEmbedder
         emb = AzureOpenAIEmbedder()
         print("embedding via Azure text-embedding-3-small (batch=64)...")
         embs = np.asarray(emb.embed_documents(queries["query"].tolist(), batch_size=64),
                           dtype=np.float32)
     else:
-        from embedders import LocalE5SmallEmbedder
+        from aerorag.embedders import LocalE5SmallEmbedder
         emb = LocalE5SmallEmbedder()
         emb._load()
         print("embedding via local e5-small (batch=32, 'query: ' prefix)...")

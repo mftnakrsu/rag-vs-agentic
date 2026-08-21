@@ -18,8 +18,8 @@ COLLECTION = "musique-azure"
 
 def main():
     load_dotenv(ROOT / ".env")
-    from embedders import AzureOpenAIEmbedder
-    from vector_store import get_client, get_or_create_collection
+    from aerorag.embedders import AzureOpenAIEmbedder
+    from aerorag.vector_store import get_client, get_or_create_collection
 
     chunks = [json.loads(line) for line in open(CHUNKS)]
     print(f"loading {len(chunks)} chunks from {CHUNKS}")

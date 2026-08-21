@@ -93,7 +93,7 @@ def walk_2hop_local(adj: dict[str, set[str]], seed_ids: list[str]) -> list[dict]
 
 def main() -> int:
     load_dotenv(ROOT / ".env")
-    from llm_compat import GPT5Client
+    from aerorag.llm_compat import GPT5Client
 
     text_by_id = {}
     title_by_id = {}

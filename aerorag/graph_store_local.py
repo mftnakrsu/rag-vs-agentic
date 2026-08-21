@@ -30,7 +30,8 @@ TRACEABILITY_LINK_TYPES: tuple[str, ...] = (
     "DERIVES_FROM", "SATISFIES", "REFERENCES", "VERIFIES", "REFINES",
 )
 
-DEFAULT_CORPUS = Path(__file__).resolve().parent / "data" / "synthetic" / "requirements.jsonl"
+ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_CORPUS = ROOT / "data" / "synthetic" / "requirements.jsonl"
 
 
 class LocalGraph:

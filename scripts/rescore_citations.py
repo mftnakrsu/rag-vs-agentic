@@ -26,7 +26,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from eval_metrics import (  # noqa: E402
+from aerorag.eval_metrics import (  # noqa: E402
     citation_f1,
     citation_precision,
     citation_recall,

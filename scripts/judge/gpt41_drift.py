@@ -42,7 +42,7 @@ def kappa(a: list[bool], b: list[bool]) -> float:
 
 def main() -> int:
     load_dotenv(ROOT / ".env")
-    from multi_judge import _format_contexts, load_query_chunks, score_with_gpt41
+    from aerorag.multi_judge import _format_contexts, load_query_chunks, score_with_gpt41
 
     chunks = load_query_chunks(ROOT / "data/synthetic/requirements.jsonl")
 

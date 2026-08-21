@@ -58,7 +58,7 @@ import httpx
 from dotenv import load_dotenv
 from tqdm import tqdm
 
-from llm_compat import GPT5Client
+from aerorag.llm_compat import GPT5Client
 
 
 # =============================================================================

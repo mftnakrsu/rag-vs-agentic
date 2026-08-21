@@ -213,16 +213,16 @@ def adaptive_rag(
     routed = decision.pipeline
 
     if routed == "vanilla":
-        from vanilla_rag import vanilla_rag
+        from aerorag.vanilla_rag import vanilla_rag
         result = vanilla_rag(query, embedder_name=embedder_name, reranker_name=None)
     elif routed == "graphrag":
-        from graph_rag import graph_rag
+        from aerorag.graph_rag import graph_rag
         result = graph_rag(query, embedder_name=embedder_name)
     elif routed == "agentic-graph":
-        from agentic_rag import run_agentic_rag
+        from aerorag.agentic_rag import run_agentic_rag
         result = run_agentic_rag(query, embedder_name=embedder_name, use_graph=True)
     else:  # agentic (or unknown — defensive)
-        from agentic_rag import run_agentic_rag
+        from aerorag.agentic_rag import run_agentic_rag
         result = run_agentic_rag(query, embedder_name=embedder_name, use_graph=False)
 
     # The router's own latency is small (regex only), but capture it so
@@ -252,7 +252,7 @@ def adaptive_rag(
 # =============================================================================
 
 if __name__ == "__main__":
-    from eval_queries import EVAL_QUERIES
+    from aerorag.eval_queries import EVAL_QUERIES
 
     print("\nDry routing decisions for the 10 hand-curated eval queries:\n")
     print(f"  {'Query':<58s} {'Routed to':<14s} Reason")

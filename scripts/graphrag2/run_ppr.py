@@ -42,11 +42,11 @@ def main() -> int:
     args = ap.parse_args()
     load_dotenv(ROOT / ".env")
 
-    from embedders import get_embedder
-    from graph_store_local import LocalGraph, TRACEABILITY_LINK_TYPES
-    from llm_compat import GPT5Client
-    from vanilla_rag import GROUNDED_SYSTEM_PROMPT, _coll_for
-    from vector_store import get_client, get_or_create_collection, query_top_k
+    from aerorag.embedders import get_embedder
+    from aerorag.graph_store_local import LocalGraph, TRACEABILITY_LINK_TYPES
+    from aerorag.llm_compat import GPT5Client
+    from aerorag.vanilla_rag import GROUNDED_SYSTEM_PROMPT, _coll_for
+    from aerorag.vector_store import get_client, get_or_create_collection, query_top_k
 
     text_by_id = {r["id"]: r["full_text"]
                   for r in map(json.loads, CORPUS.open(encoding="utf-8"))}
