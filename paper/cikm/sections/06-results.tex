@@ -118,39 +118,56 @@ the budget only removes the recall the advantage rests on.
 \label{sec:c3}
 An earlier version of this analysis reported the faithfulness decline as
 \emph{corpus-conditional}: present on DO-178C, absent on Wikipedia
-chains. Judging the full matrix rather than 300-row subsets, and
-bringing the MuSiQue arm up to comparable power, withdraws that claim.
+chains. Judging the full matrix rather than 300-row subsets, bringing
+the MuSiQue arm up to comparable power, and adding a second Wikipedia
+corpus withdraws that claim.
 
 The MuSiQue arm had 67 rows per stratum, since 200 queries split three
 ways. Its observed 1-hop to 3+-hop drop was $9.2$\,pp -- larger than the
 $4.7$\,pp drop that reaches significance on DO-178C -- but detecting it
 at 80\% power needs about 210 rows per cell. Re-running that arm at
-three seeds ($n{=}600$, $\approx$200 per cell, judged in the same window
-by the same judge) makes the decline significant there too:
-$0.935/0.861/0.828$, Cochran--Armitage $p{=}1.2{\times}10^{-3}$, a
-$10.7$\,pp drop at $p{=}9.1{\times}10^{-4}$, comparable to the
-$11.9$\,pp we measure on DO-178C under the Azure embedder. The apparent
-corpus-conditionality was an artifact of an underpowered cell.
+three seeds ($n{=}600$, $\approx$200 per cell) makes the decline
+significant under both judges: $0.930/0.876/0.823$ under GPT-4.1
+($p{=}1.1{\times}10^{-3}$) and $0.955/0.945/0.869$ under Gemini
+($p{=}1.2{\times}10^{-3}$). 2WikiMultihopQA, a second Wikipedia corpus
+judged in full ($n{=}1{,}200$, both judges), declines as well
+($p{=}5.0{\times}10^{-2}$ and $4.8{\times}10^{-6}$). The apparent
+corpus-conditionality was an artifact of an underpowered cell, and the
+decline now replicates on three corpora under two vendors.
 
 What does separate pipelines is whether they expand the context at all.
-Judging all 4{,}440 rows per embedder (per-stratum $n\approx300$ rather
-than $\approx33$), \emph{vanilla -- the only pipeline that retrieves a
-fixed top-5 and expands nothing -- never declines}: $p{=}0.16$, $0.99$
-and $0.76$ under the three embedders. GraphRAG declines under e5-small
-($p{=}0.039$) and strongly under 3-small ($p{=}1.4{\times}10^{-6}$),
-though only marginally under bge-m3 ($p{=}0.065$); the agentic arms
-decline in four of six embedder--pipeline combinations. We therefore
-state the weaker claim the data supports: the non-expanding baseline is
-flat everywhere, expansion is a necessary condition for the decline, and
-we do not claim every expanding pipeline declines in every setting.
+Vanilla is the only pipeline that retrieves a fixed top-5 and expands
+nothing, and its 1-hop to 3+-hop drop is statistically indistinguishable
+from zero on both corpus families under GPT-4.1: ${-}1.5$\,pp on DO-178C
+($n{=}2{,}072$, per-embedder $p{=}0.16$, $0.99$, $0.76$) and $+1.1$\,pp
+on 2Wiki ($n{=}600$, $p{=}0.66$). The four expanding pipelines drop
+$6.3$\,pp and $6.7$\,pp on the same two corpora. Fitting faithfulness on
+hop index, an expansion indicator and their interaction makes the
+contrast a single test: the interaction is negative and significant on
+the pooled DO-178C matrix ($b{=}{-}0.599$, $p{=}1.0{\times}10^{-7}$,
+$n{=}10{,}360$) and negative with the same magnitude on 2Wiki
+($b{=}{-}0.286$, $p{=}0.27$, $n{=}1{,}200$, where the arm is a
+twentieth the size). Expansion does not merely accompany the decline; it
+steepens it.
 
-These verdicts come from a single judging date and are not pooled with
-the earlier batches (\S\ref{sec:c4}); the GPT-5.4 leg, on which the
-original corpus-conditional claim also rested, has not been re-run at
-this power and remains the one open thread.
+Under Gemini the same ordering holds but the test does not resolve: at
+$0.97$--$1.00$ faithful across most DO-178C cells the matrix is
+compressed against the ceiling, the baseline itself acquires a slope
+($b{=}{-}0.729$, $p{=}0.012$), and the interaction is no longer separable
+from it ($p{=}0.11$). The expanding arms still drop further than vanilla
+in both corpora ($2.8$ vs.\ $1.5$\,pp on DO-178C, $12.7$ vs.\ $7.7$\,pp
+on 2Wiki). This is C4 acting on C3: a lenient judge preserves the
+ranking and loses the resolution.
+
+We therefore state what the data supports: the non-expanding baseline is
+flat, expansion steepens the hop-wise decline, and the effect is
+measurable wherever the judge is not saturated. We do not claim every
+expanding pipeline declines in every cell -- GraphRAG is marginal under
+bge-m3 ($p{=}0.065$), and the agentic arms decline in four of six
+embedder--pipeline combinations. The GPT-5.4 leg, on which the original
+corpus-conditional claim also rested, has not been re-run at this power.
 
 \input{tables/tab_judges}
-
 \subsection{C4: Judges Are Unstable on Frozen Inputs and on Changed Ones}
 \label{sec:c4}
 \looseness=-1
@@ -176,22 +193,37 @@ component mixes output drift with judge response, and the two judges
 rank oppositely on the two axes: the judge more stable under embedder
 swap is the less stable across time, so stability on one axis does not
 transfer to the other.
-\noindent\textit{Across vendors, same day.} Adding a third vendor
-(Gemini 3.7-flash, thinking enabled) as a judge on identical rows on a
-single date sharpens the picture. Gemini is uniformly the more lenient
-judge -- 0.98--0.99 faithful against GPT-4.1's 0.92--0.95 -- and
-McNemar rejects symmetric disagreement everywhere
-($p{<}10^{-9}$), so the gap is systematic, not noise. The two agree on
-91--94\% of rows, yet Cohen's $\kappa$ reads $0.03$--$0.13$ while
-Gwet's AC1 reads $0.90$--$0.94$ (Table~\ref{tab:judges}, bottom). This
-is the prevalence paradox of Feinstein and Cicchetti~\cite{feinstein1990}
-in a cross-vendor pair: at 93\% agreement, reporting $\kappa$ alone
-would license the claim that two judges agree no better than chance.
+\noindent\textit{Across vendors.} Adding a third vendor
+(Gemini 3.7-flash, thinking enabled) as a judge on identical rows
+sharpens the picture, and shows that leniency is not a fixed property of
+a judge. On the four DO-178C settings Gemini is the more lenient of the
+pair by a wide margin -- 0.98--0.99 faithful against GPT-4.1's
+0.93--0.95, with McNemar rejecting symmetric disagreement everywhere
+($p{<}10^{-9}$). On 2WikiMultihopQA the direction \emph{reverses}
+($0.888$ vs.\ $0.914$, $p{=}6.2{\times}10^{-3}$), and on the
+budget-capped MuSiQue arm the two are indistinguishable ($0.875$ vs.\
+$0.880$, $p{=}1.00$). Which judge is stricter is therefore a property of
+the judge--corpus pair, not of the judge, and cannot be calibrated away
+once and reused.
+
+The same eight settings make the prevalence paradox of Feinstein and
+Cicchetti~\cite{feinstein1990} directly visible in a single judge pair.
+Raw agreement moves only from 0.82 to 0.94 across them, and Gwet's AC1
+tracks it closely (0.77--0.94), but Cohen's $\kappa$ swings from $0.03$
+to $0.44$ -- ordering the settings almost exactly by how far
+faithfulness sits from the ceiling (Table~\ref{tab:judges}, bottom).
+At 93\% agreement on DO-178C, reporting $\kappa$ alone would license the
+claim that two judges agree no better than chance; the same pair on
+2Wiki, agreeing \emph{less} often, would appear four times more
+reliable.
+
 Crucially, leniency and \emph{trend} come apart --- despite sitting near
-the ceiling, Gemini still reproduces the hop-wise decline
-($p{=}4.3{\times}10^{-3}$ and $p{<}10^{-16}$ on the two main matrices).
-A judge's strictness and the ordering it induces are separable
-properties, and only the first is vendor-specific.
+the ceiling on DO-178C, Gemini still reproduces the hop-wise decline
+there ($p{=}4.3{\times}10^{-3}$ and $p{<}10^{-16}$ on the two main
+matrices) and on both Wikipedia corpora. A judge's strictness and the
+ordering it induces are separable properties: the second replicates
+across vendors, the first does not, though a saturated judge loses the
+power to resolve interactions (\S\ref{sec:c3}).
 
 \noindent\textit{Between judges.} Inter-judge $\kappa$ halves under
 embedder swap on identical tuples (0.30 $\to$ 0.17 overall); McNemar
