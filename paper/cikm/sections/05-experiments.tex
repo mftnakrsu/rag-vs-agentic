@@ -59,4 +59,8 @@ single make target on locked CSVs. Azure model snapshots:
 8{,}192-token completion cap. The MuSiQue
 subgraph (3{,}996 paragraph chunks, 399 \textit{REFERENCES} edges) is
 built deterministically from the \texttt{dgslibisey}
-MuSiQue mirror (validation split, seed $20260511$).
+MuSiQue mirror (validation split, seed $20260511$), and the
+2WikiMultihopQA subgraph (2{,}000 chunks, 332 edges) from the
+\texttt{voidful} mirror (seed $20260816$) by the same procedure.
+The graph pipelines read a file-backed store built from the released
+link annotations, so no database service is needed to reproduce them.
