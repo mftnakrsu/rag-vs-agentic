@@ -21,7 +21,7 @@ from dotenv import load_dotenv
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
-from multi_judge import _format_contexts, load_query_chunks, score_with_gpt41  # noqa: E402
+from aerorag.multi_judge import _format_contexts, load_query_chunks, score_with_gpt41  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[2]
 IN_CSV = ROOT / "results/musique-v3-judged.csv"

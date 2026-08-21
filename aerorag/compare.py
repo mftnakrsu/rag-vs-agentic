@@ -34,9 +34,9 @@ from pathlib import Path  # noqa: F401  (used by --queries-jsonl)
 from dotenv import load_dotenv
 from tabulate import tabulate
 
-from agentic_rag import run_agentic_rag
-from eval_queries import EVAL_QUERIES
-from vanilla_rag import vanilla_rag
+from aerorag.agentic_rag import run_agentic_rag
+from aerorag.eval_queries import EVAL_QUERIES
+from aerorag.vanilla_rag import vanilla_rag
 
 
 def build_configs(
@@ -77,12 +77,12 @@ def run_one(cfg: dict, query: str) -> dict:
             reranker_name=cfg["reranker"],
         )
     if cfg["pipeline"] == "graphrag":
-        from graph_rag import graph_rag
+        from aerorag.graph_rag import graph_rag
         return graph_rag(query, embedder_name=cfg["embedder"])
     if cfg["pipeline"] == "agentic-graph":
         return run_agentic_rag(query, embedder_name=cfg["embedder"], use_graph=True)
     if cfg["pipeline"] == "adaptive":
-        from hop_router import adaptive_rag
+        from aerorag.hop_router import adaptive_rag
         return adaptive_rag(query, embedder_name=cfg["embedder"])
     return run_agentic_rag(query, embedder_name=cfg["embedder"])
 

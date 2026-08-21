@@ -30,7 +30,6 @@ results/cross-*.jsonl
 .vscode/
 
 # Paper build artefacts (track .tex / .bib sources, not byproducts)
-paper/cikm-skeleton.zip
 paper/cikm/main.pdf
 paper/cikm/CIKM-2026-anonymous.pdf
 paper/cikm/CIKM-2026-anonymous.zip
@@ -51,3 +50,6 @@ paper/cikm/figures/architecture.pdf
 paper/cikm/pg*.png
 results/twowiki-all.jsonl
 .env.bak-*
+
+# Overleaf / arXiv export archives — regenerate from paper/cikm/ sources
+paper/*.zip

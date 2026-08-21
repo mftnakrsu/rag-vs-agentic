@@ -60,7 +60,7 @@ def main() -> int:
     args = ap.parse_args()
 
     load_dotenv(ROOT / ".env")
-    from multi_judge import (_format_contexts, load_query_chunks,
+    from aerorag.multi_judge import (_format_contexts, load_query_chunks,
                              score_with_gemini, score_with_gpt41, score_with_gpt5)
 
     scorers = {"gemini": score_with_gemini, "gpt41": score_with_gpt41,

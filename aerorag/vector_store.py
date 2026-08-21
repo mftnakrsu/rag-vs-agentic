@@ -13,7 +13,7 @@ from typing import List
 import chromadb
 from chromadb.config import Settings
 
-from data_loader import chunk_to_metadata
+from aerorag.data_loader import chunk_to_metadata
 
 
 def get_client(path: str | None = None) -> chromadb.api.ClientAPI:
