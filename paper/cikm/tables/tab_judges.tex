@@ -1,6 +1,6 @@
 \begin{table}[t]
   \centering
-  \caption{Judge stability. \textit{Top}: same judge, frozen input --- the answer and context strings are identical and only the judging date differs, so the fall from 0.76 to 0.14 isolates drift from any retrieval effect. \textit{Middle}: same judge, input changed by embedder swap. \textit{Bottom}: cross-vendor agreement on identical rows judged the same day. Gemini is uniformly the more lenient judge (McNemar $p{<}10^{-9}$ throughout), and $\kappa$ collapses at this prevalence while Gwet's AC1 tracks the actual 91--94\% agreement.}
+  \caption{Judge stability. \textit{Top}: same judge, frozen input --- the answer and context strings are identical and only the judging date differs, so the fall from 0.76 to 0.14 isolates drift from any retrieval effect. \textit{Middle}: same judge, input changed by embedder swap. \textit{Bottom}: cross-vendor agreement on identical rows. Which judge is stricter depends on the corpus --- Gemini is markedly more lenient on DO-178C, indistinguishable on the capped MuSiQue arm, and stricter on 2Wiki. Raw agreement and AC1 move together across the eight settings while $\kappa$ swings by a factor of fifteen, ordered by distance from the ceiling.}
   \label{tab:judges}
   \small
   \setlength{\tabcolsep}{4pt}
@@ -19,7 +19,7 @@
     GPT-5.4 (v2 vs v3) & \multicolumn{4}{r}{$\kappa = 0.137$, raw agr.\ 0.59} \\
     GPT-4.1 (v2 vs v3) & \multicolumn{4}{r}{$\kappa = 0.480$, raw agr.\ 0.74} \\
     \midrule
-    \multicolumn{5}{l}{\textit{Cross-vendor, same rows, same day (Gemini 3.7-flash $\times$ GPT-4.1)}} \\
+    \multicolumn{5}{l}{\textit{Cross-vendor, same rows, one judging window (Gemini 3.7-flash $\times$ GPT-4.1)}} \\
     \midrule
     \textit{Setting} & raw & $\kappa$ & AC1 & faithful (G\,/\,4.1) \\
     \midrule
@@ -27,6 +27,10 @@
     DO-178C 3-small ($n{=}4{,}440$)  & 0.913 & 0.125 & 0.903 & 0.980 / 0.917 \\
     DO-178C bge-m3 ($n{=}1{,}480$)   & 0.939 & 0.047 & 0.935 & 0.991 / 0.945 \\
     DO-178C PPR walk ($n{=}296$)     & 0.926 & 0.058 & 0.919 & 0.983 / 0.936 \\
+    MuSiQue, 3 seeds ($n{=}600$)     & 0.850 & 0.172 & 0.817 & 0.923 / 0.877 \\
+    MuSiQue rerank ($n{=}200$)       & 0.820 & 0.171 & 0.772 & 0.935 / 0.825 \\
+    MuSiQue budget cap ($n{=}200$)   & 0.875 & 0.419 & 0.841 & 0.875 / 0.880 \\
+    2WikiMultihopQA ($n{=}1{,}200$)  & 0.899 & 0.435 & 0.877 & 0.888 / 0.914 \\
     \bottomrule
   \end{tabular}%
   }
