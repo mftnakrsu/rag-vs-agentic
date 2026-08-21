@@ -22,7 +22,12 @@ weeks after the first, yielding 1{,}200 paired binary judgments per
 embedder. Each batch is \emph{pinned} to the same 300 (query,
 pipeline, repeat) tuples across embedders so C3 deltas are computed
 on identical items; batches are reported separately, never pooled
-across judging dates. On the Wikipedia corpora we judge every row.
+across judging dates. On the Wikipedia corpora we judge every row with
+GPT-4.1 and Gemini 3.7-flash. The Gemini leg of the MuSiQue seed
+extension, both mitigation arms and 2Wiki ran one day after their
+GPT-4.1 leg, on frozen stored answer--context strings, so the pairing is
+row-exact; the DO-178C matrices were judged by both vendors in a single
+pass.
 Same-input controls re-judge 300 v2 tuples twice with GPT-5.4
 (test--retest) and once eleven weeks later (temporal drift); a
 generator-swap control re-synthesizes 332 v3 rows with GPT-4.1 on

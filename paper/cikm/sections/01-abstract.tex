@@ -7,8 +7,8 @@ embedder (e5-small 384d, text-embedding-3-small 1536d, bge-m3 1024d),
 the corpus (DO-178C typed-edge requirements, and Wikipedia paragraph
 chains via MuSiQue and 2WikiMultihopQA), the graph traversal (bounded
 2-hop walk vs.\ personalized PageRank), and the judge (GPT-5.4, GPT-4.1
-and Gemini 3.7-flash), over 10{,}656 generation runs at three seeds and
-more than 24{,}000 faithfulness judgments. Our central finding concerns
+and Gemini 3.7-flash), over 13{,}400 generation runs at up to three
+seeds and more than 30{,}000 faithfulness judgments. Our central finding concerns
 the measurement point rather than the architecture: GraphRAG's graph
 walk floods the context window at precision 0.12--0.23, while the
 synthesizer it feeds cites selectively at 0.48--0.98. Scoring the
@@ -17,14 +17,17 @@ scoring the answer's citations ranks it first or tied-first, in all six
 settings we tested; the split survives a change of traversal and defeats
 two obvious mitigations, since the synthesizer already performs the
 filtering. Answer-level winners are stratum-conditional but stable
-across embedders and seeds. Faithfulness declines with hop distance on
-\emph{both} corpus families once the comparison is adequately powered --
-a corpus-conditional reading we previously reported does not survive --
-while the one pipeline that expands no context never declines. Judges,
+across embedders and seeds. Faithfulness declines with hop distance on all
+three corpora once the comparison is adequately powered -- a
+corpus-conditional reading we previously reported does not survive --
+and the decline tracks context expansion rather than the corpus: the one
+pipeline that expands nothing stays flat, and a hop$\times$expansion
+interaction is significant at $p{=}10^{-7}$. Judges,
 by contrast, are not stable: re-judging frozen answer--context pairs
-eleven weeks later gives self-agreement $\kappa{\leq}0.14$, and two
-vendors judging identical rows on one day agree on 93\% of them at
-$\kappa{=}0.03$--$0.13$ yet AC1 $0.90$--$0.94$. We argue that RAG
+eleven weeks later gives self-agreement $\kappa{\leq}0.14$; two vendors
+judging identical rows reverse which of them is stricter between
+corpora; and across eight settings their $\kappa$ swings from $0.03$ to
+$0.44$ while raw agreement moves only from 0.82 to 0.94. We argue that RAG
 architecture claims should be tested at this level of robustness --
 including robustness to the citation-measurement point -- before they
 are trusted.

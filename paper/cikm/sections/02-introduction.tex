@@ -29,8 +29,8 @@ bge-m3 1024d -- three vendors, three dimensionalities), the corpus
 (DO-178C typed-edge requirements; Wikipedia paragraph chains via
 MuSiQue and 2WikiMultihopQA), the graph traversal (a bounded 2-hop walk
 and personalized PageRank over the same graph), and the faithfulness
-judge (GPT-5.4, GPT-4.1, Gemini 3.7-flash). The design produces 10{,}656
-generation runs and over 24{,}000 faithfulness judgments.
+judge (GPT-5.4, GPT-4.1, Gemini 3.7-flash). The design produces 13{,}456
+generation runs and over 30{,}000 faithfulness judgments.
 
 Our headline result is not that one architecture wins, but that a
 methodological choice most evaluations leave implicit -- whether
@@ -51,15 +51,17 @@ GraphRAG last; scoring the answer's citations ranks it first or
 tied-first. This holds in all six settings, survives swapping the
 traversal, and defeats two mitigations.
 \textbf{(C3)} The faithfulness decline follows \emph{context
-expansion}, not the corpus: once the Wikipedia arm is powered
-comparably it declines too ($p{=}1.2{\times}10^{-3}$), withdrawing a
-corpus-conditional claim we previously reported, while the one pipeline
-that expands nothing never declines.
+expansion}, not the corpus: powered comparably, both Wikipedia corpora
+decline too, withdrawing a corpus-conditional claim we previously
+reported. The pipeline that expands nothing stays flat on every corpus,
+and a hop$\times$expansion interaction is significant on the pooled
+matrix ($b{=}{-}0.599$, $p{=}1.0{\times}10^{-7}$).
 \textbf{(C4)} \emph{Judges are unstable along separable axes}: on
 frozen answer--context pairs, self-agreement falls to
-$\kappa{\leq}0.14$ after eleven weeks, and two vendors judging
-identical rows on one day agree on 93\% of them at $\kappa{=}0.03$--$0.13$
-but AC1 $0.90$--$0.94$ (Table~\ref{tab:judges}). Strictness is
-vendor-specific; the hop-wise ordering is not.
+$\kappa{\leq}0.14$ after eleven weeks; across eight settings two vendors
+reverse which of them is stricter, and their $\kappa$ swings from $0.03$
+to $0.44$ while raw agreement moves only from 0.82 to 0.94
+(Table~\ref{tab:judges}). Strictness is a judge--corpus property; the
+hop-wise ordering replicates across vendors regardless.
 \textbf{(C5, supporting)} a logistic-regression router on dense embeddings
 alone reaches macro-$F_1$ $0.86$ on hop classification.
