@@ -83,42 +83,43 @@ def fig1():
 
 
 def fig2():
-    fc = pd.read_csv(STATS / "faithfulness_ci.csv")
-    ja = pd.read_csv(STATS / "judge_agreement.csv")
+    """Full-matrix v2 faithfulness, GPT-4.1 vs Gemini on identical rows."""
+    from faithfulness_ci import cohens_kappa, gwet_ac1
 
-    judges = ["gpt5", "gpt41"]
-    judge_labels = {"gpt5": "GPT-5.4", "gpt41": "GPT-4.1"}
+    key = ["query", "pipeline", "repeat"]
+    a = pd.read_csv(ROOT / "results" / "main-v2-judged-full-gpt41.csv")
+    b = pd.read_csv(ROOT / "results" / "main-v2-judged-gemini.csv")
+    m = a.merge(b[key + ["gemini_faithful"]], on=key)
+
+    judges = ["gpt41_faithful", "gemini_faithful"]
+    judge_labels = {"gpt41_faithful": "GPT-4.1", "gemini_faithful": "Gemini"}
     cols = [(s, j) for s in STRATA for j in judges]
-    grid = np.full((len(PIPELINES), len(cols)), np.nan)
-    for i, p in enumerate(PIPELINES):
-        for j, (s, jud) in enumerate(cols):
-            row = fc[(fc["stratum"] == s) & (fc["pipeline"] == p) & (fc["judge"] == jud)]
-            if len(row):
-                grid[i, j] = row.iloc[0]["faithful_pct"]
+    cell = m.groupby(["pipeline", "query_type"])[judges].mean()
+    grid = np.array([[cell.loc[(p, s), j] for s, j in cols] for p in PIPELINES])
 
-    ac1 = []
+    ac1, kap = [], []
     for s in STRATA:
-        r = ja[(ja["slice_type"] == "stratum") & (ja["slice"] == s)]
-        ac1.append(float(r.iloc[0]["gwets_ac1"]) if len(r) else np.nan)
+        g = m[m["query_type"] == s]
+        ac1.append(gwet_ac1(g[judges[0]], g[judges[1]]))
+        kap.append(cohens_kappa(g[judges[0]].astype(int), g[judges[1]].astype(int))[0])
 
     fig, (ax, ax2) = plt.subplots(1, 2, figsize=(7.8, 3.6),
                                    gridspec_kw={"width_ratios": [6, 1]})
-    im = ax.imshow(grid, aspect="auto", cmap="Blues", vmin=0, vmax=1)
+    # ponytail: colour scale starts at 0.80 -- every cell is >= 0.88, a 0-1 scale would be flat
+    im = ax.imshow(grid, aspect="auto", cmap="Blues", vmin=0.8, vmax=1)
     ax.set_xticks(np.arange(len(cols)))
     ax.set_xticklabels([f"{s}\n{judge_labels[j]}" for s, j in cols],
                        rotation=0, ha="center", fontsize=8)
     ax.set_yticks(np.arange(len(PIPELINES)))
     ax.set_yticklabels(PIPELINES)
-    # Vertical separators between strata
     for k in range(1, len(STRATA)):
         ax.axvline(k * 2 - 0.5, color="black", linewidth=0.6)
     for i in range(grid.shape[0]):
         for j in range(grid.shape[1]):
             v = grid[i, j]
-            if not np.isnan(v):
-                ax.text(j, i, f"{v * 100:.0f}", ha="center", va="center",
-                        color="white" if v > 0.5 else "black", fontsize=8)
-    ax.set_title("Faithfulness % (5 pipelines × 3 strata × 2 judges)", fontsize=10)
+            ax.text(j, i, f"{v * 100:.1f}", ha="center", va="center",
+                    color="white" if v > 0.93 else "black", fontsize=8)
+    ax.set_title("Faithfulness % (full v2 matrix, n=4,440 per judge)", fontsize=10)
     cb = fig.colorbar(im, ax=ax, fraction=0.04, pad=0.02)
     cb.set_label("faithful %", fontsize=8)
 
@@ -129,16 +130,16 @@ def fig2():
     ax2.set_xlim(0, 1)
     ax2.set_xlabel("Gwet's AC1")
     ax2.invert_yaxis()
-    ax2.set_title("Per-stratum AC1", fontsize=9)
-    for i, v in enumerate(ac1):
-        if not np.isnan(v):
-            ax2.text(min(v + 0.02, 0.93), i, f"{v:.2f}", va="center", fontsize=8)
+    ax2.set_title("AC1 ($\\kappa$)", fontsize=9)
+    for i, (v, kv) in enumerate(zip(ac1, kap)):
+        ax2.text(0.03, i, f"{v:.2f} ({kv:.2f})", va="center", fontsize=8)
     ax2.spines["top"].set_visible(False)
     ax2.spines["right"].set_visible(False)
 
     fig.tight_layout()
     fig.savefig(FIGS / "fig2_faithfulness_heatmap.pdf", bbox_inches="tight")
     plt.close(fig)
+    print("AC1", [round(x, 3) for x in ac1], "kappa", [round(x, 3) for x in kap])
 
 
 def main():

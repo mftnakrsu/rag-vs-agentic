@@ -62,5 +62,13 @@ built deterministically from the \texttt{dgslibisey}
 MuSiQue mirror (validation split, seed $20260511$), and the
 2WikiMultihopQA subgraph (2{,}000 chunks, 332 edges) from the
 \texttt{voidful} mirror (seed $20260816$) by the same procedure.
-The graph pipelines read a file-backed store built from the released
-link annotations, so no database service is needed to reproduce them.
+The v2/v3 graph arms walked that original store; the bge-m3 matrix and
+the PPR arm walked a file-backed store built from the released link
+annotations, which is also what a reproduction uses (no database service
+needed). To check that this change of graph does not drive the
+comparisons, we rebuilt every v3 GraphRAG context on the file-backed
+store without any generation: the vector seeds are identical in 295 of
+296 queries, the contexts overlap at Jaccard 0.89, and context
+precision ($0.131$ vs.\ $0.129$) and retrieval recall ($0.720$ vs.\
+$0.724$) differ by at most 0.01 in every stratum. The citation side was not
+re-generated on the new store.
