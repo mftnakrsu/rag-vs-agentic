@@ -1,0 +1,67 @@
+\section{Introduction}
+\label{sec:intro}
+
+Certifying avionics software under DO-178C requires demonstrating
+\emph{traceability}: each requirement must be linked to the parent it
+derives from, the system-level intent it satisfies, and the
+verification artifact that tests it, and certification authorities
+increasingly require these chains to be auditable across two or more
+hops~\cite{do178c,arp4754a,easa2025npa,faa2024airoadmap}. Requirements
+management tools record those links explicitly, so a requirements
+corpus is naturally read as a typed link graph, which makes retrieval
+over it a graph problem as much as a text problem.
+
+RAG architectures for this task have produced contradictory verdicts:
+Microsoft GraphRAG~\cite{graphrag2024} exploits structure but loses to
+vector RAG on detailed
+queries~\cite{ragvsgraphrag2025,graphragbench2026};
+Adaptive-RAG~\cite{adaptiverag2024} routes by
+complexity yet is hop-blind; LiSSA~\cite{lissa2025} and
+TVR~\cite{niu_tvr2025} omit typed-graph reasoning. Prior evaluations
+report which architecture wins in a given setting, but not why the
+outcome changes when the setting changes.
+
+We address this with a \textbf{multi-axis robustness} analysis.
+Holding a five-pipeline architecture matrix fixed (vanilla, agentic,
+agentic+graph, GraphRAG, learned adaptive), we vary four orthogonal
+axes: the retrieval embedder (e5-small 384d, Azure 3-small 1536d,
+bge-m3 1024d -- three vendors, three dimensionalities), the corpus
+(DO-178C typed-edge requirements; Wikipedia paragraph chains via
+MuSiQue and 2WikiMultihopQA), the graph traversal (a bounded 2-hop walk
+and personalized PageRank over the same graph), and the faithfulness
+judge (GPT-5.4, GPT-4.1, Gemini 3.7-flash). The design produces 13{,}456
+generation runs and over 30{,}000 faithfulness judgments.
+
+Our headline result is not that one architecture wins, but that a
+methodological choice most evaluations leave implicit -- whether
+citation quality is scored over the retrieved context or over the
+answer's own citations -- decides the winner. We make five
+contributions.
+\textbf{(C1)} Answer-level citation winners are
+\emph{stratum-conditional but embedder- and seed-robust}
+(Table~\ref{tab:embedders}): vanilla ties GraphRAG on 1--2-hop DO-178C
+queries and is last at 3+-hop under all three embedders, where a
+graph-aided pipeline leads.
+\textbf{(C2)} GraphRAG's walk and its synthesizer pull in opposite
+directions: the walk fills the context at precision 0.12--0.23, the
+answer cites 2.5--5.0 IDs at 0.48--0.98
+(Table~\ref{tab:pathology}). Scoring the retrieved set as the
+attribution set -- a choice some comparisons make implicitly -- ranks
+GraphRAG below the vanilla baseline; scoring the answer's citations
+ranks it first of all pipelines. This holds in all six settings,
+survives swapping the traversal, and defeats two mitigations.
+\textbf{(C3)} The faithfulness decline follows \emph{context
+expansion}, not the corpus: powered comparably, both Wikipedia corpora
+decline too, overturning the corpus-conditional reading that
+smaller judged subsets suggest. The pipeline that expands nothing stays flat on every corpus,
+and a hop$\times$expansion interaction is significant on the pooled
+matrix ($b{=}{-}0.599$, $p{=}1.0{\times}10^{-7}$).
+\textbf{(C4)} \emph{Judges are unstable along separable axes}: on
+frozen answer--context pairs, self-agreement falls to
+$\kappa{\leq}0.14$ after eleven weeks; across eight settings two vendors
+reverse which of them is stricter, and their $\kappa$ swings from $0.03$
+to $0.44$ while raw agreement moves only from 0.82 to 0.94
+(Table~\ref{tab:judges}). Strictness is a judge--corpus property; the
+hop-wise ordering replicates across vendors regardless.
+\textbf{(C5, supporting)} a logistic-regression router on dense embeddings
+alone reaches macro-$F_1$ $0.86$ on hop classification.
