@@ -68,24 +68,23 @@ stratum-conditional, but stable under embedder swap and reseeding.
 \begin{figure}[t!]
   \centering
   \includegraphics[width=0.84\columnwidth]{figures/fig2_faithfulness_heatmap.pdf}
-  \caption{Multi-judge faithfulness on the v2 main matrix.
-    \textit{Left}: faithfulness fraction (5 pipelines $\times$ 3 hop
-    strata $\times$ 2 judges); the GraphRAG row shows the monotonic
-    decline driving C3 on DO-178C. \textit{Right}: per-stratum Gwet
-    AC1, showing the $\kappa$ paradox at 3+-hop (AC1${=}0.57$,
-    $\kappa{<}0.10$; cf.\ Table~\ref{tab:judges}). These are the
-    original 300-row batches under GPT-5.4 and GPT-4.1; their absolute
-    levels are far below the later full-matrix pass
-    (\S\ref{sec:c3}) and are not comparable to it, which is the drift
-    C4 measures. Only the within-panel hop ordering should be read
-    across the two.}
+  \caption{Faithfulness on the full v2 main matrix (DO-178C, e5-small;
+    4{,}440 rows, $\approx$300 per cell), judged by GPT-4.1 and Gemini
+    3.7-flash on identical rows. \textit{Left}: under GPT-4.1 every
+    expanding pipeline loses 4--7\,pp from 1-hop to 3+-hop while vanilla,
+    which expands nothing, does not decline (C3); Gemini compresses every
+    cell against the ceiling. \textit{Right}: per-stratum Gwet's AC1 with
+    Cohen's $\kappa$ in parentheses -- 0.89--0.94 against
+    $\kappa{\leq}0.06$ on the same verdicts, the prevalence paradox of
+    C4. Colour scale starts at 80\%.}
   \Description{Heatmap of faithfulness percentages for five RAG
     pipelines (rows: vanilla, agentic, agentic-graph, graphrag,
     adaptive) across three hop strata times two judges (columns:
-    1-hop GPT-5.4, 1-hop GPT-4.1, 2-hop GPT-5.4, 2-hop GPT-4.1,
-    3+-hop GPT-5.4, 3+-hop GPT-4.1) on the v2 main matrix. The
-    graphrag row darkens monotonically left-to-right under both
-    judges. A side panel shows per-stratum Gwet AC1 bars.}
+    1-hop GPT-4.1, 1-hop Gemini, 2-hop GPT-4.1, 2-hop Gemini,
+    3+-hop GPT-4.1, 3+-hop Gemini) on the full v2 main matrix. Under
+    GPT-4.1 the expanding pipelines lighten toward 3+-hop while vanilla
+    does not; Gemini cells are uniformly near 99\%. A side panel shows
+    per-stratum Gwet AC1 bars annotated with Cohen's kappa.}
   \label{fig:faithheatmap}
 \end{figure}
 
@@ -116,7 +115,8 @@ choices. First, \emph{traversal}: replacing the bounded 2-hop walk with
 personalized PageRank over the same graph -- unbounded in radius and
 ranked by random-walk mass rather than hop distance, with embedder,
 seeds and context cap held fixed -- changes almost nothing (context
-precision $0.131$ vs.\ $0.129$; enrichment $3.9\times$ vs.\
+precision $0.131$ vs.\ $0.129$, and $0.131$ for the 2-hop walk rebuilt
+on the same file-backed graph, \S\ref{sec:experiments}; enrichment $3.9\times$ vs.\
 $3.8\times$; citation $F_1$ $+0.016$ at Cliff's $\delta{=}0.036$, which
 our joint criterion rejects as negligible). Second, \emph{mitigation}:
 neither obvious fix helps. Reranking the walked neighbours by query
