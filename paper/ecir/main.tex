@@ -1,0 +1,43 @@
+%% ECIR 2027 full-paper submission (Springer LNCS, double-anonymous).
+%% The de-anonymised arXiv build lives in paper/cikm/.
+\documentclass[runningheads]{llncs}
+
+\usepackage[T1]{fontenc}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{positioning, arrows.meta, shapes.geometric,
+                fit, backgrounds, calc}
+\usepackage[hidelinks]{hyperref}
+
+%% acmart's accessibility description; LNCS has no equivalent.
+\newcommand{\Description}[1]{}
+
+\begin{document}
+
+\title{A Multi-Axis Robustness Analysis of Retrieval-Augmented Generation
+  for Multi-Hop Requirements Traceability}
+\titlerunning{Multi-Axis Robustness of RAG for Requirements Traceability}
+
+\author{Anonymous Author(s)}
+\authorrunning{Anonymous}
+\institute{Anonymous Institution}
+
+\maketitle
+
+\input{sections/01-abstract}
+\input{sections/02-introduction}
+\input{sections/03-related-work}
+\input{sections/04-method}
+\input{sections/05-experiments}
+\input{sections/06-results}
+\input{sections/07-discussion}
+\input{sections/08-conclusion}
+
+\bibliographystyle{splncs04}
+\bibliography{refs}
+
+\end{document}

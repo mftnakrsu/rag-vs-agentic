@@ -1,0 +1,74 @@
+\section{Experimental Setup}
+\label{sec:experiments}
+
+\textbf{Main matrix and cross-corpus sample.} DO-178C: 5 pipelines $\times$
+296 hop-stratified queries $\times$ 3 seeds $= 4{,}440$ runs under each
+of two embedders (\emph{v2}, \emph{v3}), plus 1{,}480 runs at one seed
+under the third (\emph{v4}, bge-m3) and a 296-run personalized-PageRank
+arm on the Azure embedder. MuSiQue: 3 pipelines (vanilla,
+GraphRAG, agentic+graph) $\times$ 200 queries $\times$ 1 seed $= 600$ runs,
+Azure embedder only, with the GraphRAG arm extended to three seeds so
+its per-stratum $n$ matches DO-178C's, plus 400 runs for two mitigation
+variants and a 200-run GraphRAG distractor-edge control
+(\S\ref{sec:c1}) on the same queries and vector seeds. Agentic and
+adaptive are not re-run on MuSiQue (C2 needs only the three-pipeline
+trio). 2WikiMultihopQA: vanilla and GraphRAG $\times$ 200 queries
+$\times$ 3 seeds $= 1{,}200$ runs, Azure embedder.
+
+\textbf{Faithfulness judging.} On DO-178C, the multi-judge protocol
+(GPT-5.4 $+$ GPT-4.1) is applied to two disjoint 300-row stratified
+batches (60 per pipeline; seeds 42 and 43), the second judged eleven
+weeks after the first, yielding 1{,}200 paired binary judgments per
+embedder. Each batch is \emph{pinned} to the same 300 (query,
+pipeline, repeat) tuples across embedders so C3 deltas are computed
+on identical items; batches are reported separately, never pooled
+across judging dates. On the Wikipedia corpora we judge every row with
+GPT-4.1 and Gemini 3.7-flash. The Gemini leg of the MuSiQue seed
+extension, both mitigation arms and 2Wiki ran one day after their
+GPT-4.1 leg, on frozen stored answer--context strings, so the pairing is
+row-exact; the DO-178C matrices were judged by both vendors in a single
+pass.
+Same-input controls re-judge 300 v2 tuples twice with GPT-5.4
+(test--retest) and once eleven weeks later (temporal drift); a
+generator-swap control re-synthesizes 332 v3 rows with GPT-4.1 on
+frozen retrievals and dual-judges them.
+
+\textbf{Statistical protocol.} 95\% BCa bootstrap
+intervals~\cite{du2025bootstrap} ($B{=}1000$, paired at the query
+level), Wilcoxon signed-rank with Holm correction across the 30
+pipeline-pair $\times$ stratum
+contrasts~\cite{bergkirkpatrick2012,koehn2004}, and Cliff's $\delta$
+(negligible ${<}0.147$). A pipeline pair
+is reported as significantly different only when the BCa interval excludes
+zero, Holm $p{<}0.05$, and $|\delta|\!\geq\!0.147$ jointly hold.
+Generation is stochastic, so every query is run at three seeds; tests
+pool the seeds and we report the across-seed spread separately
+(\S\ref{sec:c1}) as a check that no reported ordering rests on a
+single run.
+
+\textbf{Reproducibility.} The graph store was populated before this
+study and carries edges beyond those annotated in the released corpus:
+re-loading the release with our ETL recovers 91.0\% of the edges and
+82.8\% of the chains behind our queries. Graph-pipeline results are
+therefore reproducible up to that coverage; the query manifest is
+released with its full chains, so every gold evidence set is exact
+regardless. The rest of the pipeline regenerates from a
+single make target on locked CSVs. Azure model snapshots:
+\texttt{gpt-5.4-}\allowbreak\texttt{2026-03-05} (generator + judge),
+\texttt{gpt-4.1-2025-04-14} (judge); reasoning-mode decoding with an
+8{,}192-token completion cap. The MuSiQue
+subgraph (3{,}996 paragraph chunks, 399 \textit{REFERENCES} edges) is
+built deterministically from the \texttt{dgslibisey}
+MuSiQue mirror (validation split, seed $20260511$), and the
+2WikiMultihopQA subgraph (2{,}000 chunks, 332 edges) from the
+\texttt{voidful} mirror (seed $20260816$) by the same procedure.
+The v2/v3 graph arms walked that original store; the bge-m3 matrix and
+the PPR arm walked a file-backed store built from the released link
+annotations, which is also what a reproduction uses (no database service
+needed). To check that this change of graph does not drive the
+comparisons, we rebuilt every v3 GraphRAG context on the file-backed
+store without any generation: the vector seeds are identical in 295 of
+296 queries, the contexts overlap at Jaccard 0.89, and context
+precision ($0.131$ vs.\ $0.129$) and retrieval recall ($0.720$ vs.\
+$0.724$) differ by at most 0.01 in every stratum. The citation side was not
+re-generated on the new store.
