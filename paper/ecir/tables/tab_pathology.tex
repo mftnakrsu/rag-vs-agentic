@@ -1,0 +1,21 @@
+\begin{table}[t]
+  \centering
+  \caption{GraphRAG floods the context and the synthesizer filters it (C2), across every setting we ran: three embedders, three corpora, and two traversals. The walk fills 11--15 slots at low precision; the answer cites 2.5--5.0 IDs at 3--4$\times$ that precision. The ranking inverts with the measurement point in all six.}
+  \label{tab:pathology}
+  \small
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{l rr rr r}
+    \toprule
+    & \multicolumn{2}{c}{\textit{retrieved context}} & \multicolumn{2}{c}{\textit{answer citations}} & \\
+    \cmidrule(lr){2-3}\cmidrule(lr){4-5}
+    Setting & slots & prec. & IDs & prec. & gain \\
+    \midrule
+    DO-178C, e5-small     & 14.9 & 0.120 & 4.9 & 0.480 & 4.0$\times$ \\
+    DO-178C, 3-small      & 14.9 & 0.129 & 5.0 & 0.493 & 3.8$\times$ \\
+    DO-178C, bge-m3       & 14.8 & 0.121 & 4.7 & 0.490 & 4.1$\times$ \\
+    DO-178C, PPR walk     & 14.9 & 0.131 & 4.9 & 0.509 & 3.9$\times$ \\
+    MuSiQue               & 11.2 & 0.227 & 3.4 & 0.654 & 2.9$\times$ \\
+    2WikiMultihopQA       & 11.4 & 0.230 & 2.5 & 0.975 & 4.2$\times$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
