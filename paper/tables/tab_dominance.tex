@@ -1,6 +1,6 @@
 \begin{table*}[t]
   \centering
-  \caption{Per-stratum citation $F_1$ across four settings. v2 main = DO-178C synthetic with local e5-small embeddings (4{,}440 runs); v3 main = same corpus with Azure text-embedding-3-small (4{,}440 runs); MuSiQue = 200-query Wikipedia stratified subset with Azure embedder (600 runs, vanilla / agentic-graph / graphrag only); 2Wiki = 200-query 2WikiMultihopQA subset at three seeds (1{,}200 runs, vanilla / graphrag only). Bold marks the per-(setting, stratum) maximum. The stratum-conditional pattern is the same on all four: vanilla is competitive at 1-hop and loses as hop distance grows.}
+  \caption{Citation $F_1$ by hop stratum in four settings. v2 and v3: DO-178C with the e5-small and text-embedding-3-small embedders (4{,}440 runs each). MuSiQue: 200 queries with the v3 embedder (600 runs; vanilla, agentic+graph, and GraphRAG only). 2Wiki: 200 2WikiMultihopQA queries at three seeds (1{,}200 runs; vanilla and GraphRAG only). Bold marks the best pipeline per setting and stratum.}
   \label{tab:dominance}
   \footnotesize\setlength{\tabcolsep}{3pt}
   \resizebox{\textwidth}{!}{%

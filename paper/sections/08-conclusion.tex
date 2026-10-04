@@ -1,10 +1,12 @@
 \section{Conclusion}
 \label{sec:conclusion}
-Around a fixed five-pipeline matrix, varying embedder, corpus,
-traversal and judge shows that moving the citation-measurement point
-from context to answer inverts the architecture ranking; that the
-faithfulness decline follows context expansion rather than the corpus;
-that stratum winners are embedder- and seed-robust; and that judges
-drift on frozen inputs while $\kappa$ hides it. Robustness on these
-axes, and an explicit choice of measurement point, is the minimum bar
-for RAG architecture claims.
+In this paper, we compared five RAG pipelines for multi-hop
+requirements traceability while varying the embedder, corpus, graph
+traversal, and judge. The citation measurement point reverses the
+GraphRAG comparison in all six settings, the best pipeline per hop
+depth is stable across embedders and seeds, and the faithfulness
+decline follows context expansion on all three corpora. LLM judges
+drift on identical inputs but agree on the hop-wise ordering. RAG
+comparisons should therefore state their measurement point and report
+results across these factors; testing a learned evidence selector and a
+third-party GraphRAG system are natural next steps.
