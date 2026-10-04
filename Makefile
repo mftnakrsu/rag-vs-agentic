@@ -65,25 +65,8 @@ clean-stats:
 clean-router:
 	rm -rf data/router results/router results/stats/adaptive_comparison.csv
 
-.PHONY: paper-tables paper
+.PHONY: paper
 
-PAPER_TABLES := \
-  paper/cikm/tables/table_main.tex \
-  paper/cikm/tables/table_faithfulness.tex \
-  paper/cikm/tables/table_agreement.tex
-
-$(PAPER_TABLES): scripts/tex/make_tables.py \
-		results/stats/per_stratum_f1_ci.csv \
-		results/stats/significance_matrix.csv \
-		results/stats/faithfulness_ci.csv \
-		results/stats/judge_agreement.csv \
-		results/stats/adaptive_comparison.csv \
-		results/main-v2-scored.csv
-	$(PYTHON) scripts/tex/make_tables.py
-
-paper-tables: $(PAPER_TABLES)
-
-paper: paper-tables
-	cp -f figures/fig1_per_stratum_f1.pdf paper/cikm/figures/
-	cp -f figures/fig2_faithfulness_heatmap.pdf paper/cikm/figures/
-	$(MAKE) -C paper/cikm
+## Builds ECIR-2027-anonymous.pdf and arXiv-preprint.pdf into the repo root.
+paper:
+	$(MAKE) -C paper
