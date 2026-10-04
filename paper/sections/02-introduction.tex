@@ -1,56 +1,54 @@
 \section{Introduction}
 \label{sec:intro}
 
-Certifying avionics software under DO-178C requires demonstrating
-\emph{traceability}: each requirement must be linked to the parent it
-derives from, the system-level intent it satisfies, and the
-verification artifact that tests it, and certification authorities
-increasingly require these chains to be auditable across two or more
-hops~\cite{do178c,arp4754a,easa2025npa,faa2024airoadmap}. Requirements
-management tools record those links explicitly, so a requirements
-corpus is naturally read as a typed link graph, which makes retrieval
-over it a graph problem as much as a text problem.
+Software traceability is the ability to relate each requirement to the
+artifacts it derives from, satisfies, and is verified by. For airborne
+software, DO-178C makes this relation a certification objective, and
+certification authorities increasingly expect trace chains to be
+auditable across two or more hops~\cite{do178c,arp4754a,easa2025npa,faa2024airoadmap}.
+Because requirements management tools record these links explicitly, a
+requirements corpus is also a typed link graph, and answering a
+traceability question over it is a retrieval problem over both text and
+graph.
 
-RAG architectures for this task have produced contradictory verdicts:
-Microsoft GraphRAG~\cite{graphrag2024} exploits structure but loses to
-vector RAG on detailed
-queries~\cite{ragvsgraphrag2025,graphragbench2026};
-Adaptive-RAG~\cite{adaptiverag2024} routes by
-complexity yet is hop-blind; LiSSA~\cite{lissa2025} and
-TVR~\cite{niu_tvr2025} omit typed-graph reasoning. Prior evaluations
-report which architecture wins in a given setting, but not why the
-outcome changes when the setting changes.
+Retrieval-augmented generation (RAG) is a natural fit for this task,
+but published comparisons of RAG architectures disagree. Microsoft
+GraphRAG~\cite{graphrag2024} exploits graph structure, yet loses to
+vector RAG on detailed queries in recent
+benchmarks~\cite{ragvsgraphrag2025,graphragbench2026}.
+Adaptive-RAG~\cite{adaptiverag2024} routes queries by predicted
+complexity but does not consider hop distance, and traceability systems
+such as LiSSA~\cite{lissa2025} and TVR~\cite{niu_tvr2025} do not reason
+over typed graphs. Each of these evaluations reports which architecture
+wins in one setting, usually with one corpus, one embedder, and one
+judge. They do not explain why the verdict changes when the setting
+changes.
 
-We address this with a \textbf{multi-axis robustness} analysis.
-Holding a five-pipeline architecture matrix fixed (vanilla, agentic,
-agentic+graph, GraphRAG, learned adaptive), we vary four orthogonal
-axes: the retrieval embedder (e5-small 384d, Azure 3-small 1536d,
-bge-m3 1024d -- three vendors, three dimensionalities), the corpus
-(DO-178C typed-edge requirements; Wikipedia paragraph chains via
-MuSiQue and 2WikiMultihopQA), the graph traversal (a bounded 2-hop walk
-and personalized PageRank over the same graph), and the faithfulness
-judge (GPT-5.4, GPT-4.1, Gemini 3.7-flash). The design produces 13{,}456
-generation runs and over 30{,}000 faithfulness judgments.
+In this paper, we hold a matrix of five pipelines fixed (vanilla,
+agentic, agentic with a graph tool, GraphRAG, and a learned adaptive
+router) and vary four factors around it. These are the retrieval
+embedder (e5-small, OpenAI text-embedding-3-small, and bge-m3, from
+three vendors and at three dimensionalities), the corpus (DO-178C
+requirements with typed edges, and Wikipedia paragraph chains from
+MuSiQue and 2WikiMultihopQA), the graph traversal (a bounded two-hop
+walk and personalized PageRank), and the faithfulness judge (GPT-5.4,
+GPT-4.1, and Gemini 3.7-flash). The design comprises 13{,}456 generation
+runs and more than 30{,}000 faithfulness judgments. We ask four research questions. \textbf{RQ1}: Which
+pipeline produces the best answer-level citations at each hop depth,
+and is that ordering stable across embedders, corpora, and seeds?
+\textbf{RQ2}: Does the GraphRAG versus vector RAG comparison depend on
+whether citation quality is measured on the retrieved context or on the
+answer? \textbf{RQ3}: Does faithfulness decline with hop depth on every
+corpus, and which property of a pipeline determines the decline?
+\textbf{RQ4}: How stable are LLM faithfulness judges across time,
+retrieval states, and vendors?
 
-Our headline result is not that one architecture wins, but that a
-methodological choice most evaluations leave implicit -- whether
-citation quality is scored over the retrieved context or over the
-answer's own citations -- decides the winner. We make four contributions.
-\textbf{(C1)} Answer-level citation winners are
-\emph{stratum-conditional but embedder- and seed-robust}: vanilla ties
-GraphRAG on 1--2-hop DO-178C queries and is last at 3+-hop under all
-three embedders.
-\textbf{(C2)} GraphRAG's walk floods the context while its synthesizer
-cites selectively, so scoring the retrieved set -- a choice some
-comparisons make implicitly -- ranks GraphRAG below the vanilla
-baseline and scoring the answer's citations ranks it first, in all six
-settings, under a second traversal, and against two mitigations.
-\textbf{(C3)} The faithfulness decline follows \emph{context
-expansion}, not the corpus: adequately powered, both Wikipedia corpora
-decline too, the one pipeline that expands nothing stays flat, and a
-hop$\times$expansion interaction is significant.
-\textbf{(C4)} \emph{Judges are unstable along separable axes}: they
-drift on frozen inputs, two vendors reverse which of them is stricter
-between corpora, and $\kappa$ swings by an order of magnitude while raw
-agreement barely moves. The hop-wise ordering nonetheless replicates
-across vendors.
+We find that the best pipeline depends on hop depth but not on the
+embedder or the seed (RQ1); that GraphRAG ranks below the vanilla
+baseline when citations are scored on the retrieved context and first
+when they are scored on the answer, in all six settings we test (RQ2);
+that faithfulness declines with hop depth on all three corpora once
+adequately powered, and only for pipelines that expand their context
+(RQ3); and that judges drift on identical inputs and reverse which of
+them is stricter between corpora, while reproducing the same hop-wise
+ordering (RQ4).
