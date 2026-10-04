@@ -16,14 +16,13 @@ distance --- consistent with C2's finding that reranking those chunks
 for relevance changes nothing.
 
 \paragraph{Implications for LLM-judge practice.}
-Same-judge self-$\kappa$ across embedders is $0.137$, against a
-same-day test--retest floor of $0.76$; on frozen inputs eleven weeks
-apart, self-$\kappa$ is $0.14$ (GPT-5.4) and $-0.05$ (GPT-4.1). A single-judge comparison across
-retrieval modules therefore reports embedder- and date-conditional
-verdicts, not invariant faithfulness. Multi-judge ensembles mitigate
-this only partially, since inter-judge $\kappa$ itself halves under
-embedder swap. Paired-tuple judging under a fixed embedder is the
-least that is needed for comparable faithfulness numbers.
+Because judges drift with the retrieval state and with the date
+(\S\ref{sec:c4}), a single-judge comparison across retrieval modules
+reports embedder- and date-conditional verdicts, not invariant
+faithfulness, and multi-judge ensembles help only partially since
+inter-judge agreement drifts too. Paired-tuple judging under a fixed
+embedder, inside one judging window, is the least that is needed for
+comparable faithfulness numbers.
 
 \paragraph{Threats to validity.}
 \looseness=-1
@@ -40,24 +39,17 @@ regulated-domain setting and may not transfer. A generator-swap
 control (GPT-4.1 re-synthesizing 332 rows on frozen retrievals)
 reproduces the architecture ordering with slightly higher $F_1$, and
 its answers show the same hop-wise faithfulness decline under both
-judges, so neither citation nor faithfulness results are
-GPT-5.4-specific; the corpus-author leg of the circularity remains. Two Wikipedia corpora (MuSiQue, 2WikiMultihopQA) are the main
-external-validity check for the universality claim; both are judged in
-full by two vendors and both replicate C1's stratum-conditional
-crossover, though only DO-178C carries the full five-pipeline field. Our graph pipeline
+judges, so neither result is GPT-5.4-specific; the corpus-author leg
+of the circularity remains. The two Wikipedia corpora are the main
+external-validity check: both are judged in full by two vendors and
+both replicate C1's crossover, though only DO-178C carries all five
+pipelines. Our graph pipeline
 is one typed-edge walk implementation, though swapping it for
 personalized PageRank leaves C2 intact; a full third-party GraphRAG
 system may still flood or filter differently.
-\textit{Mitigations we tried.} Two obvious fixes fail. Reranking the
-walked neighbours by query similarity and keeping the top five moves
-nothing (citation $F_1$ $+0.010$, $p{=}0.34$); tightening the traversal
-budget hurts and does not even buy precision (citation $F_1$ $-0.126$,
-$p{=}2.6{\times}10^{-11}$, context precision $0.227{\to}0.194$). Both
-are consistent with C2: the synthesizer is already the filter, so
-filtering upstream is redundant while budget cuts remove the recall the
-advantage depends on. A learned evidence selector conditioned on the
-question, rather than the two unsupervised heuristics we tried, remains
-open.
+\textit{Mitigations.} The two unsupervised fixes we tried, reranking
+and a tighter budget, fail for the reason C2 gives (\S\ref{sec:c2}); a
+learned, question-conditioned evidence selector remains open.
 \textit{Statistical.} Per-stratum $n$ for citation metrics is 97--100
 on DO-178C and 66--67 on the Wikipedia corpora (paired at the query
 level), the lower edge of BCa stability under heavy skew; a
@@ -65,17 +57,12 @@ percentile fallback shows no qualitative reversal. Faithfulness cells
 now carry $n\approx300$ after full-matrix judging, which is what
 overturned the corpus-conditional reading in C3. The hop$\times$expansion
 interaction is significant on DO-178C but only same-signed on 2Wiki,
-whose arm is a twentieth the size; we report it as directional there. \textit{Reranker / router engineering.} No cross-encoder
-reranker is included (orthogonal axis); C5 is a diagnostic instrument,
-not a production router.
+whose arm is a twentieth the size; we report it as directional there.
 
-%% NOTE: de-anonymizing. Remove or replace with an anonymous mirror for
-%% any double-blind submission.
 \paragraph{Artifact availability.}
-The AeroSys corpus (1{,}132 requirements, 30 modules, with its link
-annotations), the 296-query manifest with full chains, the pipeline
-code and every scored and judged CSV behind the tables are released
-under CC-BY-4.0 at
-\url{https://huggingface.co/datasets/meftun/aerosys-requirements}
-and \url{https://github.com/mftnakrsu/rag-vs-agentic}. The Wikipedia subsets are
-rebuilt from public mirrors by the seeded scripts in that repository.
+The corpus with its link annotations, the query manifest with full
+chains, the code, and every scored and judged CSV are released under
+CC-BY-4.0 \ifanonymous (links withheld for review)\else at
+\url{https://huggingface.co/datasets/meftun/aerosys-requirements} and
+\url{https://github.com/mftnakrsu/rag-vs-agentic}\fi; the Wikipedia
+subsets are rebuilt by seeded scripts.

@@ -2,10 +2,10 @@
 """Generate the triple-robustness paper tables from v3 + MuSiQue results.
 
 Outputs (each is a complete table environment, ready to \\input):
-  paper/cikm/tables/tab_dominance.tex   — C1: per-stratum F1 across 3 settings
-  paper/cikm/tables/tab_pathology.tex   — C2a/C2b: GraphRAG triple-robustness
-  paper/cikm/tables/tab_judges.tex      — C3: judge agreement v2 vs v3 + self-κ
-  paper/cikm/tables/tab_router.tex      — C4: router v2 vs v3
+  paper/tables/tab_dominance.tex   — C1: per-stratum F1 across 3 settings
+  paper/tables/tab_pathology.tex   — C2a/C2b: GraphRAG triple-robustness
+  paper/tables/tab_judges.tex      — C3: judge agreement v2 vs v3 + self-κ
+  paper/tables/tab_router.tex      — C4: router v2 vs v3
 """
 import json
 import re
@@ -17,7 +17,7 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[2]
 STATS_V2 = ROOT / "results" / "stats"
 STATS_V3 = ROOT / "results" / "stats-v3"
-OUT = ROOT / "paper" / "cikm" / "tables"
+OUT = ROOT / "paper" / "tables"
 
 PIPELINES = ["vanilla", "agentic", "agentic-graph", "graphrag", "adaptive"]
 STRATA = ["1-hop", "2-hop", "3+-hop"]

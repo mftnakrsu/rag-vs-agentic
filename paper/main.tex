@@ -1,5 +1,6 @@
-%% ECIR 2027 full-paper submission (Springer LNCS, double-anonymous).
-%% The de-anonymised arXiv build lives in paper/cikm/.
+%% One source, two builds (see Makefile):
+%%   anonymous ECIR 2027 submission  -> default
+%%   de-anonymised arXiv preprint    -> \def\arxiv{} before \input{main}
 \documentclass[runningheads]{llncs}
 
 \usepackage[T1]{fontenc}
@@ -15,6 +16,9 @@
 \usepackage{microtype}
 \usepackage[hidelinks]{hyperref}
 
+\newif\ifanonymous
+\ifdefined\arxiv \anonymousfalse \else \anonymoustrue \fi
+
 %% acmart's accessibility description; LNCS has no equivalent.
 \newcommand{\Description}[1]{}
 
@@ -24,9 +28,20 @@
   for Multi-Hop Requirements Traceability}
 \titlerunning{Multi-Axis Robustness of RAG for Requirements Traceability}
 
+\ifanonymous
 \author{Anonymous Author(s)}
 \authorrunning{Anonymous}
 \institute{Anonymous Institution}
+\else
+\author{Meftun Akarsu\inst{1} \and
+  Burak \"Ozdemir\inst{1} \and
+  Do\u{g}ancan B\"uy\"uk\c{c}olak\inst{1} \and
+  Recep Kaan Karaman\inst{2}}
+\authorrunning{M. Akarsu et al.}
+\institute{Turkish Aerospace Industries, Ankara, T\"urkiye \and
+  Technical University of Munich, Munich, Germany\\
+  \email{kaan.karaman@tum.de}}
+\fi
 
 \maketitle
 
