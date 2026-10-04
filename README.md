@@ -9,8 +9,9 @@ four robustness axes: the retrieval **embedder**, the **corpus**, the graph
 **traversal**, and the faithfulness **judge**.
 
 13,456 generation runs at up to three seeds; 30,000+ faithfulness judgments.
-The paper sources are in [`paper/cikm/`](paper/cikm/); the current build is
-[`paper/main.pdf`](paper/main.pdf).
+The paper sources are in [`paper/`](paper/) (Springer LNCS). `make paper`
+builds [`arXiv-preprint.pdf`](arXiv-preprint.pdf) and the double-anonymous
+[`ECIR-2027-anonymous.pdf`](ECIR-2027-anonymous.pdf) into the repository root.
 
 ## What the study found
 

@@ -14,10 +14,8 @@
 *.snm
 *.vrb
 
-# Built artefacts (uncomment to keep PDFs out of git)
-# main.pdf
-# CIKM-2026-anonymous.pdf
-# CIKM-2026-anonymous.zip
+# Intermediate PDFs; the deliverables are copied to the repo root
+/*.pdf
 
 # Editor
 *.swp

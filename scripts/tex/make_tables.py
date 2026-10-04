@@ -2,9 +2,9 @@
 """Generate the 3 LaTeX tables from results/stats/*.csv.
 
 Outputs (each is a complete table environment, ready to \\input):
-  paper/cikm/tables/table_main.tex
-  paper/cikm/tables/table_faithfulness.tex
-  paper/cikm/tables/table_agreement.tex
+  paper/tables/table_main.tex
+  paper/tables/table_faithfulness.tex
+  paper/tables/table_agreement.tex
 """
 from pathlib import Path
 
@@ -14,7 +14,7 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[2]
 STATS = ROOT / "results" / "stats"
 SCORED = ROOT / "results" / "main-v2-scored.csv"
-OUT = ROOT / "paper" / "cikm" / "tables"
+OUT = ROOT / "paper" / "tables"
 
 PIPELINES = ["vanilla", "agentic", "agentic-graph", "graphrag", "adaptive"]
 STRATA = ["1-hop", "2-hop", "3+-hop"]
