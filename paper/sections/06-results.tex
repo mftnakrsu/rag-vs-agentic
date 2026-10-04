@@ -6,45 +6,48 @@
 \begin{figure}[t!]
   \centering
   \includegraphics[width=0.55\textwidth]{figures/fig1_per_stratum_f1.pdf}
-  \caption{Per-stratum citation $F_1$ on the v2 main matrix (DO-178C,
-    local e5-small embedder): five pipelines with BCa 95\% CIs;
-    \mbox{$*$} marks pipelines significantly different from the
-    per-stratum winner (Holm-Wilcoxon $p{<}0.05$,
-    $|\delta|{\geq}0.147$).}
-  \Description{Grouped bar chart of per-stratum citation F1 for five
-    RAG pipelines (vanilla, agentic, agentic-graph, graphrag, adaptive)
-    on the DO-178C v2 main matrix, broken down by 1-hop, 2-hop, and
-    3+-hop strata, with error bars and asterisks marking pipelines
-    significantly different from the per-stratum winner.}
+  \caption{Citation $F_1$ by hop stratum on the v2 matrix (DO-178C,
+    e5-small), with 95\% BCa intervals. An asterisk marks a pipeline that
+    differs significantly from the best pipeline in its stratum (Holm-adjusted
+    Wilcoxon $p < 0.05$ and $|\delta| \ge 0.147$).}
   \label{fig:perstratum}
 \end{figure}
 
-\subsection{C1: Winners are Corpus-Conditional, Embedder- and Seed-Robust}
+\subsection{Citation Quality by Hop Depth (RQ1)}
 \label{sec:c1}
-Table~\ref{tab:dominance} reports per-stratum $F_1$ across four settings.
-On DO-178C, vanilla and GraphRAG are statistically tied on 1-hop and
-2-hop (Wilcoxon $p{=}0.12/0.65$ local, negligible $\delta$), the
-agentic loop costs 0.19--0.30 $F_1$ on those strata, and on 3+-hop the
-ordering inverts: vanilla drops to last and the graph-aided pipelines
-lead (local: agentic-graph 0.219 vs.\ vanilla 0.089, Holm
-$p{<}10^{-6}$; under Azure the ordering holds but no 3+-hop pair passes
-the joint criterion). A third embedder from a third vendor (bge-m3)
-reproduces it (Table~\ref{tab:embedders}): vanilla is last at 3+-hop
-under all three, and under bge-m3 both graph arms beat it ($+0.100$,
-$+0.091$; Holm $p{=}2.1{\times}10^{-4}$, $1.4{\times}10^{-3}$) while
-1--2-hop contrasts stay negligible. On MuSiQue GraphRAG wins every
-stratum ($F_1{=}0.841/0.632/0.463$; $p{\leq}5.1{\times}10^{-4}$,
-$\delta{=}0.27$--$0.43$). Because MuSiQue's \textit{REFERENCES} edges
-connect only gold paragraphs, we re-ran GraphRAG with
-consecutive-distractor edges added: it loses only $0.02/0.05/0.09$ $F_1$
-and still beats vanilla everywhere ($p{\leq}0.014$). On 2WikiMultihopQA
-the two are tied at 1-hop ($p{=}0.15$) and GraphRAG wins 2-hop and
-3+-hop by widening margins ($+0.168$, $+0.260$; $\delta{=}0.48$, $0.87$)
--- the same crossover on a graph we did not design. Seed variance is
-small against these effects: per-pipeline mean $F_1$ moves by at most
-$0.031$ across seeds, every significant ordering holds in each seed
-separately, and the only rank swaps are within the vanilla--GraphRAG
-pairs we report as tied.
+Table~\ref{tab:dominance} reports citation $F_1$ by stratum in four
+settings. On DO-178C, vanilla and GraphRAG are statistically tied on
+one- and two-hop queries (Wilcoxon $p = 0.12$ and $0.65$ under the v2
+embedder, with negligible $\delta$), and the agentic loop costs 0.19 to
+0.30 $F_1$ on these strata. On queries of three or more hops the
+ordering reverses. Vanilla falls to last place, and the pipelines that
+use the graph lead; under the v2 embedder agentic+graph reaches 0.219
+against 0.089 for vanilla (Holm $p < 10^{-6}$). Under the v3 embedder the ordering is the same, but no pair at this depth passes the joint criterion. Under bge-m3 the pattern recurs (Table~\ref{tab:embedders}):
+vanilla is last at three or more
+hops under all three embedders, and under bge-m3 both graph pipelines
+outperform it by 0.100 and 0.091 (Holm $p = 2.1 \times 10^{-4}$ and
+$1.4 \times 10^{-3}$), while the one- and two-hop contrasts remain
+negligible.
+
+On MuSiQue, GraphRAG is best in every stratum ($F_1$ of 0.841, 0.632,
+and 0.463), with $p \le 5.1 \times 10^{-4}$ and $\delta$ between 0.27
+and 0.43 against vanilla. Because the MuSiQue \textit{REFERENCES} edges
+connect only gold paragraphs, we also ran GraphRAG on a graph with
+additional edges between consecutive distractor paragraphs. GraphRAG
+then loses 0.02, 0.05, and 0.09 $F_1$ per stratum and still outperforms
+vanilla in every stratum ($p \le 0.014$), so its advantage on MuSiQue
+does not depend on gold-only edges. On 2WikiMultihopQA, the two
+pipelines are tied on one-hop queries ($p = 0.15$), and GraphRAG leads
+on two-hop and deeper queries by 0.168 and 0.260 ($\delta = 0.48$ and
+0.87). This is the DO-178C crossover again, on a graph we did not build.
+
+Seed variation is small by comparison. The mean $F_1$ of each pipeline
+changes by at most 0.031 between seeds,
+every significant ordering holds in each seed separately, and the only
+changes in rank occur between vanilla and GraphRAG on one- and two-hop
+queries, which we already report as ties. Regarding RQ1, the best
+pipeline depends on hop depth and on the corpus, but not on the embedder
+or the seed.
 
 \input{tables/tab_embedders}
 
@@ -53,146 +56,139 @@ pairs we report as tied.
 \begin{figure}[t!]
   \centering
   \includegraphics[width=0.8\textwidth]{figures/fig2_faithfulness_heatmap.pdf}
-  \caption{Faithfulness on the full v2 main matrix (DO-178C, e5-small;
-    4{,}440 rows, $\approx$300 per cell), judged by GPT-4.1 and Gemini
-    3.7-flash on identical rows. \textit{Left}: under GPT-4.1 every
-    expanding pipeline loses 4--7\,pp from 1-hop to 3+-hop while vanilla,
-    which expands nothing, does not decline (C3); Gemini compresses every
-    cell against the ceiling. \textit{Right}: per-stratum Gwet's AC1 with
-    Cohen's $\kappa$ in parentheses -- 0.89--0.94 against
-    $\kappa{\leq}0.06$ on the same verdicts, the prevalence paradox of
-    C4. Colour scale starts at 80\%.}
-  \Description{Heatmap of faithfulness percentages for five RAG
-    pipelines (rows: vanilla, agentic, agentic-graph, graphrag,
-    adaptive) across three hop strata times two judges (columns:
-    1-hop GPT-4.1, 1-hop Gemini, 2-hop GPT-4.1, 2-hop Gemini,
-    3+-hop GPT-4.1, 3+-hop Gemini) on the full v2 main matrix. Under
-    GPT-4.1 the expanding pipelines lighten toward 3+-hop while vanilla
-    does not; Gemini cells are uniformly near 99\%. A side panel shows
-    per-stratum Gwet AC1 bars annotated with Cohen's kappa.}
+  \caption{Faithfulness on the full v2 matrix (DO-178C, e5-small; 4{,}440
+    rows, about 300 per cell), judged by GPT-4.1 and Gemini 3.7-flash on
+    the same rows. Left: percentage of answers judged faithful. Right:
+    Gwet's AC1 between the two judges per stratum, with Cohen's $\kappa$
+    in parentheses. The colour scale starts at 80\%.}
   \label{fig:faithheatmap}
 \end{figure}
 
-\subsection{C2: The Walk Floods the Context, the Synthesizer Filters It}
+\subsection{Context Versus Answer Citations (RQ2)}
 \label{sec:c2}
-\noindent Table~\ref{tab:pathology} reports the same measurement in
-six settings: three embedders, three corpora, and two traversals.
-GraphRAG's walk fills 11--15 context slots at context precision
-0.12--0.23 -- four to five of every six retrieved chunks are off-gold.
-The synthesizer then cites only 2.5--5.0 IDs per answer, at citation
-precision 0.48--0.98: a 2.9--4.2$\times$ precision enrichment over its
-own context, in every setting. GraphRAG's $F_1$ edge is therefore a
-\emph{recall} effect: the walk surfaces gold chunks dense retrieval
-misses, and the synthesizer declines to cite most of the noise that
-rides along. Evaluations that score the retrieved set as the
-attribution set -- as some GraphRAG comparisons do -- measure the
-flooding and miss the filtering, and invert the ranking: by context
-precision GraphRAG sits below the vanilla baseline in every setting
-($0.12$--$0.23$ against $0.27$--$0.37$), while by answer-citation $F_1$
-it is the highest-scoring pipeline in every setting ($0.551$, $0.571$,
-$0.565$, $0.585$, $0.646$, $0.951$ in the row order of
-Table~\ref{tab:pathology}). The two measurements do not merely differ in
-magnitude; they disagree on the sign of the comparison that the
-architecture debate turns on.
+Table~\ref{tab:pathology} reports the same measurement in six settings,
+covering three embedders, three corpora, and two traversals. GraphRAG's
+walk fills 11 to 15 context slots at a context precision of 0.12 to
+0.23, so four or five of every six chunks it retrieves are not gold. The
+synthesizer then cites only 2.5 to 5.0 IDs per answer, at a citation
+precision of 0.48 to 0.98. In every setting, the precision of the
+citations is 2.9 to 4.2 times that of the context. The $F_1$ advantage
+of GraphRAG is therefore a recall effect: the walk retrieves gold chunks
+that dense retrieval misses, and the synthesizer does not cite most of
+the irrelevant chunks that come with them.
 
-Two controls show the split is not an artifact of our own design
-choices. First, \emph{traversal}: replacing the bounded 2-hop walk with
-personalized PageRank over the same graph -- unbounded in radius and
-ranked by random-walk mass rather than hop distance, with embedder,
-seeds and context cap held fixed -- changes almost nothing (context
-precision $0.131$ vs.\ $0.129$, and $0.131$ for the 2-hop walk rebuilt
-on the same file-backed graph, \S\ref{sec:experiments}; enrichment $3.9\times$ vs.\
-$3.8\times$; citation $F_1$ $+0.016$ at Cliff's $\delta{=}0.036$, which
-our joint criterion rejects as negligible). Second, \emph{mitigation}:
-neither obvious fix helps. Reranking the walked neighbours by query
-similarity and keeping the top five leaves everything where it was
-(context precision $0.227{\to}0.232$, citation $F_1$ $+0.010$,
-$p{=}0.34$), while tightening the traversal budget actively hurts
-(walk $30{\to}10$, context $15{\to}8$: citation $F_1$ $-0.126$,
-$p{=}2.6{\times}10^{-11}$, and context precision \emph{falls} to
-$0.194$). This is what C2 predicts: the synthesizer already performs
-the filtering, so filtering again upstream is redundant, and cutting
-the budget only removes the recall the advantage rests on.
+An evaluation that scores the retrieved set as the attribution set, as
+some GraphRAG comparisons do, sees only the first step and reaches the
+opposite ranking. By context precision, GraphRAG
+is below the vanilla baseline in every setting (0.12 to 0.23, against
+0.27 to 0.37 for vanilla). By citation $F_1$, it is the best pipeline in
+every setting, with scores of 0.551, 0.571, 0.565, 0.585, 0.646, and
+0.951 in the row order of Table~\ref{tab:pathology}. 
 
-\subsection{C3: The Decline Follows Context Expansion, Not the Corpus}
+Two controls test whether this depends on our design. The first
+replaces the two-hop walk with personalized PageRank over the same
+graph. Context
+precision is 0.131 with PageRank and 0.129 with the original walk (0.131
+for the walk rebuilt on the same file-backed graph;
+Section~\ref{sec:experiments}). The precision gain from context to
+citations is 3.9 and 3.8 times, and the difference in citation $F_1$ is
+0.016 with $\delta = 0.036$, which our criterion treats as negligible.
+The second control applies two mitigations on MuSiQue. Reranking the
+walked neighbours by similarity to the query and keeping the top five
+changes little (context precision from 0.227 to 0.232, citation $F_1$
+$+0.010$, $p = 0.34$). Reducing the traversal budget from 30 to 10 nodes
+and the context from 15 to 8 chunks lowers citation $F_1$ by 0.126
+($p = 2.6 \times 10^{-11}$) and also lowers context precision, to 0.194.
+Both outcomes fit a synthesizer that already filters: an upstream
+filter adds little, and a smaller budget removes the recall the
+advantage depends on. Regarding RQ2, the comparison
+reverses with the measurement point in all six settings.
+
+\subsection{Faithfulness and Hop Depth (RQ3)}
 \label{sec:c3}
-Judged on 300-row subsets, the faithfulness decline looks
-\emph{corpus-conditional}: present on DO-178C, absent on Wikipedia
-chains. That reading does not survive adequate power. The MuSiQue arm
-had 67 rows per stratum; its 1-hop to 3+-hop drop ($9.2$\,pp) was larger
-than the $4.7$\,pp that reaches significance on DO-178C, but detecting
-it at 80\% power needs about 210 rows per cell. At three seeds
-($n{=}600$) the decline is significant under both judges:
-$0.930/0.876/0.823$ under GPT-4.1 ($p{=}1.1{\times}10^{-3}$) and
-$0.955/0.945/0.869$ under Gemini ($p{=}1.2{\times}10^{-3}$).
-2WikiMultihopQA, judged in full ($n{=}1{,}200$), declines as well
-($p{=}5.0{\times}10^{-2}$ and $4.8{\times}10^{-6}$), so the decline
-replicates on three corpora under two vendors.
+On 300-row judged subsets, faithfulness declines with hop depth on
+DO-178C but not on the Wikipedia chains. This difference disappears at
+adequate power. The MuSiQue arm had 67 rows per
+stratum. Its drop from one-hop to three-or-more-hop queries (9.2
+percentage points) was larger than the 4.7-point drop that is
+significant on DO-178C, but detecting it with 80\% power requires about
+210 rows per cell. With three seeds ($n = 600$), the decline is
+significant under both judges, from 0.930 to 0.876 to 0.823 under GPT-4.1
+($p = 1.1 \times 10^{-3}$) and from 0.955 to 0.945 to 0.869 under Gemini
+($p = 1.2 \times 10^{-3}$). On 2WikiMultihopQA, judged in full
+($n = 1{,}200$), faithfulness also declines ($p = 5.0 \times 10^{-2}$ and
+$4.8 \times 10^{-6}$). The decline therefore replicates on all three
+corpora under two vendors.
 
-What separates pipelines is whether they expand the context at all.
-Vanilla, the only pipeline that retrieves a fixed top-5 and expands
-nothing, shows no significant 1-hop to 3+-hop drop under GPT-4.1:
-${-}1.5$\,pp on DO-178C ($n{=}2{,}072$, per-embedder $p{=}0.16$,
-$0.99$, $0.76$) and $+1.1$\,pp on 2Wiki ($p{=}0.66$), against $6.3$ and
-$6.7$\,pp for the four expanding pipelines. A logistic fit of
-faithfulness on hop, an expansion indicator and their interaction makes
-this a single test: the interaction is negative and significant on the
-pooled DO-178C matrix ($b{=}{-}0.599$, $p{=}1.0{\times}10^{-7}$,
-$n{=}10{,}360$) and negative but not significant on 2Wiki
-($b{=}{-}0.286$, $p{=}0.27$), whose arm is a twentieth the size.
-Under Gemini the ordering holds but the test does not resolve: near the
-ceiling the baseline itself acquires a slope ($b{=}{-}0.729$,
-$p{=}0.012$) and the interaction is not separable from it ($p{=}0.11$),
-though expanding arms still drop further than vanilla ($2.8$ vs.\
-$1.5$\,pp on DO-178C, $12.7$ vs.\ $7.7$\,pp on 2Wiki) -- a lenient judge
-preserves the ranking and loses the resolution (C4). We do not claim
-every expanding pipeline declines in every cell: GraphRAG is marginal
-under bge-m3 ($p{=}0.065$), and the agentic arms decline in four of six
-embedder--pipeline combinations. The GPT-5.4 leg has not been re-run at
-this power.
+What distinguishes the pipelines is whether they expand the context.
+Vanilla retrieves a fixed top five and adds nothing, and under GPT-4.1
+it shows no significant drop from one-hop to three-or-more-hop queries.
+Its change is $-1.5$ points on DO-178C ($n = 2{,}072$; $p = 0.16$, 0.99,
+and 0.76 for the three embedders) and $+1.1$ points on 2WikiMultihopQA
+($p = 0.66$). The four expanding pipelines drop by 6.3 and 6.7 points on
+the same corpora (Fig.~\ref{fig:faithheatmap}). A logistic regression
+of faithfulness on hop depth, an expansion indicator, and their
+interaction turns this contrast into a single test. The interaction is
+negative and significant on the pooled DO-178C matrix ($b = -0.599$,
+$p = 1.0 \times 10^{-7}$, $n = 10{,}360$), and negative but not
+significant on 2WikiMultihopQA ($b = -0.286$, $p = 0.27$), whose arm is
+one twentieth the size.
+
+Under Gemini the ordering is the same, but the test does not resolve.
+Near the ceiling, vanilla itself shows a slope ($b = -0.729$,
+$p = 0.012$), and the interaction cannot be separated from it
+($p = 0.11$). The expanding pipelines still drop more than vanilla (2.8
+against 1.5 points on DO-178C, 12.7 against 7.7 on 2WikiMultihopQA). A lenient judge preserves the ranking but not the power to test it
+(Section~\ref{sec:c4}). Not every expanding pipeline declines in every cell: GraphRAG is
+marginal under bge-m3 ($p = 0.065$), and the agentic pipelines decline
+in four of six embedder and pipeline combinations. We have not re-run the GPT-5.4
+judge at this sample size. Regarding RQ3, faithfulness declines with
+hop depth on every corpus, and the decline is steeper for pipelines
+that expand their context.
 
 \input{tables/tab_judges}
-\subsection{C4: Judges Are Unstable on Frozen Inputs and on Changed Ones}
-\label{sec:c4}
-\looseness=-1
-Table~\ref{tab:judges} separates judge instability measured on
-\emph{frozen} inputs, where no retrieval is re-run, from instability
-under a changed retrieval state.
-\noindent\textit{Frozen inputs.} Re-judging the identical 300 stored
-(answer, context) pairs gives GPT-5.4 $\kappa{=}0.76$ (raw agreement
-0.88) on the same day but only $\kappa{=}0.14$ (0.56) eleven weeks
-later, a $+15$\,pp leniency shift that rejects a stationary judge
-(binomial $p{<}10^{-44}$). GPT-4.1 on the same tuples falls to chance
-agreement with its own earlier verdicts ($\kappa{=}{-}0.05/{-}0.00$),
-$+41$\,pp more lenient. With inputs fixed, this is judge drift alone.
-\noindent\textit{Changed retrieval state.} After an embedder swap,
-which changes contexts and answers on 94\% of tuples, GPT-5.4 flips 41\%
-of verdicts ($\kappa{=}0.137$) and GPT-4.1 26\% ($\kappa{=}0.48$): the
-judge more stable under embedder swap is the less stable across time.
-\noindent\textit{Across vendors.} On identical rows, Gemini 3.7-flash is
-far more lenient than GPT-4.1 on all four DO-178C settings (0.98--0.99
-vs.\ 0.92--0.95 faithful; McNemar $p{<}10^{-9}$), indistinguishable on
-the budget-capped MuSiQue arm ($0.875$ vs.\ $0.880$, $p{=}1.00$), and
-\emph{stricter} on 2WikiMultihopQA ($0.888$ vs.\ $0.914$,
-$p{=}6.2{\times}10^{-3}$). Strictness is a property of the judge--corpus
-pair and cannot be calibrated once and reused. The same eight settings
-expose the prevalence paradox~\cite{feinstein1990} within one judge
-pair: raw agreement moves only from 0.82 to 0.94 and Gwet's AC1 tracks
-it (0.77--0.94), but $\kappa$ swings from $0.03$ to $0.44$, ordered
-almost exactly by distance from the ceiling. On 2Wiki the pair agrees
-\emph{less} often than on DO-178C (0.899 vs.\ 0.93) yet appears fifteen
-times more reliable by $\kappa$ ($0.435$ vs.\ $0.029$). Leniency and
-\emph{trend} nonetheless come apart: near the ceiling, Gemini still
-reproduces the hop-wise decline on both DO-178C matrices
-($p{=}4.3{\times}10^{-3}$, $p{<}10^{-16}$) and on both Wikipedia corpora.
-The ordering a judge induces replicates across vendors; its strictness
-does not.
 
-\noindent\textit{Between judges, and why we re-judged everything.}
-Inter-judge $\kappa$ halves under embedder swap on identical tuples
-(0.30 $\to$ 0.17; McNemar $p{<}0.001$), and on the 300-row MuSiQue
-batch GPT-5.4 and GPT-4.1 agreed at chance (raw agreement 0.48, AC1
-0.08 -- genuine disagreement, not a prevalence artifact). Verdicts this
-unstable cannot carry a cross-corpus claim, which is why the full matrix
-was re-judged inside a single window (\S\ref{sec:c3}); no faithfulness
-comparison we report spans judging dates.
+\subsection{Judge Stability (RQ4)}
+\label{sec:c4}
+Table~\ref{tab:judges} separates instability on fixed inputs from
+instability after the retrieval state changes.
+\textit{Fixed inputs.} Re-judging the same 300 stored answer and
+context pairs gives GPT-5.4 a self-agreement of $\kappa = 0.76$ (raw
+agreement 0.88) on the same day, but only $\kappa = 0.14$ (raw agreement
+0.56) eleven weeks later, with 15 points more answers judged faithful.
+This rejects a stationary judge (binomial $p < 10^{-44}$). GPT-4.1 on the same tuples agrees with its own earlier
+verdicts only at chance level ($\kappa = -0.05$ and $-0.00$ for v2 and
+v3) and judges 41 points more answers faithful. With fixed inputs, this is drift of the judge alone.
+\textit{Changed retrieval state.} After an embedder swap, which
+changes the context and the answer for 94\% of the tuples, GPT-5.4
+changes 41\% of its verdicts ($\kappa = 0.137$) and GPT-4.1 changes 26\%
+($\kappa = 0.48$). The judge that is more stable under the embedder
+swap is thus the less stable over time.
+\textit{Across vendors.} On the same rows, Gemini 3.7-flash is much
+more lenient than GPT-4.1 on all four DO-178C settings (0.98 to 0.99
+against 0.92 to 0.95 faithful; McNemar $p < 10^{-9}$). They are indistinguishable on the budget-capped MuSiQue arm (0.875 against 0.880,
+$p = 1.00$), and Gemini is stricter on 2WikiMultihopQA (0.888 against
+0.914, $p = 6.2 \times 10^{-3}$). Strictness is therefore a property of
+the judge and corpus together, and a calibration offset measured on one
+corpus cannot be reused on another. The same eight
+settings show the prevalence paradox~\cite{feinstein1990} within one
+pair of judges. Raw agreement ranges only from 0.82 to 0.94, and Gwet's
+AC1 follows it (0.77 to 0.94), whereas $\kappa$ ranges from 0.03 to
+0.44, ordered almost exactly by the distance of faithfulness from the
+ceiling. On 2WikiMultihopQA the two judges agree less often than on
+DO-178C (0.899 against 0.93), yet their $\kappa$ is fifteen times
+higher (0.435 against 0.029). Leniency and trend are nevertheless
+separate properties. Although Gemini is near the ceiling on DO-178C, it
+reproduces the decline with hop depth on both DO-178C matrices
+($p = 4.3 \times 10^{-3}$ and $p < 10^{-16}$) and on both Wikipedia
+corpora. The ordering a judge induces replicates across vendors, while
+its strictness does not.
+\textit{Between judges.} Inter-judge agreement halves under the embedder swap ($\kappa$ from
+0.30 to 0.17; McNemar $p < 0.001$), and on the 300-row MuSiQue batch
+GPT-5.4 and GPT-4.1 agreed only at chance (raw agreement 0.48, AC1
+0.08), a real disagreement rather than a prevalence effect. We therefore
+re-judged the full matrix within one judging period
+(Section~\ref{sec:c3}), and no comparison we report spans judging
+dates. Regarding RQ4, judges are not stable over
+time, across retrieval states, or across vendors, although the hop-wise
+ordering they induce is.

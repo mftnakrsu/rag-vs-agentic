@@ -1,25 +1,24 @@
 \begin{abstract}
-Reported verdicts on GraphRAG versus vector RAG disagree, and the
-evidence is typically tied to a single corpus, embedder, and judge --
-and, we show, to where citation quality is measured. Holding a
-five-pipeline matrix fixed, we vary the embedder (three vendors), the
-corpus (DO-178C requirements, MuSiQue, 2WikiMultihopQA), the graph
-traversal, and the judge (GPT-5.4, GPT-4.1, Gemini), over 13{,}400
-generation runs and more than 30{,}000 faithfulness judgments.
-GraphRAG's walk floods the context at precision 0.12--0.23 while its
-synthesizer cites selectively at 0.48--0.98, so scoring the retrieved
-set ranks GraphRAG below the vanilla baseline and scoring the answer's
-citations ranks it first -- in all six settings, under a second
-traversal, and against two mitigations. Answer-level winners are
-stratum-conditional but stable across embedders and seeds.
-Faithfulness declines with hop distance on all three corpora once
-adequately powered, overturning the corpus-conditional reading that
-smaller judged subsets suggest; the decline tracks context expansion,
-with a significant hop$\times$expansion interaction ($p{=}10^{-7}$).
-Judges are not stable: on frozen inputs, self-agreement falls to
-$\kappa{\leq}0.14$ after eleven weeks, and two vendors reverse which is
-stricter between corpora. RAG architecture claims should be tested at
-this level of robustness, including the citation-measurement point.
+Published comparisons of GraphRAG and vector RAG reach conflicting
+verdicts, and each typically rests on a single corpus, embedder, and
+judge. We hold five RAG pipelines fixed and vary the embedder, the
+corpus (DO-178C requirements, MuSiQue, and 2WikiMultihopQA), the graph
+traversal, and the faithfulness judge, over 13{,}456 generation runs
+and more than 30{,}000 judgments. We find that the point at which
+citation quality is measured decides the comparison. GraphRAG's graph
+walk fills the context with mostly irrelevant chunks, at a precision of
+0.12 to 0.23, while its synthesizer cites selectively. Scored on the
+retrieved context, GraphRAG therefore ranks below the vanilla baseline
+in all six settings we test; scored on the answer's citations, it ranks
+first. The best pipeline at each hop depth is stable across embedders
+and seeds. Faithfulness declines with hop depth on all three corpora
+once the comparison is adequately powered, and the decline follows
+context expansion: the one pipeline that does not expand its context
+does not decline. LLM judges, in contrast, are unstable. On identical
+inputs re-judged eleven weeks later, self-agreement falls to
+$\kappa \le 0.14$, and two vendors reverse which of them is stricter
+between corpora. We recommend that RAG architecture comparisons report
+the citation measurement point and be repeated across these factors.
 
 \keywords{Retrieval-augmented generation \and GraphRAG \and Requirements traceability \and Multi-hop QA \and LLM-as-judge \and Evaluation methodology}
 \end{abstract}

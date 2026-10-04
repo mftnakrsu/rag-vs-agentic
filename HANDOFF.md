@@ -184,12 +184,22 @@ move. Now `parents[1]`. Self-check still reports 720 edges.
 
 ## 5. Paper build
 
+One LNCS source in `paper/` (the ACM/CIKM source was deleted 2026-10-04; it is in git history).
+
 ```bash
-cd paper/cikm && make          # pdflatex+bibtex → main.pdf (7 pp, arXiv build)
-.venv-judge/bin/python scripts/tex/make_tables_triple.py   # regenerates tables
-#   WARNING: overwrites tab_judges.tex, which carries HAND-EDITED rows
-#   (same-judge controls block + the 8-row cross-vendor block). Back it up first.
+make paper                 # -> ECIR-2027-anonymous.pdf + arXiv-preprint.pdf in the repo root
+make -C paper zip          # -> arXiv-source.zip (\arxiv baked into main.tex)
 ```
+
+`\ifanonymous` in `paper/main.tex` switches authors and artifact URLs. The anonymous body ends
+exactly at the bottom of page 12 (ECIR hard limit), so any added sentence needs a cut elsewhere.
+Prose follows `paper/writing-kb.md` (style rules distilled from 18 published papers): no C1–C5
+labels (RQ1–RQ4 instead), no parenthetical dashes, no arrows or × in prose, captions describe
+rather than claim.
+
+`scripts/tex/make_tables_triple.py` overwrites `paper/tables/` including hand-edited rows; back up first.
+
+ECIR 2027 full paper deadline: **5 Oct 2026 23:59 AoE = 6 Oct 14:59 Türkiye**.
 
 ## 6. Open items
 
